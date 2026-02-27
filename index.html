@@ -7,57 +7,297 @@
 <style>
 body {
     margin: 0;
-    background: #0f1117;
-    font-family: Arial, sans-serif;
     overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
-/* Escritorio */
 #desktop {
     width: 100vw;
     height: 100vh;
+    background-image: url("./public/wallpaper.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     position: relative;
 }
 
-/* Barra de tareas */
-#taskbar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    background: #1a1c23;
+.desktop-icon {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 80px;
+    text-align: center;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+}
+
+.desktop-icon img {
+    width: 64px;
+    height: 64px;
+}
+
+.desktop-icon span {
+    display: block;
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+.window {
+    position: absolute;
+    width: 600px;
+    height: 400px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(25px);
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    overflow: hidden;
+}
+
+.window-header {
+    height: 40px;
+    background: rgba(255,255,255,0.15);
     display: flex;
     align-items: center;
-    padding: 0 10px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+    padding: 0 15px;
+    cursor: grab;
+    color: white;
+    font-weight: bold;
 }
 
-/* Logo */
-#start-logo {
-    width: 32px;
-    height: 32px;
+.window-close {
+    margin-left: auto;
     cursor: pointer;
-    transition: transform 0.2s;
 }
 
-#start-logo:hover {
-    transform: scale(1.1);
+.window-content {
+    padding: 20px;
+    color: white;
+    display: flex;
+    gap: 30px;
+}
+
+.folder {
+    text-align: center;
+    cursor: pointer;
+}
+
+.folder img {
+    width: 64px;
+}
+
+#taskbar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 60px;
+    min-width: 200px;
+    padding: 0 25px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    z-index: 100;
+}
+
+#start-logo {
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+}
+
+#start-menu {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 50;
+
+    background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.15)
+    );
+
+    backdrop-filter: blur(10px);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.25);
 }
 </style>
-
 </head>
 <body>
 
 <div id="desktop"></div>
+    <div class="desktop-icon" id="explorer-icon">
+        <img src="./public/folder_full.png">
+        <span>Explorer</span>
+    </div>
 
 <div id="taskbar">
-    <img src="./public/winlogo.png" id="start-logo" alt="Hue-Bit Logo">
+    <img src="./public/winlogo.png" id="start-logo">
 </div>
 
+<div id="start-menu"></div>
+
 <script>
-// De momento vacío.
-// Aquí irá el "núcleo" más adelante.
+const logo = document.getElementById("start-logo");
+const menu = document.getElementById("start-menu");
+
+const explorerIcon = document.getElementById("explorer-icon");
+
+explorerIcon.addEventListener("dblclick", () => {
+    createExplorer();
+});
+
+function createExplorer() {
+
+    const win = document.createElement("div");
+    win.className = "window";
+    win.style.top = "120px";
+    win.style.left = "200px";
+
+    win.innerHTML = `
+        <div class="window-header">
+            Explorer
+            <div class="window-close">✕</div>
+        </div>
+        <div class="window-content" id="explorer-content">
+            <div class="folder" data-type="empty">
+                <img src="./public/folder.png">
+                <div>folder</div>
+            </div>
+            <div class="folder" data-type="full">
+                <img src="./public/folder_full.png">
+                <div>folder_full</div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(win);
+
+    const header = win.querySelector(".window-header");
+    const closeBtn = win.querySelector(".window-close");
+    const content = win.querySelector("#explorer-content");
+
+    closeBtn.onclick = () => win.remove();
+
+    header.onmousedown = (e) => {
+        const offsetX = e.clientX - win.offsetLeft;
+        const offsetY = e.clientY - win.offsetTop;
+
+        document.onmousemove = (e) => {
+            win.style.left = e.clientX - offsetX + "px";
+            win.style.top = e.clientY - offsetY + "px";
+        };
+
+        document.onmouseup = () => {
+            document.onmousemove = null;
+        };
+    };
+
+    content.querySelectorAll(".folder").forEach(folder => {
+        folder.addEventListener("click", () => {
+            if(folder.dataset.type === "full"){
+                content.innerHTML = `
+                    <div>archivo1.txt</div>
+                    <div>imagen.png</div>
+                    <div>video.mp4</div>
+                `;
+            } else {
+                content.innerHTML = `<div>Carpeta vacía</div>`;
+            }
+        });
+    });
+}
+
+let isOpen = false;
+
+function sleep(ms){
+    return new Promise(r => setTimeout(r, ms));
+}
+
+function getLogoPosition(){
+    const rect = logo.getBoundingClientRect();
+    return {
+        bottom: window.innerHeight - rect.bottom + rect.height/2
+    };
+}
+
+async function openMenu(){
+
+    const pos = getLogoPosition();
+
+    menu.style.transition = "none";
+    menu.style.opacity = "1";
+    menu.style.pointerEvents = "auto";
+    menu.style.width = "45px";
+    menu.style.height = "45px";
+    menu.style.bottom = pos.bottom + "px";
+
+    await sleep(10);
+
+    menu.style.transition = "bottom 0.4s cubic-bezier(.3,1.8,.4,1)";
+    menu.style.bottom = "90px";
+
+    await sleep(400);
+
+    menu.style.transition = "width 0.25s cubic-bezier(.3,1.5,.5,1)";
+    menu.style.width = "400px";
+
+    await sleep(250);
+
+    menu.style.transition = "height 0.35s cubic-bezier(.3,1.6,.4,1)";
+    menu.style.height = "500px";
+}
+
+async function closeMenu(){
+
+    menu.style.transition = "height 0.25s ease";
+    menu.style.height = "45px";
+
+    await sleep(250);
+
+    menu.style.transition = "width 0.25s ease";
+    menu.style.width = "45px";
+
+    await sleep(250);
+
+    const pos = getLogoPosition();
+
+    menu.style.transition = "bottom 0.35s cubic-bezier(.4,-0.4,.6,1.4)";
+    menu.style.bottom = pos.bottom + "px";
+
+    await sleep(350);
+
+    menu.style.opacity = "0";
+    menu.style.pointerEvents = "none";
+}
+
+logo.addEventListener("click", async (e)=>{
+    e.stopPropagation();
+    if(!isOpen){
+        await openMenu();
+        isOpen = true;
+    } else {
+        await closeMenu();
+        isOpen = false;
+    }
+});
+
+document.addEventListener("click", async (e)=>{
+    if(isOpen && !menu.contains(e.target) && e.target !== logo){
+        await closeMenu();
+        isOpen = false;
+    }
+});
 </script>
 
 </body>
