@@ -1,0 +1,10 @@
+{
+  "_readme": "Add filenames here to make them appear in HueBit OS. Put the actual files in ./public/FolderName/filename",
+  "Desktop": ["78a8d179156d6ad0795e04c1c2a184fa.jpg"],
+  "Documents": [],
+  "Downloads": [],
+  "Pictures": [],
+  "Music": [],
+  "Videos": ["gLADOS.mp4"],
+  "Trash": []
+}

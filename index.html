@@ -302,25 +302,21 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 .sett-row label{font-size:13.5px;color:rgba(255,255,255,0.8);flex-shrink:0}
 .sett-row .val{font-size:13px;color:rgba(255,255,255,0.4);text-align:right}
 .sett-row .val.on{color:#78e0a0}
-/* Toggle switch */
 .sett-toggle{position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer}
 .sett-toggle input{opacity:0;width:0;height:0;position:absolute}
 .sett-toggle-track{position:absolute;inset:0;background:rgba(255,255,255,0.15);border-radius:12px;transition:background .2s}
 .sett-toggle input:checked+.sett-toggle-track{background:var(--accent)}
 .sett-toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,0.4)}
 .sett-toggle input:checked~.sett-toggle-thumb{transform:translateX(18px)}
-/* Color swatches */
 .color-swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0}
 .color-swatch:hover{transform:scale(1.15)}
 .color-swatch.active{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3)}
-/* Wallpaper grid */
 .wp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
 .wp-opt{height:58px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden}
 .wp-opt:hover{transform:scale(1.05)}
 .wp-opt.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,138,245,0.28)}
 .wp-opt span{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,0.9)}
-/* Range in settings */
 .sett-range-wrap{width:100%;display:flex;align-items:center;gap:10px;margin-top:4px}
 .sett-range-wrap input[type=range]{flex:1}
 .sett-range-val{font-size:12px;color:rgba(255,255,255,0.5);min-width:36px;text-align:right;font-family:var(--mono)}
@@ -390,13 +386,11 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 <script>
 'use strict';
 
-// ── winlogo fallback ──────────────────────────────────────────
 document.getElementById('sb-img').onerror=function(){this.style.display='none';document.querySelector('.sb-fb').style.display='block'};
 
 // ── SVG ICON FACTORY ─────────────────────────────────────────
 let _uid=0;
 const mkI=fn=>()=>fn('i'+(++_uid));
-
 const ICO={
   folder:      mkI(id=>`<svg viewBox="0 0 48 48" fill="none"><path d="M6 14C6 11.8 7.8 10 10 10H20.2C20.7 10 21.2 10.2 21.6 10.6L24.4 13.4C24.8 13.8 25.3 14 25.8 14H40C42.2 14 44 15.8 44 18V38C44 40.2 42.2 42 40 42H10C7.8 42 6 40.2 6 38V14Z" fill="url(#${id}a)"/><path d="M6 18H44V38C44 40.2 42.2 42 40 42H10C7.8 42 6 40.2 6 38V18Z" fill="rgba(255,255,255,0.08)"/><defs><linearGradient id="${id}a" x1="6" y1="10" x2="44" y2="42"><stop stop-color="#5b8af5"/><stop offset="1" stop-color="#9b59f5"/></linearGradient></defs></svg>`),
   folder_open: mkI(id=>`<svg viewBox="0 0 48 48" fill="none"><path d="M6 14C6 11.8 7.8 10 10 10H20.2C20.7 10 21.2 10.2 21.6 10.6L24.4 13.4C24.8 13.8 25.3 14 25.8 14H40C42.2 14 44 15.8 44 18V38C44 40.2 42.2 42 40 42H10C7.8 42 6 40.2 6 38V14Z" fill="url(#${id}a)"/><path d="M8 20L4 40C4 41.1 4.9 42 6 42H42C43.1 42 44 41.1 44 40L40 20H8Z" fill="url(#${id}b)"/><defs><linearGradient id="${id}a" x1="6" y1="10" x2="44" y2="42"><stop stop-color="#5b8af5"/><stop offset="1" stop-color="#9b59f5"/></linearGradient><linearGradient id="${id}b" x1="4" y1="20" x2="44" y2="42"><stop stop-color="#7aaeff"/><stop offset="1" stop-color="#c084fc"/></linearGradient></defs></svg>`),
@@ -434,19 +428,89 @@ function setNightLight(on){
 }
 
 // ── FAKE FILESYSTEM ────────────────────────────────────────────
-const CHANGELOG=`HueBit OS — Changelog\n═════════════════════\n\n[v2.2.0] — Latest\n─────────────────\n• Boot lock screen on every launch\n• Desktop shows FS /Desktop files as icons automatically\n• Saved files appear immediately on the desktop\n• File drop zone: drag any file onto desktop to import it\n  - Images (.jpg .png .gif .webp .svg) → Pictures + Desktop icon\n  - Videos (.mp4 .webm) → Videos + Desktop icon\n  - Audio (.mp3 .wav .ogg .flac) → Music + Desktop icon\n  - Text files (.txt .md .csv etc.) → readable in editor\n  - Any other file → Downloads folder\n• Media apps now use blob URLs for dropped files\n• Settings: real interactive controls\n  - Accent color swatches (6 colors)\n  - Night Light toggle\n  - Animations toggle\n  - Font size slider (12–18px)\n  - Volume slider (synced with tray)\n  - Lock-after timer\n  - All displayed values update live\n• Volume tray: CSS gradient follows slider thumb correctly\n• Text Editor: Ctrl+S saves; Save As shows folder picker\n  Saved files persist in session and appear in Explorer\n• Explorer: dropped files and saved files show thumbnails\n\n[v2.1.0]\n─────────────────\n• Image Viewer, Video Player, Audio Player apps\n• Text Editor: Save As with folder/name picker\n• File routing: opens in correct app by extension\n• Settings expanded (Appearance, Display, Sound,\n  Network, Privacy, Keyboard, About)\n• Volume tray popup with slider\n• Desktop: battery and network icons removed\n• changes_log.txt on Desktop (this file!)\n\n[v2.0.0]\n─────────────────\n• Complete rewrite from scratch\n• Window manager: drag, resize (8 handles),\n  minimize, maximize, close with animations\n• Virtual filesystem with session persistence\n• Terminal with 16 commands + Tab autocomplete\n• File Explorer with sidebar + breadcrumbs\n• Text Editor with live cursor/line tracking\n• Analog Clock with smooth second hand\n• Calculator with full keyboard support\n• Settings with wallpaper themes\n• Lock screen, Toast notifications\n• Context menus, Start Menu with search\n• Taskbar with running app indicators\n• Aurora + starfield background\n\n[v1.0.0]\n─────────────────\n• Original prototype`;
+const CHANGELOG=`HueBit OS — Changelog
+═════════════════════
+
+[v2.3.0] — Latest
+─────────────────
+• Public folder sync via manifest.json
+  - Place files inside ./public/Desktop/, ./public/Documents/,
+    ./public/Pictures/, ./public/Music/, ./public/Videos/, etc.
+  - Add the filename to the matching array in ./public/manifest.json
+  - Refresh the page — the file appears automatically in the OS
+  - Works 100% static: no backend, no Node.js, GitHub Pages compatible
+• Text files (.txt .md .csv etc.) → fetched and opened in Text Editor
+• Images (.jpg .png .gif .webp .svg) → shown with thumbnail, open in Viewer
+• Videos (.mp4 .webm .mov) → open in Video Player
+• Audio (.mp3 .wav .ogg .flac) → open in Audio Player
+• Manifest files take priority: never overwrite hardcoded FS entries
+• Graceful: if manifest.json is missing or a file 404s, OS still boots fine
+
+[v2.2.0]
+─────────────────
+• Boot lock screen on every launch
+• Desktop shows FS /Desktop files as icons automatically
+• Saved files appear immediately on the desktop
+• File drop zone: drag any file onto desktop to import it
+  - Images (.jpg .png .gif .webp .svg) → Pictures + Desktop icon
+  - Videos (.mp4 .webm) → Videos + Desktop icon
+  - Audio (.mp3 .wav .ogg .flac) → Music + Desktop icon
+  - Text files (.txt .md .csv etc.) → readable in editor
+  - Any other file → Downloads folder
+• Media apps now use blob URLs for dropped files
+• Settings: real interactive controls
+  - Accent color swatches (6 colors)
+  - Night Light toggle
+  - Animations toggle
+  - Font size slider (12–18px)
+  - Volume slider (synced with tray)
+  - Lock-after timer
+  - All displayed values update live
+• Volume tray: CSS gradient follows slider thumb correctly
+• Text Editor: Ctrl+S saves; Save As shows folder picker
+  Saved files persist in session and appear in Explorer
+• Explorer: dropped files and saved files show thumbnails
+
+[v2.1.0]
+─────────────────
+• Image Viewer, Video Player, Audio Player apps
+• Text Editor: Save As with folder/name picker
+• File routing: opens in correct app by extension
+• Settings expanded
+• Volume tray popup with slider
+
+[v2.0.0]
+─────────────────
+• Complete rewrite from scratch
+• Window manager: drag, resize (8 handles),
+  minimize, maximize, close with animations
+• Virtual filesystem with session persistence
+• Terminal with 16 commands + Tab autocomplete
+• File Explorer with sidebar + breadcrumbs
+• Text Editor with live cursor/line tracking
+• Analog Clock with smooth second hand
+• Calculator with full keyboard support
+• Settings with wallpaper themes
+• Lock screen, Toast notifications
+• Context menus, Start Menu with search
+• Taskbar with running app indicators
+• Aurora + starfield background
+
+[v1.0.0]
+─────────────────
+• Original prototype`;
 
 const FS={ '/':{type:'dir',children:{
   'Desktop':{type:'dir',children:{
-    'readme.txt':{type:'file',icon:'file_txt',content:'Welcome to HueBit OS v2.2!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nTerminal: type "help"\nEnjoy! ✨'},
+    'readme.txt':{type:'file',icon:'file_txt',content:'Welcome to HueBit OS v2.3!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nTo add files permanently:\n  1. Put the file in ./public/Desktop/\n  2. Add its name to ./public/manifest.json\n  3. Refresh the page\n\nTerminal: type "help"\nEnjoy! ✨'},
     'changes_log.txt':{type:'file',icon:'file_txt',content:CHANGELOG},
   }},
   'Documents':{type:'dir',children:{
     'Projects':{type:'dir',children:{
-      'dev-notes.txt':{type:'file',icon:'file_txt',content:'# HueBit OS Dev Notes\n\nStack: HTML5, CSS3, Vanilla JS\nNo frameworks. No dependencies.\n\nFile routing by extension:\n- .txt/.md/.csv/.json → Text Editor\n- .jpg/.png/.gif/.webp/.svg → Image Viewer\n- .mp4/.webm/.ogv → Video Player\n- .mp3/.wav/.ogg/.flac → Audio Player\n\nFS file entry types:\n- content: string → text, editable\n- blobUrl: string → binary/media, viewable\n- content: null, blobUrl: null → placeholder only\n\nTo import files: drag them onto the desktop.'}
+      'dev-notes.txt':{type:'file',icon:'file_txt',content:'# HueBit OS Dev Notes\n\nStack: HTML5, CSS3, Vanilla JS\nNo frameworks. No dependencies.\nGitHub Pages compatible.\n\n## Adding files permanently\nEdit ./public/manifest.json and add the filename\nto the correct folder array. Put the actual file\nin ./public/FolderName/. Refresh. Done.\n\n## File routing by extension\n- .txt/.md/.csv/.json → Text Editor\n- .jpg/.png/.gif/.webp/.svg → Image Viewer\n- .mp4/.webm/.ogv → Video Player\n- .mp3/.wav/.ogg/.flac → Audio Player\n\n## FS file entry types\n- content: string → text, editable\n- blobUrl: string → binary/media URL\n- content: null, blobUrl: null → placeholder only\n\nTo import files at runtime: drag them onto desktop.'}
     }},
-    'todo.txt':{type:'file',icon:'file_txt',content:'TODO\n────\n[x] Window manager\n[x] Virtual FS\n[x] Terminal\n[x] Wallpaper themes\n[x] Lock screen\n[x] Media apps\n[x] Save dialog\n[x] File drag & drop\n[x] Interactable settings\n[ ] More wallpapers\n[ ] World domination 🌍'},
-    'notes.txt':{type:'file',icon:'file_txt',content:'Quick Notes\n──────────\n• Coffee ☕\n• Ship the OS\n• Sleep 8 hours\n• Drop files to import them!\n• Profit'},
+    'todo.txt':{type:'file',icon:'file_txt',content:'TODO\n────\n[x] Window manager\n[x] Virtual FS\n[x] Terminal\n[x] Wallpaper themes\n[x] Lock screen\n[x] Media apps\n[x] Save dialog\n[x] File drag & drop\n[x] Interactable settings\n[x] Public folder sync via manifest.json\n[ ] More wallpapers\n[ ] World domination 🌍'},
+    'notes.txt':{type:'file',icon:'file_txt',content:'Quick Notes\n──────────\n• Coffee ☕\n• Ship the OS\n• Sleep 8 hours\n• Drop files to import them!\n• Or use manifest.json for permanent files\n• Profit'},
   }},
   'Downloads':{type:'dir',children:{
     'data.csv':{type:'file',icon:'file_txt',content:'id,name,score\n1,Alice,98\n2,Bob,76\n3,Carol,88\n4,Dave,55\n5,Eve,100'},
@@ -463,6 +527,67 @@ function fsGet(path){
   let n=FS['/'];
   for(const p of parts){if(!n?.children?.[p])return null;n=n.children[p];}
   return n;
+}
+
+// ── FILE TYPE HELPERS ─────────────────────────────────────────
+const IMG_EXT=['jpg','jpeg','png','gif','webp','bmp','svg'];
+const VID_EXT=['mp4','webm','ogv','mov'];
+const AUD_EXT=['mp3','wav','ogg','flac','aac','m4a'];
+const TXT_EXT=['txt','md','csv','json','js','css','html','py','sh','xml','log'];
+
+function extIcon(ext){
+  if(IMG_EXT.includes(ext))return 'file_img';
+  if(VID_EXT.includes(ext))return 'file_video';
+  if(AUD_EXT.includes(ext))return 'file_music';
+  if(TXT_EXT.includes(ext))return 'file_txt';
+  return 'file_bin';
+}
+
+// ── MANIFEST LOADER ───────────────────────────────────────────
+// Reads ./public/manifest.json and populates the FS.
+// Format: { "Desktop": ["file.txt", "photo.jpg"], "Music": ["song.mp3"], ... }
+// Files go in ./public/FolderName/filename on disk.
+// Purely static — works on GitHub Pages with no backend.
+async function loadManifest(){
+  try{
+    const res=await fetch('./public/manifest.json');
+    if(!res.ok)return;
+    const manifest=await res.json();
+    const folders=Object.keys(manifest).filter(k=>k!=='_readme');
+    let loaded=0;
+    for(const folder of folders){
+      const files=manifest[folder];
+      if(!Array.isArray(files)||!files.length)continue;
+      const folderNode=fsGet('/'+folder);
+      if(!folderNode?.children)continue;
+      for(const filename of files){
+        // Don't overwrite hardcoded FS entries
+        if(folderNode.children[filename])continue;
+        const ext=filename.split('.').pop().toLowerCase();
+        const url=`./public/${folder}/${filename}`;
+        if(TXT_EXT.includes(ext)){
+          // Fetch text content
+          try{
+            const r=await fetch(url);
+            if(r.ok){
+              const content=await r.text();
+              folderNode.children[filename]={type:'file',icon:'file_txt',content};
+              loaded++;
+            }
+          }catch(e){}
+        }else{
+          // Media/binary: store URL directly (works as src for img/video/audio)
+          folderNode.children[filename]={type:'file',icon:extIcon(ext),blobUrl:url,content:null};
+          loaded++;
+        }
+      }
+    }
+    if(loaded>0){
+      renderDesktopFsIcons();
+    }
+  }catch(e){
+    // manifest.json missing or invalid — silent fail, OS boots normally
+  }
 }
 
 // ── WINDOW MANAGER ─────────────────────────────────────────────
@@ -614,14 +739,9 @@ function openApp(id,opts){
 }
 
 // ── FILE ROUTING ────────────────────────────────────────────────
-const IMG_EXT=['jpg','jpeg','png','gif','webp','bmp','svg'];
-const VID_EXT=['mp4','webm','ogv','mov'];
-const AUD_EXT=['mp3','wav','ogg','flac','aac','m4a'];
-const TXT_EXT=['txt','md','csv','json','js','css','html','py','sh','xml','log'];
-
 function routeOpen(name,item,cwd){
   const ext=name.split('.').pop().toLowerCase();
-  const src=item.blobUrl||'./public/'+name;
+  const src=item.blobUrl||item.src||'';
   if(IMG_EXT.includes(ext)){
     const uid='imgv_'+Date.now();
     const{content,onMount}=buildImgViewer({filename:name,src});
@@ -636,13 +756,12 @@ function routeOpen(name,item,cwd){
     WM.create({id:uid,title:name,width:380,height:490,content,onMount,imgSrc:APPS_CFG.aud_player.img,iconKey:'aud_player'});
   }else if(item.content!==null&&item.content!==undefined){
     openFileInEditor(name,item.content,cwd==='/'?'/'+name:cwd+'/'+name);
-  }else if(item.blobUrl){
-    // Unknown binary with blob — try image viewer first
+  }else if(src){
     const uid='imgv_'+Date.now();
-    const{content,onMount}=buildImgViewer({filename:name,src:item.blobUrl});
+    const{content,onMount}=buildImgViewer({filename:name,src});
     WM.create({id:uid,title:name,width:680,height:500,content,onMount,imgSrc:APPS_CFG.img_viewer.img,iconKey:'img_viewer'});
   }else{
-    toast('ℹ️','Info',`Drop the file onto the desktop to import it.`);
+    toast('ℹ️','Info','Drop the file onto the desktop to import it.');
   }
 }
 
@@ -714,16 +833,15 @@ function buildExplorer(opts){
       bkBtn.disabled=hi===0;fdBtn.disabled=hi===hist.length-1;upBtn.disabled=cwd==='/';
       const node=fsGet(cwd);fEl.innerHTML='';
       const ents=node?.children?Object.entries(node.children):[];
-      sEl.textContent=ents.length?`${ents.length} item${ents.length!==1?'s':''}${sel?` · "${sel}" selected`:'`'}`:'Empty folder';
-      if(!ents.length){fEl.innerHTML='<div class="exp-empty">📂<br>This folder is empty<br><small style="font-size:11px">Drop files here to import them</small></div>';return;}
+      sEl.textContent=ents.length?`${ents.length} item${ents.length!==1?'s':''}`:'Empty folder';
+      if(!ents.length){fEl.innerHTML='<div class="exp-empty">📂<br>This folder is empty<br><small style="font-size:11px">Drop files here or add to manifest.json</small></div>';return;}
       ents.sort(([a,av],[b,bv])=>av.type!==bv.type?(av.type==='dir'?-1:1):a.localeCompare(b)).forEach(([name,item])=>{
         const el=document.createElement('div');el.className='exp-item';
         const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];
-        // For image files with blobUrl, show thumbnail
         const ext=name.split('.').pop().toLowerCase();
         let imgHtml='';
-        if(item.blobUrl&&IMG_EXT.includes(ext)){
-          imgHtml=`<div class="ei-img"><img src="${item.blobUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:4px"></div>`;
+        if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){
+          imgHtml=`<div class="ei-img"><img src="${item.blobUrl||item.src}" style="width:40px;height:40px;object-fit:cover;border-radius:4px"></div>`;
         }else{
           imgHtml=`<div class="ei-img">${iconFn?iconFn():''}</div>`;
         }
@@ -773,7 +891,7 @@ function buildNotepad(opts){
 // ── IMAGE VIEWER ─────────────────────────────────────────────────
 function buildImgViewer(opts){
   const src=opts?.src||'',fn=opts?.filename||'image';
-  const content=`<div class="imgv-wrap"><div class="imgv-toolbar"><button class="imgv-btn" id="iv-zin" title="Zoom In">+</button><button class="imgv-btn" id="iv-zout" title="Zoom Out">−</button><button class="imgv-btn" id="iv-fit" title="Fit">⊡</button><button class="imgv-btn" id="iv-full" title="1:1">1:1</button><span class="imgv-name">${fn}</span><span class="imgv-zoom" id="iv-zpct">100%</span></div><div class="imgv-stage" id="iv-stage"><img id="iv-img" src="${src}" alt="${fn}" draggable="false"><div class="imgv-err" id="iv-err" style="display:none">🖼️<br>Could not load image<br><small style="font-size:11px">Drop it onto the desktop to import it</small></div></div></div>`;
+  const content=`<div class="imgv-wrap"><div class="imgv-toolbar"><button class="imgv-btn" id="iv-zin" title="Zoom In">+</button><button class="imgv-btn" id="iv-zout" title="Zoom Out">−</button><button class="imgv-btn" id="iv-fit" title="Fit">⊡</button><button class="imgv-btn" id="iv-full" title="1:1">1:1</button><span class="imgv-name">${fn}</span><span class="imgv-zoom" id="iv-zpct">100%</span></div><div class="imgv-stage" id="iv-stage"><img id="iv-img" src="${src}" alt="${fn}" draggable="false"><div class="imgv-err" id="iv-err" style="display:none">🖼️<br>Could not load image<br><small style="font-size:11px">Check that it exists in ./public/ and manifest.json</small></div></div></div>`;
   function onMount(win){
     const img=win.querySelector('#iv-img'),stage=win.querySelector('#iv-stage'),zpct=win.querySelector('#iv-zpct'),err=win.querySelector('#iv-err');
     let scale=1,ox=0,oy=0,dragging=false,sx=0,sy=0;
@@ -800,7 +918,7 @@ function buildVidPlayer(opts){
     const vid=win.querySelector('#vp-vid'),pb=win.querySelector('#vp-play'),mb=win.querySelector('#vp-mute');
     const fill=win.querySelector('#vp-fill'),timeEl=win.querySelector('#vp-time'),prog=win.querySelector('#vp-prog');
     const fmt=s=>{const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;};
-    vid.onerror=()=>{win.querySelector('.vid-stage').innerHTML=`<div class="vid-err">🎬<br>Could not load video<br><small style="font-size:11px">Drop the file onto the desktop to import it</small></div>`;};
+    vid.onerror=()=>{win.querySelector('.vid-stage').innerHTML=`<div class="vid-err">🎬<br>Could not load video<br><small style="font-size:11px">Check ./public/Videos/ and manifest.json</small></div>`;};
     vid.addEventListener('timeupdate',()=>{if(!vid.duration)return;fill.style.width=(vid.currentTime/vid.duration*100)+'%';timeEl.textContent=fmt(vid.currentTime)+' / '+fmt(vid.duration);});
     vid.addEventListener('play',()=>pb.textContent='⏸');
     vid.addEventListener('pause',()=>pb.textContent='▶');
@@ -824,7 +942,7 @@ function buildAudPlayer(opts){
     const fill=win.querySelector('#ap-fill'),prog=win.querySelector('#ap-prog');
     const curEl=win.querySelector('#ap-cur'),durEl=win.querySelector('#ap-dur');
     const fmt=s=>{const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;};
-    aud.onerror=()=>toast('❌','Audio',`Cannot load "${fn}". Drop it onto the desktop to import.`);
+    aud.onerror=()=>toast('❌','Audio',`Cannot load "${fn}". Check manifest.json and ./public/Music/`);
     aud.addEventListener('loadedmetadata',()=>durEl.textContent=fmt(aud.duration));
     aud.addEventListener('timeupdate',()=>{if(!aud.duration)return;fill.style.width=(aud.currentTime/aud.duration*100)+'%';curEl.textContent=fmt(aud.currentTime);});
     aud.addEventListener('play',()=>{pb.textContent='⏸';art.classList.add('playing');});
@@ -851,7 +969,7 @@ function buildTerminal(opts){
     const ln=(t,c='')=>{const d=document.createElement('div');d.className='term-line '+c;d.textContent=t;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const lnh=h=>{const d=document.createElement('div');d.className='term-line';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const upP=()=>{const s=cwd==='/'?'~':cwd.split('/').pop();pEl.textContent=`user@huebit:${s}$ `;};
-    ln('HueBit Shell  v2.2.0','acc');ln('Type "help" for commands.','info');ln('');
+    ln('HueBit Shell  v2.3.0','acc');ln('Type "help" for commands.','info');ln('');
     const CMD={
       help(){lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');[['help','Show help'],['ls/dir','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));},
       ls(){CMD.dir();},
@@ -862,7 +980,7 @@ function buildTerminal(opts){
       echo(a){ln(a.join(' '));},
       whoami(){ln('user  [uid=1000  groups=admin,users]');},
       date(){ln(new Date().toString());},
-      uname(){ln('HueBit OS 2.2.0 (HTML5/JS) x86_64');},
+      uname(){ln('HueBit OS 2.3.0 (HTML5/JS) x86_64 — GitHub Pages compatible');},
       history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
       cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
       mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
@@ -870,7 +988,7 @@ function buildTerminal(opts){
       rm(a){if(!a[0]){ln('Usage: rm <n>','err');return;}const p=fsGet(cwd);if(p?.children?.[a[0]]){delete p.children[a[0]];ln(`Removed '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();}else ln(`rm: ${a[0]}: No such file`,'err');},
       open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
       calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
-      neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 2.2.0','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 2.2','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
+      neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 2.3.0','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 2.3','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
     };
     inp.addEventListener('keydown',e=>{
       if(e.key==='Enter'){const r=inp.value.trim();if(!r)return;hist.unshift(r);hi=-1;lnh(`<span style="color:#5b8af5">${pEl.textContent}</span><span style="color:#a0c8ff">${r}</span>`);inp.value='';const[c,...a]=r.split(/\s+/);CMD[c]?CMD[c](a):ln(`${c}: command not found (try "help")`,'err');}
@@ -989,7 +1107,6 @@ function buildSettings(opts){
       body.innerHTML='';
 
       if(sec==='appearance'){
-        // Wallpaper section
         const wpGrid=document.createElement('div');wpGrid.className='sett-sec';
         wpGrid.innerHTML='<h3>Wallpaper Theme</h3>';
         const g=document.createElement('div');g.className='wp-grid';
@@ -1002,7 +1119,6 @@ function buildSettings(opts){
         });
         wpGrid.appendChild(g);body.appendChild(wpGrid);
 
-        // Accent colors
         const accentSec=document.createElement('div');accentSec.className='sett-sec';
         accentSec.innerHTML='<h3>Accent Color</h3>';
         const row1=document.createElement('div');row1.className='sett-row col';
@@ -1017,7 +1133,6 @@ function buildSettings(opts){
         });
         row1.appendChild(swatches);accentSec.appendChild(row1);body.appendChild(accentSec);
 
-        // Interface toggles
         const ifSec=document.createElement('div');ifSec.className='sett-sec';
         ifSec.innerHTML='<h3>Interface</h3>';
         const rows2=[
@@ -1033,7 +1148,6 @@ function buildSettings(opts){
           ifSec.appendChild(row);
         });
 
-        // Font size
         const fsRow=document.createElement('div');fsRow.className='sett-row col';
         fsRow.innerHTML='<label>Desktop Font Size</label>';
         const fsWrap=document.createElement('div');fsWrap.className='sett-range-wrap';
@@ -1071,7 +1185,6 @@ function buildSettings(opts){
         sSlider.oninput=()=>{
           OS.volume=parseInt(sSlider.value);sVal.textContent=OS.volume+'%';
           updateRangeGradient(sSlider,0,100);
-          // Sync tray vol
           const tr=document.getElementById('vol-range');if(tr){tr.value=OS.volume;document.getElementById('vol-val').textContent=OS.volume+'%';updateRangeGradient(tr,0,100);}
           document.getElementById('tray-vol').textContent=OS.volume===0?'🔇':OS.volume<40?'🔈':OS.volume<70?'🔉':'🔊';
         };
@@ -1107,7 +1220,7 @@ function buildSettings(opts){
         lRow.innerHTML='<label>Auto-lock after</label>';
         const sel=document.createElement('select');sel.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer';
         lockOptions.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===OS.lockAfter)o.selected=true;sel.appendChild(o);});
-        sel.onchange=()=>{ OS.lockAfter=parseInt(sel.value); resetLockTimer(); toast('🔒','Lock Screen',sel.value==='0'?'Auto-lock disabled.`':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`); };
+        sel.onchange=()=>{ OS.lockAfter=parseInt(sel.value); resetLockTimer(); toast('🔒','Lock Screen',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`); };
         lRow.appendChild(sel);pSec.appendChild(lRow);body.appendChild(pSec);
         body.innerHTML+=`<div class="sett-sec"><h3>Permissions</h3>
           <div class="sett-row"><label>Camera</label><span class="val">Blocked</span></div>
@@ -1135,25 +1248,30 @@ function buildSettings(opts){
       }
 
       else if(sec==='about'){
-        const ut=document.createElement('span');ut.className='val';ut.id='sv-uptime';ut.textContent='0s';
         body.innerHTML=`<div class="sett-sec"><h3>System Information</h3>
           <div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div>
-          <div class="sett-row"><label>Version</label><span class="val">2.2.0</span></div>
-          <div class="sett-row"><label>Build</label><span class="val">2025.06 stable</span></div>
+          <div class="sett-row"><label>Version</label><span class="val">2.3.0</span></div>
+          <div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div>
           <div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div>
           <div class="sett-row"><label>Architecture</label><span class="val">x86_64</span></div>
+          <div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div>
           <div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div>
           <div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div>
         </div>
+        <div class="sett-sec"><h3>File System</h3>
+          <div class="sett-row"><label>Persistent files</label><span class="val">./public/manifest.json</span></div>
+          <div class="sett-row"><label>Runtime imports</label><span class="val on">Drag & Drop</span></div>
+          <div class="sett-row"><label>Session saves</label><span class="val on">In-memory</span></div>
+        </div>
         <div class="sett-sec"><h3>Applications</h3>
-          <div class="sett-row"><label>File Explorer</label><span class="val on">v2.2</span></div>
-          <div class="sett-row"><label>Text Editor</label><span class="val on">v2.2 + Save</span></div>
-          <div class="sett-row"><label>Terminal</label><span class="val on">hsh 2.2</span></div>
+          <div class="sett-row"><label>File Explorer</label><span class="val on">v2.3</span></div>
+          <div class="sett-row"><label>Text Editor</label><span class="val on">v2.3 + Save</span></div>
+          <div class="sett-row"><label>Terminal</label><span class="val on">hsh 2.3</span></div>
           <div class="sett-row"><label>Image Viewer</label><span class="val on">v1.1</span></div>
           <div class="sett-row"><label>Video Player</label><span class="val on">v1.1</span></div>
           <div class="sett-row"><label>Audio Player</label><span class="val on">v1.1</span></div>
         </div>
-        <div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="font-size:32px;margin-bottom:8px">💻</div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies</div></div>`;
+        <div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="font-size:32px;margin-bottom:8px">💻</div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;
         const t0=Date.now();
         const iv=setInterval(()=>{
           const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}
@@ -1246,7 +1364,6 @@ document.getElementById('desktop').addEventListener('drop',e=>{
   e.preventDefault();_dragCount=0;dropZone.classList.remove('show');
   handleFileDrop(e.dataTransfer.files);
 });
-// Also allow drop on dropzone itself
 dropZone.addEventListener('dragover',e=>e.preventDefault());
 dropZone.addEventListener('drop',e=>{e.preventDefault();_dragCount=0;dropZone.classList.remove('show');handleFileDrop(e.dataTransfer.files);});
 
@@ -1318,17 +1435,13 @@ function buildDesktop(){
   document.getElementById('desktop').addEventListener('click',e=>{if(!e.target.closest('.desk-icon'))document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));});
 }
 
-// ── FS DESKTOP ICONS (file icons from /Desktop folder) ───────────
-const FS_ICON_COL_LEFT=110; // x position for column 2
-let _fsIconSlots={};
+// ── FS DESKTOP ICONS ─────────────────────────────────────────────
+const FS_ICON_COL_LEFT=110;
 
 function renderDesktopFsIcons(){
-  // Remove all existing FS icons
   document.querySelectorAll('.desk-icon.fs-file-icon').forEach(e=>e.remove());
-  _fsIconSlots={};
   const desktopNode=fsGet('/Desktop');if(!desktopNode?.children)return;
-  const entries=Object.entries(desktopNode.children);
-  entries.forEach(([name,item],idx)=>{
+  Object.entries(desktopNode.children).forEach(([name,item],idx)=>{
     addFsDesktopIcon(name,item,idx);
   });
 }
@@ -1338,10 +1451,9 @@ function addFsDesktopIcon(name,item,idx){
   const el=document.createElement('div');el.className='desk-icon fs-file-icon';
   el.style.top=(22+idx*90)+'px';el.style.left=FS_ICON_COL_LEFT+'px';
   const ext=name.split('.').pop().toLowerCase();
-  // Image thumbnail or SVG icon
   const imgWrapper=document.createElement('div');imgWrapper.className='di-img';
-  if(item.blobUrl&&IMG_EXT.includes(ext)){
-    const thumb=document.createElement('img');thumb.src=item.blobUrl;thumb.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:8px';
+  if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){
+    const thumb=document.createElement('img');thumb.src=item.blobUrl||item.src;thumb.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:8px';
     imgWrapper.appendChild(thumb);
   }else{
     const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];
@@ -1349,13 +1461,11 @@ function addFsDesktopIcon(name,item,idx){
   }
   const sp=document.createElement('span');sp.textContent=name;
   el.appendChild(imgWrapper);el.appendChild(sp);
-  // Animate in
   el.style.opacity='0';el.style.transform='translateX(22px)';
   requestAnimationFrame(()=>{el.style.transition='opacity .35s ease,transform .45s cubic-bezier(.2,1.2,.3,1)';el.style.opacity='1';el.style.transform='translateX(0)';setTimeout(()=>el.style.transition='',500);});
-  // Click handler
   let clicks=0,ct;
   el.addEventListener('click',e=>{document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');clicks++;clearTimeout(ct);ct=setTimeout(()=>{if(clicks>=2)routeOpen(name,item,'/Desktop');clicks=0;},280);e.stopPropagation();});
-  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');ctxMenu(e.clientX,e.clientY,[{label:`▶ Open ${name}`,fn:()=>routeOpen(name,item,'/Desktop')},{sep:true},{label:'🗑 Delete',fn:()=>{const dn=fsGet('/Desktop');if(dn?.children){delete dn.children[name];el.style.transition='all .18s ease';el.style.opacity='0';el.style.transform='scale(0.5)';setTimeout(()=>el.remove(),180);toast('🗑','Deleted',`"${name}" removed.`);}}  ,danger:true}]);});
+  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');ctxMenu(e.clientX,e.clientY,[{label:`▶ Open ${name}`,fn:()=>routeOpen(name,item,'/Desktop')},{sep:true},{label:'🗑 Delete',fn:()=>{const dn=fsGet('/Desktop');if(dn?.children){delete dn.children[name];el.style.transition='all .18s ease';el.style.opacity='0';el.style.transform='scale(0.5)';setTimeout(()=>el.remove(),180);toast('🗑','Deleted',`"${name}" removed.`);}},danger:true}]);});
   _makeDraggableIcon(el);
   area.appendChild(el);
 }
@@ -1397,9 +1507,12 @@ document.addEventListener('click',e=>{const sm=document.getElementById('start-me
 // ── BOOT ──────────────────────────────────────────────────────────
 buildDesktop();
 buildStartMenu();
-renderDesktopFsIcons(); // Render FS Desktop files (readme, changes_log)
+renderDesktopFsIcons();
 
-// Boot lock screen (slight delay for visual effect)
+// Load files from ./public/manifest.json (static, GitHub Pages compatible)
+loadManifest();
+
+// Boot lock screen
 setTimeout(()=>lockScreen(),200);
 </script>
 </body>
