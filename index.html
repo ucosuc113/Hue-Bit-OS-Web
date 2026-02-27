@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Hue-Bit-OS</title>
+
+<style>
+body {
+    margin: 0;
+    background: #0f1117;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* Escritorio */
+#desktop {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+/* Barra de tareas */
+#taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: #1a1c23;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+}
+
+/* Logo */
+#start-logo {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+#start-logo:hover {
+    transform: scale(1.1);
+}
+</style>
+
+</head>
+<body>
+
+<div id="desktop"></div>
+
+<div id="taskbar">
+    <img src="./public/winlogo.png" id="start-logo" alt="Hue-Bit Logo">
+</div>
+
+<script>
+// De momento vacío.
+// Aquí irá el "núcleo" más adelante.
+</script>
+
+</body>
+</html>
