@@ -1,6 +1,9 @@
 {
   "_readme": "Add filenames here to make them appear in HueBit OS. Put the actual files in ./public/FolderName/filename (audio files belong in Music or Desktop).",
-  "Desktop": ["78a8d179156d6ad0795e04c1c2a184fa.jpg"],
+  "Desktop": [
+    "78a8d179156d6ad0795e04c1c2a184fa.jpg",
+    "Stellar Engines.mp3"
+  ],
   "Documents": [],
   "Downloads": [],
   "Pictures": [],
