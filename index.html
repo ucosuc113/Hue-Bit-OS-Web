@@ -910,9 +910,10 @@ function buildNotepad(opts){
 function buildVSCode(opts){
   const fn=opts?.filename||'untitled.html',init=opts?.initial||'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <title>Untitled</title>\n</head>\n<body>\n  \n</body>\n</html>';
   let savedFsPath=opts?.fsPath||null;
-  const content=`<div class="ed-wrap"><div class="ed-toolbar"><button class="ed-btn" id="ed-new">New</button><button class="ed-btn" id="ed-save">💾 Save</button><button class="ed-btn" id="ed-saveas">Save As…</button><span class="ed-fname" id="ed-fn">${fn}</span><div class="ed-status" id="ed-stat">Ln 1, Col 1</div></div><textarea class="ed-ta" id="ed-ta" spellcheck="false" placeholder="Start typing…"></textarea></div>`;
+  const content=`<div class="ed-wrap"><div class="ed-toolbar"><button class="ed-btn" id="ed-new">New</button><button class="ed-btn" id="ed-open">Open…</button><button class="ed-btn" id="ed-save">💾 Save</button><button class="ed-btn" id="ed-saveas">Save As…</button><button class="ed-btn" id="ed-export">Export</button><button class="ed-btn" id="ed-preview">Preview</button><span class="ed-fname" id="ed-fn">${fn}</span><div class="ed-status" id="ed-stat">Ln 1, Col 1</div></div><textarea class="ed-ta" id="ed-ta" spellcheck="false" placeholder="Start typing…"></textarea><input type="file" id="ed-fileinput" accept=".html" style="display:none"></div>`;
   function onMount(win){
     const ta=win.querySelector('#ed-ta'),stat=win.querySelector('#ed-stat'),fnEl=win.querySelector('#ed-fn');
+    const fileInput=win.querySelector('#ed-fileinput');
     ta.value=init;
     const upd=()=>{const v=ta.value,lines=v.substr(0,ta.selectionStart).split('\n');stat.textContent=`Ln ${lines.length}, Col ${lines[lines.length-1].length+1}  |  ${v.length} ch`;};
     const ensureHtml=name=>{if(!name.toLowerCase().endsWith('.html'))name+='.html';return name;};
@@ -926,8 +927,12 @@ function buildVSCode(opts){
     };
     ta.addEventListener('input',upd);ta.addEventListener('click',upd);ta.addEventListener('keyup',upd);
     win.querySelector('#ed-new').onclick=()=>{ta.value='';upd();savedFsPath=null;fnEl.textContent='untitled.html';};
+    win.querySelector('#ed-open').onclick=()=>fileInput.click();
+    fileInput.addEventListener('change',e=>{if(e.target.files.length){const f=e.target.files[0];const rdr=new FileReader();rdr.onload=ev=>{ta.value=ev.target.result;fnEl.textContent=ensureHtml(f.name);savedFsPath=null;upd();};rdr.readAsText(f);}});
     win.querySelector('#ed-save').onclick=doSave;
     win.querySelector('#ed-saveas').onclick=()=>showSaveDialog(ensureHtml(fnEl.textContent),()=>ta.value,(dir,name)=>{name=ensureHtml(name);savedFsPath='/'+dir+'/'+name;fnEl.textContent=name;});
+    win.querySelector('#ed-export').onclick=()=>{const blob=new Blob([ta.value],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fnEl.textContent;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);};
+    win.querySelector('#ed-preview').onclick=()=>{const html=ta.value.replace(/"/g,'&quot;');const uid='vscprev_'+Date.now();const pc=`<iframe style="width:100%;height:100%;border:none" srcdoc="${html}"></iframe>`;WM.create({id:uid,title:'Preview',width:600,height:400,content:pc,onMount:null,imgSrc:APPS_CFG.vscode.img,iconKey:'vscode'});};
     win.addEventListener('keydown',e=>{if(e.key==='s'&&(e.ctrlKey||e.metaKey)){e.preventDefault();doSave();}});
     ta.focus();upd();
   }
