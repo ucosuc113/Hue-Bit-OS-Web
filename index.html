@@ -391,6 +391,20 @@ const ICO={
   file_bin:    mkI(id=>`<svg viewBox="0 0 48 48" fill="none"><path d="M11 5H30L38 13V43H11V5Z" fill="rgba(150,150,160,0.15)" stroke="rgba(150,150,160,0.45)" stroke-width="1.5"/><path d="M30 5V13H38" stroke="rgba(150,150,160,0.45)" stroke-width="1.5" fill="none"/><text x="14" y="34" font-size="11" fill="rgba(255,255,255,0.38)" font-family="monospace">BIN</text></svg>`),
 };
 
+// Try loading an app image from `path`; if it doesn't exist or fails, replace with generated SVG icon
+function ensureAppImage(imgEl, path, icoKey){
+  if(!path) { imgEl.onerror?.(); return; }
+  fetch(path, {method:'GET'}).then(r=>{
+    if(r.ok){ imgEl.src = path; }
+    else throw new Error('not ok');
+  }).catch(()=>{
+    const d=document.createElement('div');
+    d.style.cssText = `width:${imgEl.width}px;height:${imgEl.height}px;display:flex;align-items:center;justify-content:center`;
+    d.innerHTML = ICO[icoKey]?ICO[icoKey]():'';
+    imgEl.replaceWith(d);
+  });
+}
+
 // ── GLOBAL OS STATE ────────────────────────────────────────────
 const OS={
   volume:80, accent:'#5b8af5', accent2:'#9b59f5',
@@ -1467,8 +1481,9 @@ function buildDesktop(){
   DESK_CFG.forEach((app,i)=>{
     const el=document.createElement('div');el.className='desk-icon';el.style.top=(22+i*90)+'px';el.style.left='16px';el.dataset.id=app.id;
     const imgWrapper=document.createElement('div');imgWrapper.className='di-img';
-    const img=document.createElement('img');img.src=app.img;img.alt=app.label;img.width=52;img.height=52;
+    const img=document.createElement('img');img.alt=app.label;img.width=52;img.height=52;
     img.onerror=function(){const d=document.createElement('div');d.style.cssText='width:52px;height:52px;display:flex;align-items:center;justify-content:center';d.innerHTML=ICO[app.ico]?ICO[app.ico]():'';this.replaceWith(d);};
+    ensureAppImage(img, app.img, app.ico);
     imgWrapper.appendChild(img);const sp=document.createElement('span');sp.textContent=app.label;
     el.appendChild(imgWrapper);el.appendChild(sp);
     el.style.opacity='0';el.style.transform='translateX(-22px)';
@@ -1534,8 +1549,9 @@ function buildStartMenu(){
   ALL_SM_APPS.forEach(app=>{
     const el=document.createElement('div');el.className='sm-item';el.dataset.q=app.label.toLowerCase();
     const iW=document.createElement('div');iW.className='si-img';
-    const img=document.createElement('img');img.src=app.img;img.alt=app.label;img.width=36;img.height=36;
+    const img=document.createElement('img');img.alt=app.label;img.width=36;img.height=36;
     img.onerror=function(){const d=document.createElement('div');d.style.cssText='width:36px;height:36px;display:flex;align-items:center;justify-content:center';d.innerHTML=ICO[app.ico]?ICO[app.ico]():'';this.replaceWith(d);};
+    ensureAppImage(img, app.img, app.ico);
     iW.appendChild(img);const sp=document.createElement('span');sp.textContent=app.label;
     el.appendChild(iW);el.appendChild(sp);
     el.addEventListener('click',()=>{openApp(app.id);closeStartMenu();});
