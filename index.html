@@ -163,9 +163,14 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 .vol-val{font-size:12px;font-weight:700;color:rgba(255,255,255,0.65);min-width:30px;text-align:right}
 
 .lock-overlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.93);backdrop-filter:blur(32px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:opacity .4s ease}
+.lock-overlay.show{background:linear-gradient(135deg,rgba(0,0,0,0.9),rgba(20,20,40,0.9)),url('./public/wallpaper.png');background-size:cover;background-position:center}
 .lock-time{font-size:82px;font-weight:100;font-family:var(--mono);letter-spacing:-2px}
 .lock-date{font-size:18px;color:rgba(255,255,255,0.55)}
 .lock-hint{font-size:13px;color:rgba(255,255,255,0.3);margin-top:10px;animation:lp 2.5s ease-in-out infinite}
+.lock-input{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.lock-input input{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 15px;color:#fff;font-size:16px;outline:none;width:250px;text-align:center}
+.lock-input input:focus{border-color:var(--accent)}
+.lock-error{color:#ff6b6b;font-size:12px;margin-top:5px}
 @keyframes lp{0%,100%{opacity:.3}50%{opacity:.7}}
 
 .exp-wrap{display:flex;height:100%}
@@ -193,6 +198,39 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 .exp-statusbar{height:26px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 12px;font-size:11px;color:rgba(255,255,255,0.35)}
 
 .ed-wrap{display:flex;flex-direction:column;height:100%}
+
+.vscode-wrap{display:flex;flex-direction:column;height:100%;background:#1e1e1e;color:#d4d4d4;font-family:var(--mono);font-size:14px}
+.vscode-menu{display:flex;gap:10px;padding:5px 10px;background:#323233;border-bottom:1px solid #3e3e42}
+.menu-item{padding:5px 10px;cursor:pointer;border-radius:3px;color:#cccccc}
+.menu-item:hover{background:#37373d}
+.vscode-main{display:flex;flex:1;overflow:hidden}
+.vscode-sidebar{width:250px;background:#252526;border-right:1px solid #3e3e42;display:flex;flex-direction:column}
+.sidebar-tabs{display:flex;border-bottom:1px solid #3e3e42}
+.tab{padding:8px 12px;cursor:pointer;background:#2d2d30;color:#cccccc;border-right:1px solid #3e3e42}
+.tab.active{background:#1e1e1e;color:#ffffff}
+.sidebar-content{flex:1;overflow-y:auto;padding:10px}
+.exp-nav{padding:5px 10px;border-radius:3px;cursor:pointer;color:#cccccc;margin-bottom:2px}
+.exp-nav:hover{background:#37373d}
+.exp-nav.active{background:#04395e;color:#ffffff}
+.open-file{padding:5px 10px;color:#cccccc}
+.vscode-editor{flex:1;display:flex;flex-direction:column}
+.editor-tabs{display:flex;background:#2d2d30;border-bottom:1px solid #3e3e42}
+.editor-tab{padding:8px 12px;background:#2d2d30;color:#cccccc;border-right:1px solid #3e3e42;position:relative}
+.editor-tab.active{background:#1e1e1e;color:#ffffff}
+.close-tab{position:absolute;right:5px;top:8px;cursor:pointer;color:#cccccc}
+.close-tab:hover{color:#ffffff}
+.ed-ta{flex:1;padding:10px;background:#1e1e1e;border:none;outline:none;color:#d4d4d4;font-family:var(--mono);font-size:14px;resize:none;overflow:auto}
+.vscode-status{display:flex;justify-content:space-between;padding:5px 10px;background:#007acc;color:#ffffff;font-size:12px;border-top:1px solid #3e3e42}
+.status-left{}
+.status-right{}
+.vscode-terminal{display:flex;flex-direction:column;height:200px;border-top:1px solid #3e3e42;background:#1e1e1e}
+.term-header{display:flex;justify-content:space-between;padding:5px 10px;background:#323233;border-bottom:1px solid #3e3e42}
+.term-close{cursor:pointer;color:#cccccc}
+.term-close:hover{color:#ffffff}
+.term-output{flex:1;padding:10px;overflow-y:auto;font-family:var(--mono);font-size:12px;color:#d4d4d4}
+.term-input-line{display:flex;padding:5px 10px;background:#252526;border-top:1px solid #3e3e42}
+.term-prompt{color:#007acc;margin-right:5px}
+.term-input{flex:1;background:none;border:none;outline:none;color:#d4d4d4;font-family:var(--mono);font-size:12px}
 .ed-toolbar{height:36px;flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.18)}
 .ed-btn{padding:4px 11px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);font-size:12px;font-family:var(--font);cursor:pointer;transition:all .13s;font-weight:500}
 .ed-btn:hover{background:rgba(255,255,255,0.13);color:#fff}
@@ -409,25 +447,67 @@ function ensureAppImage(imgEl, path, icoKey){
 const OS={
   volume:80, accent:'#5b8af5', accent2:'#9b59f5',
   nightLight:false, animations:true, fontSize:14,
+  lockAfter:0, password:'', usePassword:false
 };
 
 function setAccent(c1,c2){
   document.documentElement.style.setProperty('--accent',c1);
   if(c2)document.documentElement.style.setProperty('--accent2',c2);
   OS.accent=c1; if(c2)OS.accent2=c2;
+  autoSave();
 }
 function setNightLight(on){
   OS.nightLight=on;
   let el=document.getElementById('nightlight-ol');
   if(on&&!el){ el=document.createElement('div');el.id='nightlight-ol';el.style.cssText='position:fixed;inset:0;background:rgba(255,110,0,0.11);pointer-events:none;z-index:799;mix-blend-mode:multiply';document.body.appendChild(el); }
   else if(!on&&el) el.remove();
+  autoSave();
+}
+
+// ── AUTO SAVE SYSTEM ─────────────────────────────────────────────
+function autoSave(){
+  const state={
+    OS:OS,
+    FS:FS,
+    curWP:curWP,
+    desktopIcons:desktopIcons
+  };
+  localStorage.setItem('huebit-os-state',JSON.stringify(state));
+}
+
+function loadAutoSave(){
+  const saved=localStorage.getItem('huebit-os-state');
+  if(saved){
+    try{
+      const state=JSON.parse(saved);
+      Object.assign(OS,state.OS);
+      Object.assign(FS,state.FS);
+      curWP=state.curWP;
+      desktopIcons=state.desktopIcons;
+      setAccent(OS.accent,OS.accent2);
+      setNightLight(OS.nightLight);
+      setWallpaper(curWP);
+      renderDesktopFsIcons();
+      toast('💾','Auto-save','System state loaded.');
+    }catch(e){
+      console.error('Failed to load auto-save:',e);
+    }
+  }
 }
 
 // ── FAKE FILESYSTEM ────────────────────────────────────────────
 const CHANGELOG=`HueBit OS — Changelog
 ═════════════════════
 
-[v1.4.0] - Latest
+[v1.4.1] - Latest
+
+- The code editor has been improved, and Python has also been added as a language.
+
+- The graphical interface of the lock screen has been slightly improved.
+
+- A login system has been added.
+
+[v1.4.0]
 
 - Added a functional code editor with HTML, JS, and CSS, all within a single HTML file.
 - Fixed an issue with audio, enabling the opening and detection of audio files.
@@ -737,7 +817,7 @@ const APPS_CFG={
   img_viewer: {title:'Image Viewer',  w:680,h:500,img:'./public/img_viewer.png', ico:'img_viewer'},
   vid_player: {title:'Video Player',  w:700,h:480,img:'./public/vid_player.png', ico:'vid_player'},
   aud_player: {title:'Audio Player', w:380,h:490,img:'./public/aud_player.png', ico:'aud_player'},
-  vscode:      {title:'VS Code',        w:800,h:600,img:'./public/vscode.png',    ico:'vscode'},
+  vscode:      {title:'VS Code',        w:1000,h:700,img:'./public/vscode.png',    ico:'vscode'},
 };
 
 function openApp(id,opts){
@@ -818,6 +898,7 @@ function showSaveDialog(defaultName,getContent,onSaved){
       if(selDir==='Desktop')renderDesktopFsIcons();
       onSaved?.(selDir,fname);
       toast('💾','Saved',`"${fname}" saved to /${selDir}`);
+      autoSave();
     }
     ov.remove();
   };
@@ -906,35 +987,141 @@ function buildNotepad(opts){
   return{content,onMount};
 }
 
+// ── SIMPLE PYTHON INTERPRETER ───────────────────────────────────
+function simplePythonRun(code){
+  let output = '';
+  const print = (...args) => { output += args.join(' ') + '\n'; };
+  const vars = {};
+  const lines = code.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  for(const line of lines){
+    if(line.startsWith('print(')){
+      const arg = line.slice(6, -1);
+      if(arg.startsWith('"') && arg.endsWith('"')) print(arg.slice(1, -1));
+      else if(vars[arg]) print(vars[arg]);
+      else print(arg);
+    }else if(line.includes('=')){
+      const [varName, value] = line.split('=').map(s => s.trim());
+      if(value.startsWith('"') && value.endsWith('"')) vars[varName] = value.slice(1, -1);
+      else if(!isNaN(value)) vars[varName] = Number(value);
+      else vars[varName] = value;
+    }else if(line.startsWith('import ')){
+      const mod = line.split(' ')[1];
+      if(mod === 'os') print('Imported os module (simulated)');
+      else if(mod === 'json') print('Imported json module (simulated)');
+      else print(`Module ${mod} not available`);
+    }else{
+      print(`Syntax not supported: ${line}`);
+    }
+  }
+  return output || 'No output';
+}
+
 // ── VS CODE LIGHT EDITOR ──────────────────────────────────────────
 function buildVSCode(opts){
-  const fn=opts?.filename||'untitled.html',init=opts?.initial||'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <title>Untitled</title>\n</head>\n<body>\n  \n</body>\n</html>';
+  const fn=opts?.filename||'untitled.py',init=opts?.initial||'# Python script\nprint("Hello, World!")\n\nimport os\nimport json\n\n# Your code here\n';
   let savedFsPath=opts?.fsPath||null;
-  const content=`<div class="ed-wrap"><div class="ed-toolbar"><button class="ed-btn" id="ed-new">New</button><button class="ed-btn" id="ed-open">Open…</button><button class="ed-btn" id="ed-save">💾 Save</button><button class="ed-btn" id="ed-saveas">Save As…</button><button class="ed-btn" id="ed-export">Export</button><button class="ed-btn" id="ed-preview">Preview</button><span class="ed-fname" id="ed-fn">${fn}</span><div class="ed-status" id="ed-stat">Ln 1, Col 1</div></div><textarea class="ed-ta" id="ed-ta" spellcheck="false" placeholder="Start typing…"></textarea><input type="file" id="ed-fileinput" accept=".html" style="display:none"></div>`;
+  const content=`<div class="vscode-wrap">
+      <div class="vscode-menu">
+        <div class="menu-item">File</div>
+        <div class="menu-item">Edit</div>
+        <div class="menu-item">View</div>
+        <div class="menu-item">Go</div>
+        <div class="menu-item">Run</div>
+        <div class="menu-item">Terminal</div>
+        <div class="menu-item">Help</div>
+      </div>
+      <div class="vscode-main">
+        <div class="vscode-sidebar">
+          <div class="sidebar-tabs">
+            <div class="tab active" data-tab="explorer">📁 Explorer</div>
+            <div class="tab" data-tab="openfiles">📄 Open Editors</div>
+          </div>
+          <div class="sidebar-content">
+            <div class="tab-content" id="explorer">
+              <div class="exp-nav active" data-p="/">🏠 Root</div>
+              <div class="exp-nav" data-p="/Desktop">🖥 Desktop</div>
+              <div class="exp-nav" data-p="/Documents">📄 Documents</div>
+              <div class="exp-nav" data-p="/Pictures">🖼 Pictures</div>
+              <div class="exp-nav" data-p="/Music">🎵 Music</div>
+            </div>
+            <div class="tab-content" id="openfiles" style="display:none">
+              <div class="open-file">${fn}</div>
+            </div>
+          </div>
+        </div>
+        <div class="vscode-editor">
+          <div class="editor-tabs">
+            <div class="editor-tab active">${fn} <span class="close-tab">✕</span></div>
+          </div>
+          <textarea class="ed-ta" id="ed-ta" spellcheck="false" placeholder="Start typing…">${init}</textarea>
+        </div>
+      </div>
+      <div class="vscode-status">
+        <div class="status-left">Ln 1, Col 1 | Python</div>
+        <div class="status-right">UTF-8 | LF | Python</div>
+      </div>
+      <div class="vscode-terminal" style="display:none">
+        <div class="term-header">Terminal <button class="term-close">✕</button></div>
+        <div class="term-output" id="term-out"></div>
+        <div class="term-input-line"><span class="term-prompt">$ </span><input class="term-input" id="term-inp"></div>
+      </div>
+    </div>`;
   function onMount(win){
-    const ta=win.querySelector('#ed-ta'),stat=win.querySelector('#ed-stat'),fnEl=win.querySelector('#ed-fn');
-    const fileInput=win.querySelector('#ed-fileinput');
-    ta.value=init;
-    const upd=()=>{const v=ta.value,lines=v.substr(0,ta.selectionStart).split('\n');stat.textContent=`Ln ${lines.length}, Col ${lines[lines.length-1].length+1}  |  ${v.length} ch`;};
-    const ensureHtml=name=>{if(!name.toLowerCase().endsWith('.html'))name+='.html';return name;};
-    const doSave=()=>{
-      if(savedFsPath){
-        const parts=savedFsPath.replace(/^\/+/,'').split('/').filter(Boolean);
-        const fname=parts.pop(),parent=fsGet('/'+parts.join('/'));
-        if(parent?.children?.[fname]){parent.children[fname].content=ta.value;toast('💾','VS Code',`"${fname}" saved.`);return;}
-      }
-      showSaveDialog(ensureHtml(fnEl.textContent),()=>ta.value,(dir,name)=>{name=ensureHtml(name);savedFsPath='/'+dir+'/'+name;fnEl.textContent=name;});
-    };
+    const ta=win.querySelector('#ed-ta'),status=win.querySelector('.status-left');
+    const termOut=win.querySelector('#term-out'),termInp=win.querySelector('#term-inp');
+    const sidebarTabs=win.querySelectorAll('.tab'),tabContents=win.querySelectorAll('.tab-content');
+    const expNavs=win.querySelectorAll('.exp-nav');
+    const term=win.querySelector('.vscode-terminal'),termClose=win.querySelector('.term-close');
+    const menuItems=win.querySelectorAll('.menu-item');
+    const upd=()=>{const v=ta.value,lines=v.substr(0,ta.selectionStart).split('\n');status.textContent=`Ln ${lines.length}, Col ${lines[lines.length-1].length+1} | Python`;};
     ta.addEventListener('input',upd);ta.addEventListener('click',upd);ta.addEventListener('keyup',upd);
-    win.querySelector('#ed-new').onclick=()=>{ta.value='';upd();savedFsPath=null;fnEl.textContent='untitled.html';};
-    win.querySelector('#ed-open').onclick=()=>fileInput.click();
-    fileInput.addEventListener('change',e=>{if(e.target.files.length){const f=e.target.files[0];const rdr=new FileReader();rdr.onload=ev=>{ta.value=ev.target.result;fnEl.textContent=ensureHtml(f.name);savedFsPath=null;upd();};rdr.readAsText(f);}});
-    win.querySelector('#ed-save').onclick=doSave;
-    win.querySelector('#ed-saveas').onclick=()=>showSaveDialog(ensureHtml(fnEl.textContent),()=>ta.value,(dir,name)=>{name=ensureHtml(name);savedFsPath='/'+dir+'/'+name;fnEl.textContent=name;});
-    win.querySelector('#ed-export').onclick=()=>{const blob=new Blob([ta.value],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fnEl.textContent;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);};
-    win.querySelector('#ed-preview').onclick=()=>{const html=ta.value.replace(/"/g,'&quot;');const uid='vscprev_'+Date.now();const pc=`<iframe style="width:100%;height:100%;border:none" srcdoc="${html}"></iframe>`;WM.create({id:uid,title:'Preview',width:600,height:400,content:pc,onMount:null,imgSrc:APPS_CFG.vscode.img,iconKey:'vscode'});};
-    win.addEventListener('keydown',e=>{if(e.key==='s'&&(e.ctrlKey||e.metaKey)){e.preventDefault();doSave();}});
-    ta.focus();upd();
+    upd();
+    menuItems.forEach(item => {
+        item.onclick = () => toast('📋', 'Menu', `${item.textContent} menu not implemented yet.`);
+    });
+    sidebarTabs.forEach(tab => {
+        tab.onclick = () => {
+            sidebarTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            tabContents.forEach(c => c.style.display = 'none');
+            const target = win.querySelector('#' + tab.dataset.tab);
+            if (target) target.style.display = 'block';
+        };
+    });
+    expNavs.forEach(nav => {
+        nav.onclick = () => toast('📁', 'Explorer', `Navigating to ${nav.dataset.p}`);
+    });
+    const toggleTerminal = () => {
+        term.style.display = term.style.display === 'none' ? 'block' : 'none';
+    };
+    termClose.onclick = () => term.style.display = 'none';
+    const runCodeInEditor = () => {
+        const code = ta.value;
+        let result = '';
+        try {
+            if (fn.endsWith('.py')) {
+                result = simplePythonRun(code);
+            } else if (fn.endsWith('.js')) {
+                result = eval(code);
+            } else {
+                result = 'Run not supported for this file type.';
+            }
+        } catch (e) {
+            result = 'Error: ' + e.message;
+        }
+        termOut.textContent = result;
+        toggleTerminal();
+    };
+    win.addEventListener('keydown', e => {
+        if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            runCodeInEditor();
+        } else if (e.key === '`' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            toggleTerminal();
+        }
+    });
+    ta.focus();
   }
   return{content,onMount};
 }
@@ -1020,9 +1207,9 @@ function buildTerminal(opts){
     const ln=(t,c='')=>{const d=document.createElement('div');d.className='term-line '+c;d.textContent=t;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const lnh=h=>{const d=document.createElement('div');d.className='term-line';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const upP=()=>{const s=cwd==='/'?'~':cwd.split('/').pop();pEl.textContent=`user@huebit:${s}$ `;};
-    ln('HueBit Shell  v1.4.0','acc');ln('Type "help" for commands.','info');ln('');
+    ln('HueBit Shell  v1.4.1','acc');ln('Type "help" for commands.','info');ln('');
     const CMD={
-      help(){lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');[['help','Show help'],['ls/dir','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));},
+      help(){lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');[['help','Show help'],['ls/dir','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['python [code]','Run Python code'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));},
       ls(){CMD.dir();},
       dir(){const n=fsGet(cwd);if(!n?.children){ln('Not a directory','err');return;}const e=Object.entries(n.children);if(!e.length){ln('(empty)','info');return;}e.forEach(([nm,it])=>lnh(`  ${it.type==='dir'?`<span style="color:#5b8af5">📁 ${nm}/</span>`:`<span style="color:rgba(255,255,255,0.75)">📄 ${nm}</span>`}`));lnh(`<span style="color:rgba(255,255,255,0.3)">  ${e.length} item${e.length!==1?'s':''}</span>`);},
       cd(a){const t=a[0];if(!t||t==='~'){cwd='/';upP();return;}if(t==='..'){cwd=cwd.split('/').slice(0,-1).join('/')||'/';upP();return;}const np=t.startsWith('/')?t:(cwd==='/'?'/'+t:cwd+'/'+t);const n=fsGet(np);if(!n)ln(`cd: ${t}: No such file or directory`,'err');else if(n.type!=='dir')ln(`cd: ${t}: Not a directory`,'err');else{cwd=np;upP();}},
@@ -1031,13 +1218,14 @@ function buildTerminal(opts){
       echo(a){ln(a.join(' '));},
       whoami(){ln('user  [uid=1000  groups=admin,users]');},
       date(){ln(new Date().toString());},
-      uname(){ln('HueBit OS 1.4.0 (HTML5/JS) x86_64 — GitHub Pages compatible');},
+      uname(){ln('HueBit OS 1.4.1 (HTML5/JS) x86_64 — GitHub Pages compatible');},
       history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
       cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
       mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
       touch(a){if(!a[0]){ln('Usage: touch <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'file',icon:'file_txt',content:''};ln(`Created '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();}},
       rm(a){if(!a[0]){ln('Usage: rm <n>','err');return;}const p=fsGet(cwd);if(p?.children?.[a[0]]){delete p.children[a[0]];ln(`Removed '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();}else ln(`rm: ${a[0]}: No such file`,'err');},
       open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
+      python(a){if(!a[0]){ln('Usage: python <code>','err');return;}try{const r=simplePythonRun(a.join(' '));r.split('\n').forEach(l=>ln(l));}catch(e){ln('Error: '+e.message,'err');}},
       calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
       neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.0','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.3','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
     };
@@ -1271,8 +1459,21 @@ function buildSettings(opts){
         lRow.innerHTML='<label>Auto-lock after</label>';
         const sel=document.createElement('select');sel.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer';
         lockOptions.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===OS.lockAfter)o.selected=true;sel.appendChild(o);});
-        sel.onchange=()=>{ OS.lockAfter=parseInt(sel.value); resetLockTimer(); toast('🔒','Lock Screen',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`); };
-        lRow.appendChild(sel);pSec.appendChild(lRow);body.appendChild(pSec);
+        sel.onchange=()=>{ OS.lockAfter=parseInt(sel.value); resetLockTimer(); toast('🔒','Lock Screen',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`); autoSave(); };
+        lRow.appendChild(sel);pSec.appendChild(lRow);
+
+        const pwRow=document.createElement('div');pwRow.className='sett-row';
+        pwRow.innerHTML='<label>Use password</label>';
+        const pwToggle=mkToggle('use_pass',OS.usePassword,v=>{OS.usePassword=v;pwInp.style.display=v?'block':'none';if(!v)OS.password='';autoSave();});
+        pwRow.appendChild(pwToggle);pSec.appendChild(pwRow);
+
+        const pwInp=document.createElement('div');pwInp.className='sett-row col';pwInp.style.display=OS.usePassword?'block':'none';
+        pwInp.innerHTML='<label>Set password</label>';
+        const pwInput=document.createElement('input');pwInput.type='password';pwInput.placeholder='Enter new password';pwInput.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;width:100%';
+        pwInput.onchange=()=>{OS.password=pwInput.value;autoSave();toast('🔒','Password','Updated.');};
+        pwInp.appendChild(pwInput);pSec.appendChild(pwInp);
+
+        body.appendChild(pSec);
         body.innerHTML+=`<div class="sett-sec"><h3>Permissions</h3>
           <div class="sett-row"><label>Camera</label><span class="val">Blocked</span></div>
           <div class="sett-row"><label>Microphone</label><span class="val">Blocked</span></div>
@@ -1301,7 +1502,7 @@ function buildSettings(opts){
       else if(sec==='about'){
         body.innerHTML=`<div class="sett-sec"><h3>System Information</h3>
           <div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div>
-          <div class="sett-row"><label>Version</label><span class="val">1.4.0</span></div>
+          <div class="sett-row"><label>Version</label><span class="val">1.4.1</span></div>
           <div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div>
           <div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div>
           <div class="sett-row"><label>Architecture</label><span class="val">x86_64</span></div>
@@ -1350,11 +1551,23 @@ function resetLockTimer(){
 function lockScreen(){
   if(document.querySelector('.lock-overlay'))return;
   const ov=document.createElement('div');ov.className='lock-overlay';
-  const upd=()=>{const n=new Date(),p=x=>String(x).padStart(2,'0');ov.innerHTML=`<div class="lock-time">${p(n.getHours())}:${p(n.getMinutes())}</div><div class="lock-date">${n.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div><div class="lock-hint">Click or press any key to unlock</div>`;};
+  const upd=()=>{const n=new Date(),p=x=>String(x).padStart(2,'0');ov.innerHTML=`<div class="lock-time">${p(n.getHours())}:${p(n.getMinutes())}</div><div class="lock-date">${n.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>${OS.usePassword?`<div class="lock-input"><input type="password" id="lock-pass" placeholder="Enter password" autocomplete="off"><div class="lock-error" id="lock-err"></div></div>`:''}<div class="lock-hint">${OS.usePassword?'Press Enter to unlock':'Click or press any key to unlock'}</div>`;};
   upd();document.body.appendChild(ov);const iv=setInterval(upd,30000);
   const unlock=()=>{clearInterval(iv);ov.style.opacity='0';setTimeout(()=>ov.remove(),400);resetLockTimer();};
-  ov.addEventListener('click',unlock);
-  document.addEventListener('keydown',unlock,{once:true});
+  if(OS.usePassword){
+    const inp=ov.querySelector('#lock-pass');
+    const err=ov.querySelector('#lock-err');
+    ov.addEventListener('click',e=>{if(e.target!==ov)return;inp.focus();});
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        if(inp.value===OS.password){unlock();}else{err.textContent='Incorrect password';setTimeout(()=>err.textContent='',2000);}
+      }
+    });
+    setTimeout(()=>inp.focus(),100);
+  }else{
+    ov.addEventListener('click',unlock);
+    document.addEventListener('keydown',unlock,{once:true});
+  }
 }
 
 // ── CONTEXT MENU ─────────────────────────────────────────────────
@@ -1566,6 +1779,9 @@ renderDesktopFsIcons();
 // Load files from ./public/manifest.json (static, GitHub Pages compatible)
 loadManifest();
 
+// Load auto-saved state
+loadAutoSave();
+
 // Boot lock screen
 setTimeout(()=>lockScreen(),200);
 
@@ -1573,3 +1789,4 @@ setTimeout(()=>lockScreen(),200);
 </script>
 </body>
 </html>
+
