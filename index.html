@@ -572,10 +572,10 @@ function showSaveDialog(defaultName,getContent,onSaved){const dirs=Object.entrie
 // ── FILE EXPLORER ────────────────────────────────────────────────
 function buildExplorer(opts){
   const startPath=opts?.path||'/';
-  const navLinks=[{label:'Home',path:'/',e:'🏠'},{label:'Desktop',path:'/Desktop',e:'🖥'},{label:'Documents',path:'/Documents',e:'📄'},{label:'Downloads',path:'/Downloads',e:'⬇'},{label:'Pictures',path:'/Pictures',e:'🖼'},{label:'Music',path:'/Music',e:'🎵'},{label:'Videos',path:'/Videos',e:'🎬'},{label:'Trash',path:'/Trash',e:'🗑'}];
+  const navLinks=[{label:'Home',path:'/',e:SI.home},{label:'Desktop',path:'/Desktop',e:SI.desktop},{label:'Documents',path:'/Documents',e:SI.document},{label:'Downloads',path:'/Downloads',e:SI.download},{label:'Pictures',path:'/Pictures',e:SI.image},{label:'Music',path:'/Music',e:SI.music},{label:'Videos',path:'/Videos',e:SI.video},{label:'Trash',path:'/Trash',e:SI.trash}];
   const sidebar=navLinks.map(n=>`<div class="exp-nav" data-p="${n.path}">${n.e} <span style="margin-left:5px">${n.label}</span></div>`).join('');
-  const content=`<div class="exp-wrap"><div class="exp-sidebar">${sidebar}</div><div class="exp-main"><div class="exp-toolbar"><button class="exp-tbtn" id="xback">‹</button><button class="exp-tbtn" id="xfwd">›</button><button class="exp-tbtn" id="xup">↑</button><div class="exp-path" id="xpath"></div></div><div class="exp-files" id="xfiles"></div><div class="exp-statusbar" id="xstat"></div></div></div>`;
-  function onMount(win){let cwd=startPath,sel=null;const pEl=win.querySelector('#xpath'),fEl=win.querySelector('#xfiles'),sEl=win.querySelector('#xstat');const bkBtn=win.querySelector('#xback'),fdBtn=win.querySelector('#xfwd'),upBtn=win.querySelector('#xup');const hist=[cwd];let hi=0;function nav(p){const n=fsGet(p);if(!n||n.type!=='dir')return;cwd=p;if(hi<hist.length-1)hist.splice(hi+1);if(hist[hist.length-1]!==p){hist.push(p);hi=hist.length-1;}render();}function render(){sel=null;const segs=cwd==='/'?['/']: cwd.split('/').filter(Boolean);pEl.innerHTML=segs.map((s,i)=>{const p=i===0&&segs.length===1?'/':'/'+segs.slice(0,i+1).join('/');return(i>0?'<span class="exp-sep2"> › </span>':'')+`<span class="exp-seg" data-p="${p}">${s==='/'?'Home':s}</span>`;}).join('');pEl.querySelectorAll('.exp-seg').forEach(e=>e.onclick=()=>nav(e.dataset.p));win.querySelectorAll('.exp-nav').forEach(n=>n.classList.toggle('active',n.dataset.p===cwd));bkBtn.disabled=hi===0;fdBtn.disabled=hi===hist.length-1;upBtn.disabled=cwd==='/';const node=fsGet(cwd);fEl.innerHTML='';const ents=node?.children?Object.entries(node.children):[];sEl.textContent=ents.length?`${ents.length} item${ents.length!==1?'s':''}`:'Empty folder';if(!ents.length){fEl.innerHTML='<div class="exp-empty">📂<br>This folder is empty</div>';return;}ents.sort(([a,av],[b,bv])=>av.type!==bv.type?(av.type==='dir'?-1:1):a.localeCompare(b)).forEach(([name,item])=>{const el=document.createElement('div');el.className='exp-item';const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];const ext=name.split('.').pop().toLowerCase();let imgHtml='';if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){imgHtml=`<div class="ei-img"><img src="${item.blobUrl||item.src}" style="width:40px;height:40px;object-fit:cover;border-radius:4px"></div>`;}else{imgHtml=`<div class="ei-img">${iconFn?iconFn():''}</div>`;}el.innerHTML=`${imgHtml}<div class="exp-item-name">${name}</div>`;el.onclick=()=>{fEl.querySelectorAll('.exp-item').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');sel=name;sEl.textContent=`${ents.length} items · "${name}" selected`;};el.ondblclick=()=>{if(item.type==='dir')nav(cwd==='/'?'/'+name:cwd+'/'+name);else routeOpen(name,item,cwd);};el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();ctxMenu(e.clientX,e.clientY,[{label:'📂 Open',fn:()=>item.type==='dir'?nav(cwd==='/'?'/'+name:cwd+'/'+name):routeOpen(name,item,cwd)},{sep:true},{label:'🗑 Delete',fn:()=>{const p=fsGet(cwd);if(p?.children){delete p.children[name];if(cwd==='/Desktop')renderDesktopFsIcons();render();autoSave();toast('🗑','Deleted',`"${name}" removed.`);}},danger:true}]);});fEl.appendChild(el);});}bkBtn.onclick=()=>{if(hi>0){hi--;cwd=hist[hi];render();}};fdBtn.onclick=()=>{if(hi<hist.length-1){hi++;cwd=hist[hi];render();}};upBtn.onclick=()=>{if(cwd!=='/')nav(cwd.split('/').slice(0,-1).join('/')||'/');};win.querySelectorAll('.exp-nav').forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));nav(startPath);}
+  const content=`<div class="exp-wrap"><div class="exp-sidebar">${sidebar}</div><div class="exp-main"><div class="exp-toolbar"><button class="exp-tbtn" id="xback" title="Back">${SI.arrowLeft}</button><button class="exp-tbtn" id="xfwd" title="Forward">${SI.arrowRight}</button><button class="exp-tbtn" id="xup" title="Up">${SI.arrowUp}</button><div class="exp-path" id="xpath"></div></div><div class="exp-files" id="xfiles"></div><div class="exp-statusbar" id="xstat"></div></div></div>`;
+  function onMount(win){let cwd=startPath,sel=null;const pEl=win.querySelector('#xpath'),fEl=win.querySelector('#xfiles'),sEl=win.querySelector('#xstat');const bkBtn=win.querySelector('#xback'),fdBtn=win.querySelector('#xfwd'),upBtn=win.querySelector('#xup');const hist=[cwd];let hi=0;function nav(p){const n=fsGet(p);if(!n||n.type!=='dir')return;cwd=p;if(hi<hist.length-1)hist.splice(hi+1);if(hist[hist.length-1]!==p){hist.push(p);hi=hist.length-1;}render();}function render(){sel=null;const segs=cwd==='/'?['/']: cwd.split('/').filter(Boolean);pEl.innerHTML=segs.map((s,i)=>{const p=i===0&&segs.length===1?'/':'/'+segs.slice(0,i+1).join('/');return(i>0?'<span class="exp-sep2"> › </span>':'')+`<span class="exp-seg" data-p="${p}">${s==='/'?'Home':s}</span>`;}).join('');pEl.querySelectorAll('.exp-seg').forEach(e=>e.onclick=()=>nav(e.dataset.p));win.querySelectorAll('.exp-nav').forEach(n=>n.classList.toggle('active',n.dataset.p===cwd));bkBtn.disabled=hi===0;fdBtn.disabled=hi===hist.length-1;upBtn.disabled=cwd==='/';const node=fsGet(cwd);fEl.innerHTML='';const ents=node?.children?Object.entries(node.children):[];sEl.textContent=ents.length?`${ents.length} item${ents.length!==1?'s':''}`:'Empty folder';if(!ents.length){fEl.innerHTML='<div class="exp-empty"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><br>This folder is empty</div>';return;}ents.sort(([a,av],[b,bv])=>av.type!==bv.type?(av.type==='dir'?-1:1):a.localeCompare(b)).forEach(([name,item])=>{const el=document.createElement('div');el.className='exp-item';const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];const ext=name.split('.').pop().toLowerCase();let imgHtml='';if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){imgHtml=`<div class="ei-img"><img src="${item.blobUrl||item.src}" style="width:40px;height:40px;object-fit:cover;border-radius:4px"></div>`;}else{imgHtml=`<div class="ei-img">${iconFn?iconFn():''}</div>`;}el.innerHTML=`${imgHtml}<div class="exp-item-name">${name}</div>`;el.onclick=()=>{fEl.querySelectorAll('.exp-item').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');sel=name;sEl.textContent=`${ents.length} items · "${name}" selected`;};el.ondblclick=()=>{if(item.type==='dir')nav(cwd==='/'?'/'+name:cwd+'/'+name);else routeOpen(name,item,cwd);};el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();ctxMenu(e.clientX,e.clientY,[{label:'Open',fn:()=>item.type==='dir'?nav(cwd==='/'?'/'+name:cwd+'/'+name):routeOpen(name,item,cwd)},{sep:true},{label:'Delete',fn:()=>{const p=fsGet(cwd);if(p?.children){delete p.children[name];if(cwd==='/Desktop')renderDesktopFsIcons();render();autoSave();toast('🗑','Deleted',`"${name}" removed.`);}},danger:true}]);});fEl.appendChild(el);});}bkBtn.onclick=()=>{if(hi>0){hi--;cwd=hist[hi];render();}};fdBtn.onclick=()=>{if(hi<hist.length-1){hi++;cwd=hist[hi];render();}};upBtn.onclick=()=>{if(cwd!=='/')nav(cwd.split('/').slice(0,-1).join('/')||'/');};win.querySelectorAll('.exp-nav').forEach(n=>n.addEventListener('click',()=>nav(n.dataset.p)));nav(startPath);}
   return{content,onMount};
 }
 
@@ -650,19 +650,19 @@ function buildVSCode(opts){
     <div id="vsc-file-dd"   class="vsc-dd" style="display:none"><div data-a="new">New File</div><div data-a="open">Open File…</div><div data-a="save">Save &nbsp;<span style="opacity:.4">Ctrl+S</span></div><div data-a="saveas">Save As…</div><div data-a="export">Export / Download</div></div>
     <div id="vsc-edit-dd"   class="vsc-dd" style="display:none"><div data-a="copy">Copy</div><div data-a="paste">Paste</div><div data-a="selectall">Select All</div><div data-a="find">Find…</div></div>
     <div id="vsc-view-dd"   class="vsc-dd" style="display:none"><div data-a="sidebar">Toggle Sidebar</div><div data-a="toggleterm">Toggle Terminal</div></div>
-    <div id="vsc-run-dd"    class="vsc-dd" style="display:none"><div data-a="runcode">▶ Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
+    <div id="vsc-run-dd"    class="vsc-dd" style="display:none"><div data-a="runcode">${SI.playSmall}Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
     <div id="vsc-terminal-dd" class="vsc-dd" style="display:none"><div data-a="newterm">New Terminal</div><div data-a="clearterm">Clear Terminal</div></div>
     <div class="vscode-toolbar">
-      <button class="tool-btn" id="vsc-runbtn">▶ Run</button>
-      <button class="tool-btn" id="vsc-debugbtn" style="background:#5a4a00">🐛 Debug</button>
-      <button class="tool-btn" id="vsc-termbtn" style="background:#1a3a1a">⌨ Terminal</button>
+      <button class="tool-btn" id="vsc-runbtn">${SI.playSmall}Run</button>
+      <button class="tool-btn" id="vsc-debugbtn" style="background:#5a4a00">${SI.bugIcon}Debug</button>
+      <button class="tool-btn" id="vsc-termbtn" style="background:#1a3a1a">${SI.terminalIcon}Terminal</button>
       <span id="vsc-dirty" style="margin-left:8px;font-size:11px;color:#e2a045;display:none">● unsaved</span>
     </div>
     <div class="vscode-main" id="vsc-main">
       <div class="vscode-sidebar" id="vsc-sidebar">
         <div class="sidebar-tabs">
-          <div class="tab active" data-panel="vsc-exp-panel">📁 Explorer</div>
-          <div class="tab" data-panel="vsc-open-panel">📄 Open Editors</div>
+          <div class="tab active" data-panel="vsc-exp-panel">${SI.explorerTab}Explorer</div>
+          <div class="tab" data-panel="vsc-open-panel">${SI.editorsTab}Open Editors</div>
         </div>
         <div class="sidebar-content" style="overflow-y:auto;flex:1">
           <div id="vsc-exp-panel"></div>
@@ -856,7 +856,7 @@ function buildVSCode(opts){
       openPanel.innerHTML = '';
       const d = document.createElement('div');
       d.style.cssText = 'padding:6px 10px;color:#ccc;font-size:12px;cursor:pointer';
-      d.textContent = '📄 ' + currentFileName;
+      d.innerHTML = SI.fileGeneric + ' ' + currentFileName;
       openPanel.appendChild(d);
     };
     updateOpenPanel();
@@ -869,7 +869,7 @@ function buildVSCode(opts){
       if(node.type === 'dir'){
         const row = document.createElement('div');
         row.style.cssText = `padding:3px 8px 3px ${8+indent}px;cursor:pointer;color:#bbb;font-size:12px;user-select:none`;
-        row.textContent = (path==='/'? '🏠 HueBit FS' : '📁 '+path.split('/').pop());
+        row.innerHTML = (path==='/'? SI.home+' HueBit FS' : SI.folder+' '+path.split('/').pop());
         const childWrap = document.createElement('div');
         let open = depth < 1;
         childWrap.style.display = open ? 'block' : 'none';
@@ -888,10 +888,10 @@ function buildVSCode(opts){
         }
       } else {
         const ext = path.split('.').pop().toLowerCase();
-        const ico = {txt:'📄',md:'📝',js:'🟨',py:'🐍',html:'🌐',css:'🎨',json:'📋',csv:'📊'}[ext]||'📄';
+        const ico = {txt:SI.fileGeneric,md:SI.mdFile,js:SI.jsFile,py:SI.pyFile,html:SI.htmlFile,css:SI.cssFile,json:SI.jsonFile,csv:SI.csvFile}[ext]||SI.fileGeneric;
         const row = document.createElement('div');
         row.style.cssText = `padding:3px 8px 3px ${8+indent}px;cursor:pointer;color:#888;font-size:12px;user-select:none`;
-        row.textContent = ico + ' ' + path.split('/').pop();
+        row.innerHTML = ico + ' ' + path.split('/').pop();
         row.addEventListener('mouseenter',()=>row.style.background='#2d2d30');
         row.addEventListener('mouseleave',()=>row.style.background='');
         row.onclick = () => {
@@ -1038,11 +1038,48 @@ function buildVidPlayer(opts){
   return{content,onMount};
 }
 
+// ── SVG ICON STRINGS (replaces emoji in Audio Player, Explorer, VS Code) ──
+const SI={
+  play:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><polygon points="6,3 20,12 6,21"/></svg>',
+  pause:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>',
+  skipBack:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><polygon points="19,4 9,12 19,20"/><rect x="5" y="4" width="3" height="16" rx="1"/></svg>',
+  skipFwd:'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><polygon points="5,4 15,12 5,20"/><rect x="16" y="4" width="3" height="16" rx="1"/></svg>',
+  volLow:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+  volHigh:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  musicNote:'<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  folderOpen:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  home:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H14v-5h-4v5H4a1 1 0 0 1-1-1z"/></svg>',
+  desktop:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  document:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+  download:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  image:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  music:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  video:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="2" y="4" width="15" height="16" rx="2"/><polygon points="17 9 22 5 22 19 17 15"/></svg>',
+  trash:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+  arrowLeft:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>',
+  arrowRight:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+  arrowUp:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>',
+  folder:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  fileGeneric:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  playSmall:'<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;vertical-align:middle;margin-right:3px"><polygon points="5,3 19,12 5,21"/></svg>',
+  explorerTab:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  editorsTab:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  terminalIcon:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+  bugIcon:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><circle cx="12" cy="13" r="4"/><path d="M12 9V5M4.5 13H2M22 13h-2.5M6 6.5l1.5 1.5M16.5 8l1.5-1.5M6 19.5l1.5-1.5M16.5 18l1.5 1.5"/></svg>',
+  jsFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#cbcb41"/><text x="2" y="15" font-size="10" font-weight="bold" font-family="monospace" fill="#1a1a00">JS</text></svg>',
+  pyFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#3572A5"/><text x="2" y="15" font-size="10" font-weight="bold" font-family="monospace" fill="#fff">PY</text></svg>',
+  htmlFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#e34c26"/><text x="0" y="14" font-size="7.5" font-weight="bold" font-family="monospace" fill="#fff">HTML</text></svg>',
+  cssFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#563d7c"/><text x="1" y="14" font-size="9" font-weight="bold" font-family="monospace" fill="#fff">CSS</text></svg>',
+  jsonFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#292929"/><text x="0" y="13" font-size="7" font-weight="bold" font-family="monospace" fill="#cbcb41">JSON</text></svg>',
+  csvFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#217346"/><text x="1" y="14" font-size="8.5" font-weight="bold" font-family="monospace" fill="#fff">CSV</text></svg>',
+  mdFile:'<svg width="12" height="12" viewBox="0 0 20 20"><rect width="20" height="20" rx="3" fill="#555"/><text x="2" y="14" font-size="9" font-weight="bold" font-family="monospace" fill="#fff">MD</text></svg>',
+};
+
 // ── AUDIO PLAYER ─────────────────────────────────────────────────
 function buildAudPlayer(opts){
   const src=opts?.src||'',fn=opts?.filename||'audio',title=fn.replace(/\.[^.]+$/,'');
   const noFile=!src;
-  const content=`<div class="aud-wrap"><div class="aud-art" id="ap-art">🎵</div><div class="aud-title" id="ap-title">${noFile?'No file loaded':title}</div><div class="aud-sub" id="ap-sub">${noFile?'Drop a file or click Open':'Audio Player'}</div><div class="aud-prog-wrap"><div class="aud-prog" id="ap-prog"><div class="aud-prog-fill" id="ap-fill" style="width:0%"></div></div><div class="aud-times"><span id="ap-cur">0:00</span><span id="ap-dur">0:00</span></div></div><div class="aud-btns"><button class="aud-btn" id="ap-rew" title="Restart">⏮</button><button class="aud-btn main" id="ap-play" title="Play / Pause">▶</button><button class="aud-btn" id="ap-fwd" title="Skip +10s">⏭</button></div><div class="aud-vol-row"><span class="aud-vol-ico">🔉</span><input type="range" class="hb-range" id="ap-vol" min="0" max="1" step="0.02" value="1" style="flex:1"><span class="aud-vol-ico">🔊</span></div><button class="aud-btn" id="ap-open" style="margin-top:4px;padding:7px 18px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.75);font-size:12px;font-family:var(--font);cursor:pointer;width:100%;transition:background .13s" title="Open audio file">📂 Open File</button><audio id="ap-aud"${src?' src="'+src+'"':''}></audio></div>`;
+  const content=`<div class="aud-wrap"><div class="aud-art" id="ap-art" style="color:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center">${SI.musicNote}</div><div class="aud-title" id="ap-title">${noFile?'No file loaded':title}</div><div class="aud-sub" id="ap-sub">${noFile?'Drop a file or click Open':'Audio Player'}</div><div class="aud-prog-wrap"><div class="aud-prog" id="ap-prog"><div class="aud-prog-fill" id="ap-fill" style="width:0%"></div></div><div class="aud-times"><span id="ap-cur">0:00</span><span id="ap-dur">0:00</span></div></div><div class="aud-btns"><button class="aud-btn" id="ap-rew" title="Restart">${SI.skipBack}</button><button class="aud-btn main" id="ap-play" title="Play / Pause">${SI.play}</button><button class="aud-btn" id="ap-fwd" title="Skip +10s">${SI.skipFwd}</button></div><div class="aud-vol-row"><span class="aud-vol-ico" style="display:flex;align-items:center">${SI.volLow}</span><input type="range" class="hb-range" id="ap-vol" min="0" max="1" step="0.02" value="1" style="flex:1"><span class="aud-vol-ico" style="display:flex;align-items:center">${SI.volHigh}</span></div><button class="aud-btn" id="ap-open" style="margin-top:4px;padding:7px 18px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.75);font-size:12px;font-family:var(--font);cursor:pointer;width:100%;transition:background .13s" title="Open audio file">${SI.folderOpen}Open File</button><audio id="ap-aud"${src?' src="'+src+'"':''}></audio></div>`;
   function onMount(win){
     const aud=win.querySelector('#ap-aud'),art=win.querySelector('#ap-art'),pb=win.querySelector('#ap-play');
     const fill=win.querySelector('#ap-fill'),prog=win.querySelector('#ap-prog');
@@ -1054,7 +1091,7 @@ function buildAudPlayer(opts){
     // ── load a new source into the player ──
     const loadSrc=(newSrc,newName)=>{
       aud.pause();aud.currentTime=0;fill.style.width='0%';curEl.textContent='0:00';durEl.textContent='0:00';
-      pb.textContent='▶';art.classList.remove('playing');
+      pb.innerHTML=SI.play;art.classList.remove('playing');
       aud.src=newSrc;
       const t=newName.replace(/\.[^.]+$/,'');
       titleEl.textContent=t;subEl.textContent='Audio Player';
@@ -1078,15 +1115,15 @@ function buildAudPlayer(opts){
     aud.addEventListener('error',()=>{
       const codes={1:'Aborted',2:'Network error',3:'Decode error',4:'Source not supported'};
       const msg=codes[aud.error?.code]||'Unknown error';
-      pb.textContent='▶';art.classList.remove('playing');
+      pb.innerHTML=SI.play;art.classList.remove('playing');
       toast('❌','Audio',`Playback failed: ${msg}. Try opening a different file.`);
     });
 
     aud.addEventListener('loadedmetadata',()=>durEl.textContent=fmt(aud.duration));
     aud.addEventListener('timeupdate',()=>{if(!aud.duration)return;fill.style.width=(aud.currentTime/aud.duration*100)+'%';curEl.textContent=fmt(aud.currentTime);});
-    aud.addEventListener('play',()=>{pb.textContent='⏸';art.classList.add('playing');});
-    aud.addEventListener('pause',()=>{pb.textContent='▶';art.classList.remove('playing');});
-    aud.addEventListener('ended',()=>{pb.textContent='▶';art.classList.remove('playing');fill.style.width='0%';});
+    aud.addEventListener('play',()=>{pb.innerHTML=SI.pause;art.classList.add('playing');});
+    aud.addEventListener('pause',()=>{pb.innerHTML=SI.play;art.classList.remove('playing');});
+    aud.addEventListener('ended',()=>{pb.innerHTML=SI.play;art.classList.remove('playing');fill.style.width='0%';});
 
     // ── play / pause — properly handle the Promise ──
     pb.onclick=()=>{
@@ -1095,7 +1132,7 @@ function buildAudPlayer(opts){
         const p=aud.play();
         if(p!==undefined){
           p.catch(err=>{
-            pb.textContent='▶';art.classList.remove('playing');
+            pb.innerHTML=SI.play;art.classList.remove('playing');
             toast('❌','Audio','Playback blocked. Try clicking play again or open a file.');
           });
         }
@@ -1381,7 +1418,7 @@ function buildDesktop(){const area=document.getElementById('icon-area');DESK_CFG
 
 const FS_ICON_COL_LEFT=110;
 function renderDesktopFsIcons(){document.querySelectorAll('.desk-icon.fs-file-icon').forEach(e=>e.remove());const desktopNode=fsGet('/Desktop');if(!desktopNode?.children)return;Object.entries(desktopNode.children).forEach(([name,item],idx)=>{addFsDesktopIcon(name,item,idx);});}
-function addFsDesktopIcon(name,item,idx){const area=document.getElementById('icon-area');const el=document.createElement('div');el.className='desk-icon fs-file-icon';el.style.top=(22+idx*90)+'px';el.style.left=FS_ICON_COL_LEFT+'px';const ext=name.split('.').pop().toLowerCase();const imgWrapper=document.createElement('div');imgWrapper.className='di-img';if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){const thumb=document.createElement('img');thumb.src=item.blobUrl||item.src;thumb.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:8px';imgWrapper.appendChild(thumb);}else{const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];imgWrapper.innerHTML=iconFn?iconFn():'';}const sp=document.createElement('span');sp.textContent=name;el.appendChild(imgWrapper);el.appendChild(sp);el.style.opacity='0';el.style.transform='translateX(22px)';requestAnimationFrame(()=>{el.style.transition='opacity .35s ease,transform .45s cubic-bezier(.2,1.2,.3,1)';el.style.opacity='1';el.style.transform='translateX(0)';setTimeout(()=>el.style.transition='',500);});let clicks=0,ct;el.addEventListener('click',e=>{document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');clicks++;clearTimeout(ct);ct=setTimeout(()=>{if(clicks>=2)routeOpen(name,item,'/Desktop');clicks=0;},280);e.stopPropagation();});el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');ctxMenu(e.clientX,e.clientY,[{label:`▶ Open ${name}`,fn:()=>routeOpen(name,item,'/Desktop')},{sep:true},{label:'🗑 Delete',fn:()=>{const dn=fsGet('/Desktop');if(dn?.children){delete dn.children[name];el.style.transition='all .18s ease';el.style.opacity='0';el.style.transform='scale(0.5)';setTimeout(()=>el.remove(),180);toast('🗑','Deleted',`"${name}" removed.`);}},danger:true}]);});_makeDraggableIcon(el);area.appendChild(el);}
+function addFsDesktopIcon(name,item,idx){const area=document.getElementById('icon-area');const el=document.createElement('div');el.className='desk-icon fs-file-icon';el.style.top=(22+idx*90)+'px';el.style.left=FS_ICON_COL_LEFT+'px';const ext=name.split('.').pop().toLowerCase();const imgWrapper=document.createElement('div');imgWrapper.className='di-img';if((item.blobUrl||item.src)&&IMG_EXT.includes(ext)){const thumb=document.createElement('img');thumb.src=item.blobUrl||item.src;thumb.style.cssText='width:52px;height:52px;object-fit:cover;border-radius:8px';imgWrapper.appendChild(thumb);}else{const iconFn=ICO[item.icon||(item.type==='dir'?'folder':'file_txt')];imgWrapper.innerHTML=iconFn?iconFn():'';}const sp=document.createElement('span');sp.textContent=name;el.appendChild(imgWrapper);el.appendChild(sp);el.style.opacity='0';el.style.transform='translateX(22px)';requestAnimationFrame(()=>{el.style.transition='opacity .35s ease,transform .45s cubic-bezier(.2,1.2,.3,1)';el.style.opacity='1';el.style.transform='translateX(0)';setTimeout(()=>el.style.transition='',500);});let clicks=0,ct;el.addEventListener('click',e=>{document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');clicks++;clearTimeout(ct);ct=setTimeout(()=>{if(clicks>=2)routeOpen(name,item,'/Desktop');clicks=0;},280);e.stopPropagation();});el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');ctxMenu(e.clientX,e.clientY,[{label:`▶ Open ${name}`,fn:()=>routeOpen(name,item,'/Desktop')},{sep:true},{label:'Delete',fn:()=>{const dn=fsGet('/Desktop');if(dn?.children){delete dn.children[name];el.style.transition='all .18s ease';el.style.opacity='0';el.style.transform='scale(0.5)';setTimeout(()=>el.remove(),180);toast('🗑','Deleted',`"${name}" removed.`);}},danger:true}]);});_makeDraggableIcon(el);area.appendChild(el);}
 function _makeDraggableIcon(el){let sx,sy,sl,st,drag=false;el.addEventListener('mousedown',e=>{if(e.button!==0)return;drag=false;const stX=e.clientX,stY=e.clientY;sx=e.clientX;sy=e.clientY;sl=el.offsetLeft;st=el.offsetTop;const mm=ev=>{if(Math.abs(ev.clientX-stX)+Math.abs(ev.clientY-stY)>4)drag=true;if(drag){el.style.left=(sl+ev.clientX-sx)+'px';el.style.top=Math.max(0,st+ev.clientY-sy)+'px';}};const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});}
 
 // ── START MENU ────────────────────────────────────────────────────
