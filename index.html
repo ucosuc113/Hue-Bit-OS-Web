@@ -419,12 +419,16 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
  * ║  This includes: OS settings (volume, accent, wallpaper,          ║
  * ║  username, password, font size, night light, lock timer),        ║
  * ║  the virtual filesystem (FS), desktop icon positions,            ║
- * ║  and now: the user profile avatar (base64 image).                ║
+ * ║  and the user profile avatar (base64 image).                     ║
  * ║                                                                  ║
- * ║  Blob URLs (drag-dropped media) are NOT persisted because        ║
- * ║  they are revoked when the tab closes. Only data:-URIs           ║
- * ║  (base64) survive — the avatar is stored as base64.              ║
+ * ║  SYSTEM FILE AUTO-PATCH:                                         ║
+ * ║  BUILD_VERSION is a string constant in the code. Every time      ║
+ * ║  it changes (e.g. "1.4.3" → "1.4.4"), loadAutoSave() calls      ║
+ * ║  getSystemFiles() and overwrites only the OS-owned paths         ║
+ * ║  (readme.txt, changes_log.txt, dev-notes, etc). All user         ║
+ * ║  files, settings, wallpaper, and avatar are preserved.           ║
  * ║                                                                  ║
+ * ║  To trigger a patch: bump BUILD_VERSION in the code.             ║
  * ║  To inspect or clear saved data:                                 ║
  * ║    DevTools → Application → Local Storage → huebit-os-v2        ║
  * ╚══════════════════════════════════════════════════════════════════╝
@@ -476,16 +480,24 @@ function setNightLight(on){OS.nightLight=on;let el=document.getElementById('nigh
 
 // ── FULL PERSISTENCE SYSTEM ───────────────────────────────────────
 const LS_KEY='huebit-os-v2';
+
+// ── BUILD VERSION ─────────────────────────────────────────────
+// Bump this string every time you update system files (readme,
+// changelog, dev-notes, etc). loadAutoSave() will patch only
+// the SYSTEM_FILES paths in localStorage and leave everything
+// else (user files, settings, wallpaper) completely untouched.
+const BUILD_VERSION='1.4.3';
+
 let customWallpaperData=null;
 
 function autoSave(){
   try{
-    const state={v:2,OS,FS:JSON.parse(JSON.stringify(FS)),curWP,customWP:customWallpaperData,iconPositions:getIconPositions()};
+    const state={v:2,buildVersion:BUILD_VERSION,OS,FS:JSON.parse(JSON.stringify(FS)),curWP,customWP:customWallpaperData,iconPositions:getIconPositions()};
     localStorage.setItem(LS_KEY,JSON.stringify(state));
   }catch(e){
     try{
       const fsSafe=stripBlobsFromFS(JSON.parse(JSON.stringify(FS)));
-      localStorage.setItem(LS_KEY,JSON.stringify({v:2,OS,FS:fsSafe,curWP,customWP:null,iconPositions:{}}));
+      localStorage.setItem(LS_KEY,JSON.stringify({v:2,buildVersion:BUILD_VERSION,OS,FS:fsSafe,curWP,customWP:null,iconPositions:{}}));
     }catch(e2){}
   }
 }
@@ -522,13 +534,57 @@ function loadAutoSave(){
       const cwp={key:'custom',label:'Custom',img:null,bg:'url('+state.customWP+') center/cover no-repeat'};
       if(ci>=0)WP_THEMES[ci]=cwp;else WP_THEMES.push(cwp);
     }
+    // ── System file patch on version change ──────────────────
+    // If the saved build version is older (or missing), overwrite
+    // only the OS-owned paths with the latest content from the
+    // current build. User files in all other locations are untouched.
+    if(state.buildVersion !== BUILD_VERSION){
+      const sysFiles = getSystemFiles();
+      for(const [path, node] of Object.entries(sysFiles)){
+        fsPatch(path, node);
+      }
+      console.info(`[HueBit] System files patched: ${state.buildVersion||'legacy'} → ${BUILD_VERSION}`);
+      // autoSave runs below after everything is applied, so the new
+      // buildVersion will be written to localStorage automatically.
+    }
     setAccent(OS.accent,OS.accent2);setNightLight(OS.nightLight);setWallpaper(curWP);renderDesktopFsIcons();if(OS.avatar)setTimeout(syncAvatar,50);
+    // Always persist the current state (captures buildVersion update)
+    setTimeout(autoSave, 100);
     if(state.iconPositions)setTimeout(()=>{document.querySelectorAll('.desk-icon').forEach(el=>{const id=el.dataset.id||el.querySelector('span')?.textContent;if(id&&state.iconPositions[id]){el.style.left=state.iconPositions[id].left;el.style.top=state.iconPositions[id].top;}});},200);
   }catch(e){console.error('HueBit loadAutoSave:',e);}
 }
 
 // ── FAKE FILESYSTEM ────────────────────────────────────────────
 const CHANGELOG=`HueBit OS — Changelog\n═════════════════════\n\n[v1.4.3] - Latest\n\n- Global SVG icon system: all emoji throughout the OS replaced with clean\n  inline SVG icons for consistent rendering across all browsers/platforms.\n- Text Editor: multi-tab support. Open multiple files simultaneously,\n  switch between tabs, close tabs individually, dirty indicator (●),\n  shortcuts Ctrl+T (new tab) and Ctrl+W (close tab).\n- Audio Player: fixed play() Promise rejection being silently swallowed,\n  causing the button to stay stuck at ▶ and timer at 0:00 for new visitors.\n- Audio Player: clicking play without a file loaded now opens a file picker.\n- Audio Player: added Open File button for loading audio without drag-and-drop.\n- Audio Player: error messages now report specific codes (Network/Decode/Unsupported).\n- Audio Player: volume slider uses parseFloat() fixing a precision coercion bug.\n\n[v1.4.2]\n\n- VS Code editor fully rewritten: menus, run, terminal, explorer,\n  open editors — all functional.\n- Default file is blank with language comment.\n- HTML run now opens a live preview window.\n- JS run captures console.log output.\n- Python run supported via built-in interpreter.\n\n[v1.4.1]\n\n- The code editor has been improved, and Python has also been added as a language.\n- The graphical interface of the lock screen has been slightly improved.\n- A login system has been added.\n\n[v1.4.0]\n\n- Added a functional code editor with HTML, JS, and CSS.\n- Fixed audio detection.\n- Changed icons.\n\n[v1.3.0]\n─────────────────\n• Public folder sync via manifest.json\n• Works 100% static: no backend, no Node.js, GitHub Pages compatible\n\n[v1.0.0]\n─────────────────\n• Complete OS: window manager, filesystem, terminal, explorer, media apps`;
+
+// ── SYSTEM FILES REGISTRY ─────────────────────────────────────
+// These are the "OS-owned" files that get refreshed in localStorage
+// whenever BUILD_VERSION changes. User files are NEVER touched.
+// Key = absolute FS path. Value = file node to restore.
+// NOTE: this object is defined *after* CHANGELOG so the content
+// is already available.
+function getSystemFiles(){
+  return {
+    '/Desktop/readme.txt':            {type:'file',icon:'file_txt',content:'Welcome to HueBit OS v1.4.3!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nVS Code is now fully functional:\n- File menu: New, Open, Save, Save As, Export\n- Edit: Copy, Paste, Select All, Find\n- View: Toggle Sidebar, Toggle Terminal\n- Run: Run button executes code\n- Terminal: interactive with run/clear/help\n- Explorer: browse and open FS files\n\nAudio files need to be listed in manifest.json.\n\nTerminal: type "help"\nEnjoy!'},
+    '/Desktop/changes_log.txt':       {type:'file',icon:'file_txt',content:CHANGELOG},
+    '/Documents/Projects/dev-notes.txt':{type:'file',icon:'file_txt',content:'# HueBit OS Dev Notes\n\nStack: HTML5, CSS3, Vanilla JS\nNo frameworks. No dependencies.\nGitHub Pages compatible.\n\n## File routing by extension\n- .txt/.md/.csv/.json → Text Editor\n- .jpg/.png/.gif/.webp/.svg → Image Viewer\n- .mp4/.webm/.ogv → Video Player\n- .mp3/.wav/.ogg/.flac → Audio Player\n- .html → VS Code with preview\n\n## VS Code keyboard shortcuts\n- Ctrl+S: Save\n- Ctrl+R or F5: Run code\n- Ctrl+`: Toggle terminal\n- Ctrl+N: New file\n- Ctrl+O: Open file'},
+    '/Documents/todo.txt':            {type:'file',icon:'file_txt',content:'TODO\n────\n[x] Window manager\n[x] Virtual FS\n[x] Terminal\n[x] Wallpaper themes\n[x] Lock screen\n[x] Media apps\n[x] Save dialog\n[x] File drag & drop\n[x] Interactable settings\n[x] Public folder sync via manifest.json\n[x] VS Code fully functional\n[x] Multi-tab text editor\n[x] SVG icon system\n[x] Profile picture\n[ ] More wallpapers\n[ ] World domination'},
+    '/Documents/notes.txt':           {type:'file',icon:'file_txt',content:'Quick Notes\n──────────\n• Coffee\n• Ship the OS\n• Sleep 8 hours\n• Drop files to import them!\n• Or use manifest.json for permanent files\n• Profit'},
+    '/Downloads/data.csv':            {type:'file',icon:'file_txt',content:'id,name,score\n1,Alice,98\n2,Bob,76\n3,Carol,88\n4,Dave,55\n5,Eve,100'},
+  };
+}
+
+// Helper: set a file at an absolute FS path, creating parent dirs as needed
+function fsPatch(path, node){
+  const parts=path.replace(/^\/+/,'').split('/').filter(Boolean);
+  const fname=parts.pop();
+  let cur=FS['/'];
+  for(const seg of parts){
+    if(!cur.children[seg]) cur.children[seg]={type:'dir',children:{}};
+    cur=cur.children[seg];
+  }
+  cur.children[fname]=node;
+}
 
 const FS={'/':{type:'dir',children:{
   'Desktop':{type:'dir',children:{
@@ -1269,6 +1325,7 @@ const SI={
   warn:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   check:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>',
   importFile:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  resetIco:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>',
   power:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>',
   search:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
   note:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
@@ -1446,7 +1503,7 @@ function mkToggle(id,checked,onChange){const lbl=document.createElement('label')
 
 function buildSettings(opts){
   const content=`<div class="sett-wrap"><div class="sett-side" id="sett-side-nav"></div><div class="sett-body" id="sbody"></div></div>`;
-  function onMount(win){const body=win.querySelector('#sbody');const nav=win.querySelector('#sett-side-nav');const navItems=[{sec:'appearance',label:'Appearance',ico:'palette'},{sec:'display',label:'Display',ico:'monitor'},{sec:'sound',label:'Sound',ico:'sound'},{sec:'network',label:'Network',ico:'globe'},{sec:'privacy',label:'Privacy',ico:'shield'},{sec:'keyboard',label:'Keyboard',ico:'keyboard'},{sec:'about',label:'About',ico:'info'}];navItems.forEach(n=>{const d=document.createElement('div');d.className='sett-nav';d.dataset.sec=n.sec;d.innerHTML=SI[n.ico]+n.label;d.onclick=()=>show(n.sec);nav.appendChild(d);});
+  function onMount(win){const body=win.querySelector('#sbody');const nav=win.querySelector('#sett-side-nav');const navItems=[{sec:'appearance',label:'Appearance',ico:'palette'},{sec:'display',label:'Display',ico:'monitor'},{sec:'sound',label:'Sound',ico:'sound'},{sec:'network',label:'Network',ico:'globe'},{sec:'privacy',label:'Privacy',ico:'shield'},{sec:'keyboard',label:'Keyboard',ico:'keyboard'},{sec:'about',label:'About',ico:'info'},{sec:'reset',label:'Reset',ico:'resetIco'}];navItems.forEach(n=>{const d=document.createElement('div');d.className='sett-nav';d.dataset.sec=n.sec;d.innerHTML=SI[n.ico]+n.label;d.onclick=()=>show(n.sec);nav.appendChild(d);});
     function show(sec){nav.querySelectorAll('.sett-nav').forEach(n=>n.classList.toggle('active',n.dataset.sec===sec));body.innerHTML='';
       if(sec==='appearance'){const wpGrid=document.createElement('div');wpGrid.className='sett-sec';wpGrid.innerHTML='<h3>Wallpaper Theme</h3>';const g=document.createElement('div');g.className='wp-grid';WP_THEMES.forEach(wp=>{const el=document.createElement('div');el.className='wp-opt'+(wp.key===curWP?' active':'');el.style.cssText=wp.img?`background-image:url('${wp.img}');background-size:cover;background-position:center`:`background:${wp.bg||'#111'}`;el.innerHTML=`<span>${wp.label}</span>`;el.onclick=()=>{setWallpaper(wp.key);g.querySelectorAll('.wp-opt').forEach(e=>e.classList.remove('active'));el.classList.add('active');toast('','Wallpaper',`Theme "${wp.label}" applied.`);};g.appendChild(el);});wpGrid.appendChild(g);
         // Custom wallpaper upload
@@ -1530,6 +1587,45 @@ function buildSettings(opts){
         const pSec=document.createElement('div');pSec.className='sett-sec';pSec.innerHTML='<h3>Lock Screen</h3>';const lockOptions=[['Never',0],['1 min',1],['5 min',5],['10 min',10],['30 min',30]];const lRow=document.createElement('div');lRow.className='sett-row';lRow.innerHTML='<label>Auto-lock after</label>';const sel=document.createElement('select');sel.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer';lockOptions.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===OS.lockAfter)o.selected=true;sel.appendChild(o);});sel.onchange=()=>{OS.lockAfter=parseInt(sel.value);resetLockTimer();toast('','Lock',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`);autoSave();};lRow.appendChild(sel);pSec.appendChild(lRow);const pwRow=document.createElement('div');pwRow.className='sett-row';pwRow.innerHTML='<label>Use password</label>';const pwToggle=mkToggle('use_pass',OS.usePassword,v=>{OS.usePassword=v;pwInp.style.display=v?'block':'none';if(!v)OS.password='';autoSave();});pwRow.appendChild(pwToggle);pSec.appendChild(pwRow);const pwInp=document.createElement('div');pwInp.className='sett-row col';pwInp.style.display=OS.usePassword?'block':'none';pwInp.innerHTML='<label>Set password</label>';const pwInput=document.createElement('input');pwInput.type='password';pwInput.placeholder='Enter new password';pwInput.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;width:100%';pwInput.onchange=()=>{OS.password=pwInput.value;autoSave();toast('','Password','Updated.');};pwInp.appendChild(pwInput);pSec.appendChild(pwInp);body.appendChild(pSec);}
       else if(sec==='keyboard'){body.innerHTML=`<div class="sett-sec"><h3>Keyboard Shortcuts</h3><div class="sett-row"><label>Ctrl+S</label><span class="val">Save file</span></div><div class="sett-row"><label>Ctrl+R / F5</label><span class="val">Run code (VS Code)</span></div><div class="sett-row"><label>Ctrl+\`</label><span class="val">Toggle terminal</span></div><div class="sett-row"><label>Space (Media)</label><span class="val">Play / Pause</span></div><div class="sett-row"><label>↑↓ (Terminal)</label><span class="val">History</span></div><div class="sett-row"><label>Tab (Terminal)</label><span class="val">Autocomplete</span></div></div>`;}
       else if(sec==='about'){body.innerHTML=`<div class="sett-sec"><h3>System Information</h3><div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div><div class="sett-row"><label>Version</label><span class="val">1.4.3</span></div><div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div><div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div><div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div><div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div><div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div></div><div class="sett-sec" style="margin-top:16px"><h3>Changelog — v1.4.3</h3><div style="background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);padding:12px 14px;font-size:12px;line-height:2;color:rgba(255,255,255,0.65)"><span style="color:#78e0a0;font-weight:700">Audio Player fixes</span><br>• Fixed: play() Promise rejection was silently swallowed — caused button stuck at ▶ and timer at 0:00 on browsers with autoplay restrictions or invalid src<br>• Fixed: opening Audio Player without a file no longer deadlocks — clicking ▶ now auto-opens a file picker<br>• Added: 📂 Open File button so users can load local audio at any time without drag-and-drop<br>• Fixed: error handler now reports specific error code (Network / Decode / Unsupported) instead of a generic message<br>• Fixed: volume slider now uses parseFloat() preventing silent volume precision bugs<br><span style="color:rgba(255,255,255,0.35);font-size:11px">v1.4.2 → v1.4.3 · Audio Player stability patch</span></div></div><div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="margin-bottom:8px;opacity:.6"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;const t0=Date.now();const iv=setInterval(()=>{const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}const s=Math.floor((Date.now()-t0)/1000);el.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m '+s%60+'s':Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';},1000);}
+      else if(sec==='reset'){
+        const rSec=document.createElement('div');rSec.className='sett-sec';
+        rSec.innerHTML='<h3>Factory Reset</h3>';
+        const desc=document.createElement('div');
+        desc.style.cssText='font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:18px;padding:12px 14px;background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.15);border-radius:10px';
+        desc.innerHTML='<strong style="color:rgba(255,120,120,0.9)">Warning — this cannot be undone.</strong><br>Clears all localStorage data: settings, wallpaper, password, profile picture, and every file you created or imported. The OS will reload from its default state.';
+        rSec.appendChild(desc);
+        const rRow=document.createElement('div');rRow.className='sett-row';rRow.style.flexDirection='column';rRow.style.alignItems='flex-start';rRow.style.gap='12px';
+
+        // Confirm checkbox
+        const chkWrap=document.createElement('label');
+        chkWrap.style.cssText='display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.65);user-select:none';
+        const chk=document.createElement('input');chk.type='checkbox';
+        chk.style.cssText='width:15px;height:15px;accent-color:#ff5f57;cursor:pointer';
+        const chkLbl=document.createElement('span');chkLbl.textContent='I understand — delete everything and reset';
+        chkWrap.appendChild(chk);chkWrap.appendChild(chkLbl);
+
+        // Reset button
+        const rBtn=document.createElement('button');
+        rBtn.style.cssText='background:rgba(255,80,80,0.18);border:1px solid rgba(255,80,80,0.4);color:#ff9090;padding:9px 22px;border-radius:10px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;opacity:0.4;pointer-events:none;transition:all .15s;display:flex;align-items:center;gap:6px';
+        rBtn.innerHTML=SI.resetIco+'Reset to Factory Defaults';
+        rBtn.title='Check the box above to enable this button';
+
+        chk.onchange=()=>{
+          rBtn.style.opacity=chk.checked?'1':'0.4';
+          rBtn.style.pointerEvents=chk.checked?'auto':'none';
+        };
+        rBtn.onclick=()=>{
+          if(!chk.checked)return;
+          localStorage.removeItem(LS_KEY);
+          toast('','Reset','Cleared. Reloading…');
+          setTimeout(()=>location.reload(),900);
+        };
+
+        rRow.appendChild(chkWrap);
+        rRow.appendChild(rBtn);
+        rSec.appendChild(rRow);
+        body.appendChild(rSec);
+      }
     }
     show('appearance');
   }
