@@ -1,4 +1,4 @@
-# HUE-BIT-OS
+    # HUE-BIT-OS
 
 Just a simple file manager where you can drop files and manage stuff.
 
