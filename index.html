@@ -1041,8 +1041,77 @@ function buildVidPlayer(opts){
 // ── AUDIO PLAYER ─────────────────────────────────────────────────
 function buildAudPlayer(opts){
   const src=opts?.src||'',fn=opts?.filename||'audio',title=fn.replace(/\.[^.]+$/,'');
-  const content=`<div class="aud-wrap"><div class="aud-art" id="ap-art">🎵</div><div class="aud-title">${title}</div><div class="aud-sub">Audio Player</div><div class="aud-prog-wrap"><div class="aud-prog" id="ap-prog"><div class="aud-prog-fill" id="ap-fill" style="width:0%"></div></div><div class="aud-times"><span id="ap-cur">0:00</span><span id="ap-dur">0:00</span></div></div><div class="aud-btns"><button class="aud-btn" id="ap-rew">⏮</button><button class="aud-btn main" id="ap-play">▶</button><button class="aud-btn" id="ap-fwd">⏭</button></div><div class="aud-vol-row"><span class="aud-vol-ico">🔉</span><input type="range" class="hb-range" id="ap-vol" min="0" max="1" step="0.02" value="1" style="flex:1"><span class="aud-vol-ico">🔊</span></div><audio id="ap-aud" src="${src}"></audio></div>`;
-  function onMount(win){const aud=win.querySelector('#ap-aud'),art=win.querySelector('#ap-art'),pb=win.querySelector('#ap-play');const fill=win.querySelector('#ap-fill'),prog=win.querySelector('#ap-prog');const curEl=win.querySelector('#ap-cur'),durEl=win.querySelector('#ap-dur');const fmt=s=>{const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;};aud.onerror=()=>toast('❌','Audio',`Cannot load "${fn}". Check manifest.json`);aud.addEventListener('loadedmetadata',()=>durEl.textContent=fmt(aud.duration));aud.addEventListener('timeupdate',()=>{if(!aud.duration)return;fill.style.width=(aud.currentTime/aud.duration*100)+'%';curEl.textContent=fmt(aud.currentTime);});aud.addEventListener('play',()=>{pb.textContent='⏸';art.classList.add('playing');});aud.addEventListener('pause',()=>{pb.textContent='▶';art.classList.remove('playing');});aud.addEventListener('ended',()=>{pb.textContent='▶';art.classList.remove('playing');fill.style.width='0%';});pb.onclick=()=>aud.paused?aud.play():aud.pause();win.querySelector('#ap-rew').onclick=()=>aud.currentTime=0;win.querySelector('#ap-fwd').onclick=()=>aud.currentTime=Math.min(aud.duration||0,aud.currentTime+10);prog.onclick=e=>{if(!aud.duration)return;const r=prog.getBoundingClientRect();aud.currentTime=((e.clientX-r.left)/r.width)*aud.duration;};const volSlider=win.querySelector('#ap-vol');updateRangeGradient(volSlider,0,1);volSlider.oninput=()=>{aud.volume=volSlider.value;updateRangeGradient(volSlider,0,1);};win.addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();pb.click();}});}
+  const noFile=!src;
+  const content=`<div class="aud-wrap"><div class="aud-art" id="ap-art">🎵</div><div class="aud-title" id="ap-title">${noFile?'No file loaded':title}</div><div class="aud-sub" id="ap-sub">${noFile?'Drop a file or click Open':'Audio Player'}</div><div class="aud-prog-wrap"><div class="aud-prog" id="ap-prog"><div class="aud-prog-fill" id="ap-fill" style="width:0%"></div></div><div class="aud-times"><span id="ap-cur">0:00</span><span id="ap-dur">0:00</span></div></div><div class="aud-btns"><button class="aud-btn" id="ap-rew" title="Restart">⏮</button><button class="aud-btn main" id="ap-play" title="Play / Pause">▶</button><button class="aud-btn" id="ap-fwd" title="Skip +10s">⏭</button></div><div class="aud-vol-row"><span class="aud-vol-ico">🔉</span><input type="range" class="hb-range" id="ap-vol" min="0" max="1" step="0.02" value="1" style="flex:1"><span class="aud-vol-ico">🔊</span></div><button class="aud-btn" id="ap-open" style="margin-top:4px;padding:7px 18px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.75);font-size:12px;font-family:var(--font);cursor:pointer;width:100%;transition:background .13s" title="Open audio file">📂 Open File</button><audio id="ap-aud"${src?' src="'+src+'"':''}></audio></div>`;
+  function onMount(win){
+    const aud=win.querySelector('#ap-aud'),art=win.querySelector('#ap-art'),pb=win.querySelector('#ap-play');
+    const fill=win.querySelector('#ap-fill'),prog=win.querySelector('#ap-prog');
+    const curEl=win.querySelector('#ap-cur'),durEl=win.querySelector('#ap-dur');
+    const titleEl=win.querySelector('#ap-title'),subEl=win.querySelector('#ap-sub');
+    const openBtn=win.querySelector('#ap-open');
+    const fmt=s=>{const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;};
+
+    // ── load a new source into the player ──
+    const loadSrc=(newSrc,newName)=>{
+      aud.pause();aud.currentTime=0;fill.style.width='0%';curEl.textContent='0:00';durEl.textContent='0:00';
+      pb.textContent='▶';art.classList.remove('playing');
+      aud.src=newSrc;
+      const t=newName.replace(/\.[^.]+$/,'');
+      titleEl.textContent=t;subEl.textContent='Audio Player';
+      aud.load();
+    };
+
+    // ── open file picker ──
+    openBtn.addEventListener('click',()=>{
+      const inp=document.createElement('input');inp.type='file';
+      inp.accept='audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a,.opus,.weba';
+      inp.onchange=e=>{
+        const f=e.target.files[0];if(!f)return;
+        const url=URL.createObjectURL(f);
+        loadSrc(url,f.name);
+        toast('🎵','Audio Player',`Loaded "${f.name}"`);
+      };
+      inp.click();
+    });
+
+    // ── error handling ──
+    aud.addEventListener('error',()=>{
+      const codes={1:'Aborted',2:'Network error',3:'Decode error',4:'Source not supported'};
+      const msg=codes[aud.error?.code]||'Unknown error';
+      pb.textContent='▶';art.classList.remove('playing');
+      toast('❌','Audio',`Playback failed: ${msg}. Try opening a different file.`);
+    });
+
+    aud.addEventListener('loadedmetadata',()=>durEl.textContent=fmt(aud.duration));
+    aud.addEventListener('timeupdate',()=>{if(!aud.duration)return;fill.style.width=(aud.currentTime/aud.duration*100)+'%';curEl.textContent=fmt(aud.currentTime);});
+    aud.addEventListener('play',()=>{pb.textContent='⏸';art.classList.add('playing');});
+    aud.addEventListener('pause',()=>{pb.textContent='▶';art.classList.remove('playing');});
+    aud.addEventListener('ended',()=>{pb.textContent='▶';art.classList.remove('playing');fill.style.width='0%';});
+
+    // ── play / pause — properly handle the Promise ──
+    pb.onclick=()=>{
+      if(!aud.src||aud.src===location.href){openBtn.click();return;}
+      if(aud.paused){
+        const p=aud.play();
+        if(p!==undefined){
+          p.catch(err=>{
+            pb.textContent='▶';art.classList.remove('playing');
+            toast('❌','Audio','Playback blocked. Try clicking play again or open a file.');
+          });
+        }
+      }else{aud.pause();}
+    };
+
+    win.querySelector('#ap-rew').onclick=()=>aud.currentTime=0;
+    win.querySelector('#ap-fwd').onclick=()=>aud.currentTime=Math.min(aud.duration||0,aud.currentTime+10);
+    prog.onclick=e=>{if(!aud.duration)return;const r=prog.getBoundingClientRect();aud.currentTime=((e.clientX-r.left)/r.width)*aud.duration;};
+
+    const volSlider=win.querySelector('#ap-vol');
+    updateRangeGradient(volSlider,0,1);
+    volSlider.oninput=()=>{aud.volume=parseFloat(volSlider.value);updateRangeGradient(volSlider,0,1);};
+
+    win.addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();pb.click();}});
+  }
   return{content,onMount};
 }
 
@@ -1055,7 +1124,7 @@ function buildTerminal(opts){
     const ln=(t,c='')=>{const d=document.createElement('div');d.className='term-line '+c;d.textContent=t;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const lnh=h=>{const d=document.createElement('div');d.className='term-line';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight;};
     const upP=()=>{const s=cwd==='/'?'~':cwd.split('/').pop();pEl.textContent=`user@huebit:${s}$ `;};
-    ln('HueBit Shell  v1.4.2','acc');ln('Type "help" for commands.','info');ln('');
+    ln('HueBit Shell  v1.4.3','acc');ln('Type "help" for commands.','info');ln('');
     const CMD={
       help(){lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');[['help','Show help'],['ls','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['python [code]','Run Python'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));},
       ls(){CMD.dir();},
@@ -1066,7 +1135,7 @@ function buildTerminal(opts){
       echo(a){ln(a.join(' '));},
       whoami(){ln('user  [uid=1000  groups=admin,users]');},
       date(){ln(new Date().toString());},
-      uname(){ln('HueBit OS 1.4.2 (HTML5/JS) x86_64');},
+      uname(){ln('HueBit OS 1.4.3 (HTML5/JS) x86_64');},
       history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
       cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
       mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
@@ -1075,7 +1144,7 @@ function buildTerminal(opts){
       open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
       python(a){if(!a[0]){ln('Usage: python <code>','err');return;}try{const r=simplePythonRun(a.join(' '));r.split('\n').forEach(l=>ln(l));}catch(e){ln('Error: '+e.message,'err');}},
       calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
-      neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.2','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
+      neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.3','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
     };
     inp.addEventListener('keydown',e=>{
       if(e.key==='Enter'){const r=inp.value.trim();if(!r)return;hist.unshift(r);hi=-1;lnh(`<span style="color:#5b8af5">${pEl.textContent}</span><span style="color:#a0c8ff">${r}</span>`);inp.value='';const[c,...a]=r.split(/\s+/);CMD[c]?CMD[c](a):ln(`${c}: command not found (try "help")`,'err');}
@@ -1181,7 +1250,7 @@ function buildSettings(opts){
 
         const pSec=document.createElement('div');pSec.className='sett-sec';pSec.innerHTML='<h3>Lock Screen</h3>';const lockOptions=[['Never',0],['1 min',1],['5 min',5],['10 min',10],['30 min',30]];const lRow=document.createElement('div');lRow.className='sett-row';lRow.innerHTML='<label>Auto-lock after</label>';const sel=document.createElement('select');sel.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer';lockOptions.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===OS.lockAfter)o.selected=true;sel.appendChild(o);});sel.onchange=()=>{OS.lockAfter=parseInt(sel.value);resetLockTimer();toast('🔒','Lock Screen',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`);autoSave();};lRow.appendChild(sel);pSec.appendChild(lRow);const pwRow=document.createElement('div');pwRow.className='sett-row';pwRow.innerHTML='<label>Use password</label>';const pwToggle=mkToggle('use_pass',OS.usePassword,v=>{OS.usePassword=v;pwInp.style.display=v?'block':'none';if(!v)OS.password='';autoSave();});pwRow.appendChild(pwToggle);pSec.appendChild(pwRow);const pwInp=document.createElement('div');pwInp.className='sett-row col';pwInp.style.display=OS.usePassword?'block':'none';pwInp.innerHTML='<label>Set password</label>';const pwInput=document.createElement('input');pwInput.type='password';pwInput.placeholder='Enter new password';pwInput.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;width:100%';pwInput.onchange=()=>{OS.password=pwInput.value;autoSave();toast('🔒','Password','Updated.');};pwInp.appendChild(pwInput);pSec.appendChild(pwInp);body.appendChild(pSec);}
       else if(sec==='keyboard'){body.innerHTML=`<div class="sett-sec"><h3>Keyboard Shortcuts</h3><div class="sett-row"><label>Ctrl+S</label><span class="val">Save file</span></div><div class="sett-row"><label>Ctrl+R / F5</label><span class="val">Run code (VS Code)</span></div><div class="sett-row"><label>Ctrl+\`</label><span class="val">Toggle terminal</span></div><div class="sett-row"><label>Space (Media)</label><span class="val">Play / Pause</span></div><div class="sett-row"><label>↑↓ (Terminal)</label><span class="val">History</span></div><div class="sett-row"><label>Tab (Terminal)</label><span class="val">Autocomplete</span></div></div>`;}
-      else if(sec==='about'){body.innerHTML=`<div class="sett-sec"><h3>System Information</h3><div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div><div class="sett-row"><label>Version</label><span class="val">1.4.2</span></div><div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div><div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div><div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div><div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div><div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div></div><div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="font-size:32px;margin-bottom:8px">💻</div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;const t0=Date.now();const iv=setInterval(()=>{const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}const s=Math.floor((Date.now()-t0)/1000);el.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m '+s%60+'s':Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';},1000);}
+      else if(sec==='about'){body.innerHTML=`<div class="sett-sec"><h3>System Information</h3><div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div><div class="sett-row"><label>Version</label><span class="val">1.4.3</span></div><div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div><div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div><div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div><div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div><div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div></div><div class="sett-sec" style="margin-top:16px"><h3>Changelog — v1.4.3</h3><div style="background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);padding:12px 14px;font-size:12px;line-height:2;color:rgba(255,255,255,0.65)"><span style="color:#78e0a0;font-weight:700">🔧 Audio Player</span><br>• Fixed: play() Promise rejection was silently swallowed — caused button stuck at ▶ and timer at 0:00 on browsers with autoplay restrictions or invalid src<br>• Fixed: opening Audio Player without a file no longer deadlocks — clicking ▶ now auto-opens a file picker<br>• Added: 📂 Open File button so users can load local audio at any time without drag-and-drop<br>• Fixed: error handler now reports specific error code (Network / Decode / Unsupported) instead of a generic message<br>• Fixed: volume slider now uses parseFloat() preventing silent volume precision bugs<br><span style="color:rgba(255,255,255,0.35);font-size:11px">v1.4.2 → v1.4.3 · Audio Player stability patch</span></div></div><div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="font-size:32px;margin-bottom:8px">💻</div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;const t0=Date.now();const iv=setInterval(()=>{const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}const s=Math.floor((Date.now()-t0)/1000);el.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m '+s%60+'s':Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';},1000);}
     }
     show('appearance');
   }
