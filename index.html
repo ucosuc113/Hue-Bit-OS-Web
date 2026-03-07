@@ -1083,12 +1083,14 @@ function buildVSCode(opts){
       <div class="menu-item" data-menu="view">View</div>
       <div class="menu-item" data-menu="run">Run</div>
       <div class="menu-item" data-menu="terminal">Terminal</div>
+      <div class="menu-item" data-menu="help">Help</div>
     </div>
     <div id="vsc-file-dd"   class="vsc-dd" style="display:none"><div data-a="new">New File</div><div data-a="open">Open File…</div><div data-a="save">Save &nbsp;<span style="opacity:.4">Ctrl+S</span></div><div data-a="saveas">Save As…</div><div data-a="export">Export / Download</div></div>
     <div id="vsc-edit-dd"   class="vsc-dd" style="display:none"><div data-a="copy">Copy</div><div data-a="paste">Paste</div><div data-a="selectall">Select All</div><div data-a="find">Find…</div></div>
     <div id="vsc-view-dd"   class="vsc-dd" style="display:none"><div data-a="sidebar">Toggle Sidebar</div><div data-a="toggleterm">Toggle Terminal</div></div>
     <div id="vsc-run-dd"    class="vsc-dd" style="display:none"><div data-a="runcode">${SI.playSmall}Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
-    <div id="vsc-terminal-dd" class="vsc-dd" style="display:none"><div data-a="newterm">New Terminal</div><div data-a="clearterm">Clear Terminal</div></div>
+    <div id="vsc-terminal-dd" class="vsc-dd" style="display:none"><div data-a="newterm">New Terminal</div>
+    <div id="vsc-help-dd"     class="vsc-dd" style="display:none"><div data-a="tutorial">Tutorial</div></div><div data-a="clearterm">Clear Terminal</div></div>
     <div class="vscode-toolbar">
       <button class="tool-btn" id="vsc-runbtn">${SI.playSmall}Run</button>
       <button class="tool-btn" id="vsc-debugbtn" style="background:#5a4a00">${SI.bugIcon}Debug</button>
@@ -1379,7 +1381,7 @@ function buildVSCode(opts){
     });
 
     // ── dropdown menu system ────────────────────────
-    const ddMap = {file:'vsc-file-dd', edit:'vsc-edit-dd', view:'vsc-view-dd', run:'vsc-run-dd', terminal:'vsc-terminal-dd'};
+    const ddMap = {file:'vsc-file-dd', edit:'vsc-edit-dd', view:'vsc-view-dd', run:'vsc-run-dd', terminal:'vsc-terminal-dd', help:'vsc-help-dd'};
     const hideAllDDs = () => Object.values(ddMap).forEach(id=>{const el=win.querySelector('#'+id);if(el)el.style.display='none';});
 
     // Position all dropdowns absolutely within the window
@@ -1433,6 +1435,7 @@ function buildVSCode(opts){
           case 'toggleterm': toggleTerm(); break;
           case 'runcode':    runCode(); break;
           case 'newterm':    termOut.innerHTML=''; showTerm(); break;
+          case 'tutorial':   showVscTutorial(); break;
           case 'clearterm':  termOut.innerHTML=''; break;
         }
       });
@@ -1454,6 +1457,42 @@ function buildVSCode(opts){
     });
 
 
+
+    function showVscTutorial() {
+      if (win.querySelector('.vsc-tut-overlay')) return;
+      const ov = document.createElement('div'); ov.className = 'vsc-tut-overlay';
+      ov.innerHTML = `<div class="vsc-tut-modal">
+          <div class="vsc-tut-header"><span class="vsc-tut-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span>VS Code &mdash; Quick Start</span><button class="vsc-tut-close" id="vsc-tut-x">&#x2715;</button></div>
+          <div class="vsc-tut-body">
+            <p class="vsc-tut-lead">To run any program, first <strong>save it with the correct extension:</strong></p>
+            <div class="vsc-tut-table">
+              <div class="vsc-tut-row"><span class="vsc-tut-lang html">HTML</span><span class="vsc-tut-ext">.html</span><span class="vsc-tut-eg">example.html</span></div>
+              <div class="vsc-tut-row"><span class="vsc-tut-lang js">JS</span><span class="vsc-tut-ext">.js</span><span class="vsc-tut-eg">example.js</span></div>
+              <div class="vsc-tut-row"><span class="vsc-tut-lang py">Python</span><span class="vsc-tut-ext">.py</span><span class="vsc-tut-eg">example.py</span></div>
+              <div class="vsc-tut-row"><span class="vsc-tut-lang css">CSS</span><span class="vsc-tut-ext">.css</span><span class="vsc-tut-eg">example.css</span></div>
+            </div>
+            <div class="vsc-tut-steps">
+              <div class="vsc-tut-step"><span class="vsc-tut-num">1</span>Write your code</div>
+              <div class="vsc-tut-step"><span class="vsc-tut-num">2</span>File &#x2192; Save As&hellip; with the correct extension</div>
+              <div class="vsc-tut-step"><span class="vsc-tut-num">3</span>Press <kbd>F5</kbd> or the <strong>&#x25B6; Run</strong> button</div>
+            </div>
+            <p class="vsc-tut-note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>HTML opens a live preview &middot; JS/Python show output in the terminal &middot; CSS must be used inside an HTML file</p>
+          </div>
+          <div class="vsc-tut-footer">
+            <label class="vsc-tut-nosee"><input type="checkbox" id="vsc-tut-nosee"> Don&#x27;t show again</label>
+            <button class="vsc-tut-ok" id="vsc-tut-ok">Got it &#x2713;</button>
+          </div>
+        </div>`;
+      win.appendChild(ov);
+      const close = () => {
+        if (ov.querySelector('#vsc-tut-nosee')?.checked) try { localStorage.setItem('huebit-vsc-tut-perm','1'); } catch(e) {}
+        ov.style.opacity = '0'; setTimeout(() => ov.remove(), 180);
+      };
+      ov.querySelector('#vsc-tut-x').onclick = close;
+      ov.querySelector('#vsc-tut-ok').onclick = close;
+      ov.addEventListener('click', e => { if (e.target === ov) close(); });
+      requestAnimationFrame(() => { ov.style.transition = 'opacity .2s'; ov.style.opacity = '1'; });
+    }
     // ── Tutorial popup (first open) ──────────────────────────────
     (()=>{
       try{if(localStorage.getItem('huebit-vsc-tut-perm'))return;}catch(e){}
