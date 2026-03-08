@@ -1391,6 +1391,10 @@ function buildVSCode(opts){
       tPrint('');
 
       if(ext === 'py'){
+        const _log = console.log.bind(console);
+        const _err = console.error.bind(console);
+        console.log = (...a) => { tPrint(a.map(String).join(' ')); _log(...a); };
+        console.error = (...a) => { tPrint(a.map(String).join(' '), '#f48771'); _err(...a); };
         try {
           await initPyodide();
           pyOutput = [];
@@ -1399,7 +1403,13 @@ function buildVSCode(opts){
           await pyodide.runPythonAsync(code);
           if(pyOutput.length === 0) tPrint('(no output)');
           else pyOutput.forEach(l => tPrint(l));
-        } catch(e){ tPrint('Python error: ' + (e?.message||String(e)), '#f48771'); }
+        } catch(e){
+          const errMsg = e?.stack || e?.message || String(e);
+          errMsg.split('\n').forEach(l=>tPrint(l, '#f48771'));
+        } finally {
+          console.log = _log;
+          console.error = _err;
+        }
       }
       else if(ext === 'js'){
         const logs = [];
