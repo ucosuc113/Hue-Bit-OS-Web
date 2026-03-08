@@ -719,6 +719,7 @@ const CHANGELOG=`HueBit OS — Changelog
 - Added Resource Monitor: fake-RAM tracker (256 MB), real localStorage meter,
   per-process breakdown, clean temp data button.
 - VS Code: first-launch tutorial popup explaining file extensions and Run.
+- Fixed: Help menu “Tutorial” option not opening the tutorial due to dropdown nesting.
 
 [v1.4.3]
 
@@ -1089,8 +1090,8 @@ function buildVSCode(opts){
     <div id="vsc-edit-dd"   class="vsc-dd" style="display:none"><div data-a="copy">Copy</div><div data-a="paste">Paste</div><div data-a="selectall">Select All</div><div data-a="find">Find…</div></div>
     <div id="vsc-view-dd"   class="vsc-dd" style="display:none"><div data-a="sidebar">Toggle Sidebar</div><div data-a="toggleterm">Toggle Terminal</div></div>
     <div id="vsc-run-dd"    class="vsc-dd" style="display:none"><div data-a="runcode">${SI.playSmall}Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
-    <div id="vsc-terminal-dd" class="vsc-dd" style="display:none"><div data-a="newterm">New Terminal</div>
-    <div id="vsc-help-dd"     class="vsc-dd" style="display:none"><div data-a="tutorial">Tutorial</div></div><div data-a="clearterm">Clear Terminal</div></div>
+    <div id="vsc-terminal-dd" class="vsc-dd" style="display:none"><div data-a="newterm">New Terminal</div><div data-a="clearterm">Clear Terminal</div></div>
+    <div id="vsc-help-dd" class="vsc-dd" style="display:none"><div data-a="tutorial">Tutorial</div></div>
     <div class="vscode-toolbar">
       <button class="tool-btn" id="vsc-runbtn">${SI.playSmall}Run</button>
       <button class="tool-btn" id="vsc-debugbtn" style="background:#5a4a00">${SI.bugIcon}Debug</button>
