@@ -716,6 +716,7 @@ const CHANGELOG=`HueBit OS — Changelog
 - Added Social Network app: P2P via WebRTC/PeerJS, no backend required.
   Posts travel peer-to-peer (max 8 hops), cached locally, survive disconnects.
   Lazy loading: 5 posts/page, 20 max in memory, 500 stored in localStorage.
+  Auto-expands network: connecting to one peer discovers their known peers and auto-connects to others.
 - Added Resource Monitor: fake-RAM tracker (256 MB), real localStorage meter,
   per-process breakdown, clean temp data button.
 - VS Code: first-launch tutorial popup explaining file extensions and Run.
@@ -2324,9 +2325,10 @@ setTimeout(()=>lockScreen(),200);
 
 // ── Global Social State ──────────────────────────────────────────
 const SOCIAL = (() => {
-  const LS_POSTS   = 'huebit-social-posts-v1';
-  const LS_PROFILE = 'huebit-social-profile-v1';
-  const LS_PEERID  = 'huebit-social-peerid-v1';
+  const LS_POSTS      = 'huebit-social-posts-v1';
+  const LS_PROFILE    = 'huebit-social-profile-v1';
+  const LS_PEERID     = 'huebit-social-peerid-v1';
+  const LS_KNOWN_PEERS = 'huebit-social-peers-v1';
 
   const FAKE_RAM_PER_CONN = 12;   // MB per active P2P connection
   const FAKE_RAM_PER_POST = 0.5;  // MB per post loaded in memory
@@ -2336,6 +2338,7 @@ const SOCIAL = (() => {
 
   let peer = null;
   let connections = new Map();  // connId -> DataConnection
+  let knownPeers = new Set();   // peer IDs we have learned about
   let loadedPosts = [];         // posts currently rendered (up to MAX_POSTS_LOADED)
   let renderedCount = 0;        // how many posts are visible in the feed
   let profile = { name: '', color: '#5b8af5', emoji: 'star' };
@@ -2362,6 +2365,19 @@ const SOCIAL = (() => {
   }
   function savePeerId(id) {
     try { localStorage.setItem(LS_PEERID, id); } catch(e) {}
+  }
+
+  function loadKnownPeers() {
+    try { return JSON.parse(localStorage.getItem(LS_KNOWN_PEERS) || '[]'); } catch(e) { return []; }
+  }
+  function saveKnownPeers() {
+    try { localStorage.setItem(LS_KNOWN_PEERS, JSON.stringify(Array.from(knownPeers))); } catch(e) {}
+  }
+  function addKnownPeer(id) {
+    if (!id || id === myPeerId) return;
+    if (knownPeers.has(id)) return;
+    knownPeers.add(id);
+    saveKnownPeers();
   }
 
   /* ── Fake-RAM update ───────────────────────────────────────────── */
@@ -2529,6 +2545,34 @@ const SOCIAL = (() => {
     });
   }
 
+  function sendPeerList(conn) {
+    if (!conn || !conn.open) return;
+    const peers = Array.from(knownPeers).filter(id => id && id !== conn.peer);
+    if (peers.length === 0) return;
+    conn.send({ type: 'peer_list', peers });
+  }
+
+  function mergePeers(peers) {
+    if (!Array.isArray(peers)) return;
+    let added = 0;
+    peers.forEach(pid => {
+      if (!pid || pid === myPeerId) return;
+      if (!knownPeers.has(pid)) {
+        knownPeers.add(pid);
+        added++;
+      }
+    });
+    if (added) saveKnownPeers();
+    // Try to connect to any new peers (respecting max connections)
+    if (connections.size < MAX_CONNECTIONS) {
+      for (const pid of Array.from(knownPeers)) {
+        if (connections.size >= MAX_CONNECTIONS) break;
+        if (pid === myPeerId) continue;
+        if (!connections.has(pid)) connectToPeer(pid, { silent: true });
+      }
+    }
+  }
+
   function handleData(conn, data) {
     if (!data || !data.type) return;
     switch (data.type) {
@@ -2557,6 +2601,15 @@ const SOCIAL = (() => {
         if (newCount > 0) renderFeed();
         break;
       }
+      case 'peer_list_request': {
+        // Peer wants our list of known peers
+        sendPeerList(conn);
+        break;
+      }
+      case 'peer_list': {
+        mergePeers(data.peers || []);
+        break;
+      }
     }
   }
 
@@ -2565,7 +2618,10 @@ const SOCIAL = (() => {
       connections.set(conn.peer, conn);
       renderConnList();
       updateFakeRam();
-      // Exchange posts
+      addKnownPeer(conn.peer);
+      // Exchange peer list and posts
+      sendPeerList(conn);
+      conn.send({ type: 'peer_list_request' });
       conn.send({ type: 'sync_req' });
       toast('', 'Social', `Connected to ${conn.peer.slice(0,8)}…`);
     });
@@ -2583,10 +2639,12 @@ const SOCIAL = (() => {
     });
   }
 
-  function connectToPeer(peerId) {
+  function connectToPeer(peerId, {silent=false} = {}) {
     if (!peer || !peerId) return;
-    if (connections.has(peerId)) { toast('','Social','Already connected to this peer'); return; }
-    if (connections.size >= MAX_CONNECTIONS) { toast('','Social','Max connections reached (RAM limit)'); return; }
+    if (peerId === myPeerId) return;
+    if (connections.has(peerId)) { if (!silent) toast('','Social','Already connected to this peer'); return; }
+    if (connections.size >= MAX_CONNECTIONS) { if (!silent) toast('','Social','Max connections reached (RAM limit)'); return; }
+    addKnownPeer(peerId);
     const conn = peer.connect(peerId, { reliable: true });
     setupConn(conn);
   }
@@ -2600,6 +2658,9 @@ const SOCIAL = (() => {
   }
 
   function initPeer(statusEl, peerIdEl) {
+    // Load known peers from storage, used to auto-expand the mesh
+    knownPeers = new Set(loadKnownPeers());
+
     // Check if PeerJS is loaded
     if (typeof Peer === 'undefined') {
       if (statusEl) statusEl.textContent = 'PeerJS not loaded. Check network.';
@@ -2614,6 +2675,10 @@ const SOCIAL = (() => {
       savePeerId(id);
       if (peerIdEl) peerIdEl.textContent = id;
       if (statusEl) { statusEl.textContent = 'Online'; statusEl.style.color = '#28c840'; }
+      // Auto-connect to known peers (mesh expansion)
+      knownPeers.forEach(kid => {
+        if (kid && kid !== myPeerId) connectToPeer(kid, { silent: true });
+      });
     });
     peer.on('connection', conn => {
       if (connections.size >= MAX_CONNECTIONS) { conn.close(); return; }
