@@ -550,6 +550,7 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 
 <div id="ctx"></div>
 <div id="toasts"></div>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 'use strict';
@@ -706,7 +707,16 @@ function loadAutoSave(){
 const CHANGELOG=`HueBit OS — Changelog
 ═════════════════════
 
-[v1.4.5] - Latest
+[v1.4.5b] - Latest
+
+- Fixed: VS Code File menu behavior. 
+  “Import…” now correctly handles loading files from the user’s PC into the mini-OS.
+  “Open File…” now properly opens files from the OS virtual filesystem.
+
+- Fixed: VS Code Open dialog now uses the built-in mini-OS file browser instead of accessing the real hard drive.
+- Misc: polish for file dialogs, updated changelog system.
+
+[v1.4.5]
 
 - Added bootloader stage: black terminal-style boot log, system validation, logo splash, then lock screen.
 - Added safe boot retry logic: if boot crashes, it retries once and then halts with a clear error message.
@@ -856,6 +866,78 @@ function openFileInEditor(name,content,fsPath){const uid='ed_'+name.replace(/\W/
 function openFileInVSCode(name,content,fsPath){const uid='vsc_'+name.replace(/\W/g,'_')+'_'+Date.now();const{content:html,onMount}=buildVSCode({filename:name,initial:content,fsPath});WM.create({id:uid,title:name+' - VS Code',width:900,height:650,content:html,onMount,imgSrc:APPS_CFG.vscode.img,iconKey:'vscode'});}
 
 function showSaveDialog(defaultName,getContent,onSaved){const dirs=Object.entries(FS['/'].children).filter(([,v])=>v.type==='dir').map(([k])=>k);const ov=document.createElement('div');ov.className='save-overlay';ov.innerHTML=`<div class="save-modal"><div class="save-modal-hd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save As</div><div class="save-modal-body"><div class="save-label">Save to folder</div><div class="save-folders">${dirs.map(d=>`<div class="save-folder-btn${d==='Documents'?' active':''}" data-d="${d}">${SI.folder} ${d}</div>`).join('')}</div><div class="save-label" style="margin-top:10px">File name</div><input class="save-input" id="sav-fname" value="${defaultName}" autocomplete="off" spellcheck="false"></div><div class="save-modal-ft"><button class="save-action cancel" id="sav-cancel">Cancel</button><button class="save-action confirm" id="sav-ok">Save</button></div></div>`;document.body.appendChild(ov);let selDir='Documents';ov.querySelectorAll('.save-folder-btn').forEach(b=>b.addEventListener('click',()=>{ov.querySelectorAll('.save-folder-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');selDir=b.dataset.d;}));ov.querySelector('#sav-cancel').onclick=()=>ov.remove();ov.querySelector('#sav-ok').onclick=()=>{const fname=ov.querySelector('#sav-fname').value.trim();if(!fname)return;const parent=fsGet('/'+selDir);if(parent?.children){parent.children[fname]={type:'file',icon:'file_txt',content:getContent()};if(selDir==='Desktop')renderDesktopFsIcons();onSaved?.(selDir,fname);toast('','Saved',`"${fname}" saved to /${selDir}`);autoSave();}ov.remove();};ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});setTimeout(()=>ov.querySelector('#sav-fname').select(),80);}
+
+function showOpenDialog(onSelected){
+  const ov=document.createElement('div');
+  ov.className='save-overlay';
+  ov.innerHTML=`<div class="save-modal"><div class="save-modal-hd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px"><path d="M3 7h18M7 7v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>Open File</div><div class="save-modal-body"><div class="save-label">Location</div><div class="open-path" id="open-path" style="font-size:12px;padding:4px 10px;background:rgba(0,0,0,0.1);border-radius:4px;margin-bottom:10px"></div><div class="open-files" id="open-files" style="max-height:260px;overflow:auto"></div></div><div class="save-modal-ft"><button class="save-action cancel" id="open-cancel">Cancel</button><button class="save-action confirm" id="open-ok">Open</button></div></div>`;
+  document.body.appendChild(ov);
+
+  let cwd='/';
+  let sel=null;
+
+  const fileListEl = ov.querySelector('#open-files');
+  const pathEl = ov.querySelector('#open-path');
+  const okBtn = ov.querySelector('#open-ok');
+
+  const render = () => {
+    const node = fsGet(cwd);
+    const entries = node?.children ? Object.entries(node.children) : [];
+    const segs = cwd==='/'?['/']: cwd.split('/').filter(Boolean);
+    pathEl.textContent = segs.join('/') || '/';
+    fileListEl.innerHTML = '';
+    const sorted = entries.filter(([,v])=>v).sort(([a,av],[b,bv])=>{
+      if(av.type!==bv.type) return av.type==='dir'?-1:1;
+      return a.localeCompare(b);
+    });
+    if(sorted.length===0){
+      fileListEl.innerHTML = '<div style="padding:14px;color:rgba(255,255,255,0.55);">(empty folder)</div>';
+    }
+    sorted.forEach(([name,item])=>{
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .12s;';
+      el.onmouseenter = () => el.style.background='rgba(255,255,255,0.08)';
+      el.onmouseleave = () => el.style.background='';
+      const icon = document.createElement('div');
+      icon.style.width='24px'; icon.style.height='24px';
+      icon.innerHTML = item.type==='dir'?SI.folder:SI.file;
+      const text = document.createElement('div');
+      text.style.flex='1';
+      text.style.fontSize='13px';
+      text.textContent = name;
+      el.appendChild(icon);
+      el.appendChild(text);
+      el.onclick = () => {
+        fileListEl.querySelectorAll('div').forEach(x=>x.style.background='');
+        el.style.background='rgba(0,122,204,0.18)';
+        sel = {name, item};
+      };
+      el.ondblclick = () => {
+        if(item.type==='dir'){
+          cwd = cwd==='/'?`/${name}`:`${cwd}/${name}`;
+          sel = null;
+          render();
+        } else {
+          openSelected();
+        }
+      };
+      fileListEl.appendChild(el);
+    });
+  };
+
+  const openSelected = () => {
+    if(!sel || sel.item.type!=='file') return;
+    const fullPath = cwd==='/'?`/${sel.name}`:`${cwd}/${sel.name}`;
+    onSelected(fullPath, sel.name, sel.item.content);
+    ov.remove();
+  };
+
+  ov.querySelector('#open-cancel').onclick = () => ov.remove();
+  okBtn.onclick = openSelected;
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+
+  render();
+}
 
 // ── FILE EXPLORER ────────────────────────────────────────────────
 function buildExplorer(opts){
@@ -1092,7 +1174,7 @@ function buildVSCode(opts){
       <div class="menu-item" data-menu="terminal">Terminal</div>
       <div class="menu-item" data-menu="help">Help</div>
     </div>
-    <div id="vsc-file-dd"   class="vsc-dd" style="display:none"><div data-a="new">New File</div><div data-a="open">Open File…</div><div data-a="save">Save &nbsp;<span style="opacity:.4">Ctrl+S</span></div><div data-a="saveas">Save As…</div><div data-a="export">Export / Download</div></div>
+    <div id="vsc-file-dd"   class="vsc-dd" style="display:none"><div data-a="new">New File</div><div data-a="open">Open File…</div><div data-a="import">Import…</div><div data-a="save">Save &nbsp;<span style="opacity:.4">Ctrl+S</span></div><div data-a="saveas">Save As…</div><div data-a="export">Export / Download</div></div>
     <div id="vsc-edit-dd"   class="vsc-dd" style="display:none"><div data-a="copy">Copy</div><div data-a="paste">Paste</div><div data-a="selectall">Select All</div><div data-a="find">Find…</div></div>
     <div id="vsc-view-dd"   class="vsc-dd" style="display:none"><div data-a="sidebar">Toggle Sidebar</div><div data-a="toggleterm">Toggle Terminal</div></div>
     <div id="vsc-run-dd"    class="vsc-dd" style="display:none"><div data-a="runcode">${SI.playSmall}Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
@@ -1189,7 +1271,21 @@ function buildVSCode(opts){
     const toggleTerm = () => term.style.display === 'flex' ? hideTerm() : showTerm();
 
     // ── run code ────────────────────────────────────
-    const runCode = () => {
+    let pyodide = null;
+    let pyodideReady = null;
+    let pyOutput = [];
+
+    function initPyodide(){
+      if(pyodideReady) return pyodideReady;
+      pyodideReady = (async () => {
+        if(typeof loadPyodide !== 'function') throw new Error('Pyodide not loaded');
+        pyodide = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/'});
+        return pyodide;
+      })();
+      return pyodideReady;
+    }
+
+    async function runCode(){
       showTerm();
       termOut.innerHTML = '';
       const code = ta.value;
@@ -1199,9 +1295,14 @@ function buildVSCode(opts){
 
       if(ext === 'py'){
         try {
-          const out = simplePythonRun(code);
-          (out||'(no output)').split('\n').forEach(l => tPrint(l));
-        } catch(e){ tPrint('Error: ' + e.message, '#f48771'); }
+          await initPyodide();
+          pyOutput = [];
+          pyodide.setStdout({batched:true, stdout:s=>{ if(s) pyOutput.push(s); }});
+          pyodide.setStderr({batched:true, stderr:s=>{ if(s) pyOutput.push(s); }});
+          await pyodide.runPythonAsync(code);
+          if(pyOutput.length === 0) tPrint('(no output)');
+          else pyOutput.forEach(l => tPrint(l));
+        } catch(e){ tPrint('Python error: ' + (e?.message||String(e)), '#f48771'); }
       }
       else if(ext === 'js'){
         const logs = [];
@@ -1251,12 +1352,31 @@ function buildVSCode(opts){
     const doNew = () => setFile('untitled.txt', '', null);
 
     const doOpen = () => {
+      showOpenDialog((path,name,content) => {
+        setFile(name, content, path);
+      });
+    };
+
+    const doImport = () => {
       const inp = document.createElement('input');
       inp.type = 'file';
       inp.onchange = e => {
         const f = e.target.files[0]; if(!f) return;
         const r = new FileReader();
-        r.onload = ev => setFile(f.name, ev.target.result, null);
+        r.onload = ev => {
+          const text = ev.target.result;
+        let targetDir = fsGet('/Documents');
+        if(!targetDir){
+          FS['/'].children = FS['/'].children || {};
+          FS['/'].children['Documents'] = {type:'dir',icon:'folder',children:{}};
+          targetDir = FS['/'].children['Documents'];
+        }
+        targetDir.children = targetDir.children || {};
+        targetDir.children[f.name] = {type:'file', icon:'file_txt', content:text};
+        autoSave();
+        toast('','Imported',`"${f.name}" imported into /Documents`);
+        setFile(f.name, text, '/Documents/'+f.name);
+        };
         r.readAsText(f);
       };
       inp.click();
@@ -1383,6 +1503,20 @@ function buildVSCode(opts){
       else if(cmd==='help')  { tPrint('Commands: run, clear, ls, pwd, help', '#4ec9b0'); }
       else if(cmd==='pwd')   { tPrint('/'); }
       else if(cmd==='ls')    { const n=fsGet('/');if(n?.children)Object.keys(n.children).forEach(k=>tPrint('  '+k)); }
+      else if(cmd.startsWith('python')){
+        const code = cmd.replace(/^python\s+/, '');
+        (async () => {
+          try {
+            await initPyodide();
+            pyOutput = [];
+            pyodide.setStdout({batched:true, stdout:s=>{ if(s) pyOutput.push(s); }});
+            pyodide.setStderr({batched:true, stderr:s=>{ if(s) pyOutput.push(s); }});
+            await pyodide.runPythonAsync(code);
+            if(pyOutput.length===0) tPrint('(no output)');
+            else pyOutput.forEach(l=>tPrint(l));
+          } catch(e) { tPrint('Python error: ' + (e?.message||String(e)), '#f48771'); }
+        })();
+      }
       else { tPrint(`"${cmd}": not found. Type help.`, '#f48771'); }
       termOut.scrollTop = termOut.scrollHeight;
     });
@@ -1431,6 +1565,7 @@ function buildVSCode(opts){
         switch(item.dataset.a){
           case 'new':        doNew(); break;
           case 'open':       doOpen(); break;
+          case 'import':     doImport(); break;
           case 'save':       doSave(); break;
           case 'saveas':     doSaveAs(); break;
           case 'export':     doExport(); break;
