@@ -821,7 +821,12 @@ function fsGet(path){if(!path||path==='/')return FS['/'];const parts=path.replac
 const FS_CHANGE_LISTENERS=new Set();
 function onFsChange(fn){FS_CHANGE_LISTENERS.add(fn);return()=>FS_CHANGE_LISTENERS.delete(fn);}
 function emitFsChange(path){for(const fn of FS_CHANGE_LISTENERS)try{fn(path);}catch(e){}}
-function fsWriteFile(path,content,icon='file_txt'){const node=fsGet(path);if(node&&node.type==='file'){node.content=content;}else{const parts=path.replace(/^\/+/,'').split('/').filter(Boolean);const fname=parts.pop();let cur=FS['/'];for(const seg of parts){if(!cur.children)cur.children={};if(!cur.children[seg])cur.children[seg]={type:'dir',children:{}};cur=cur.children[seg];}cur.children=fcur=cur.children||{};fcur[fname]={type:'file',icon,content};}emitFsChange(path);}
+function fsWriteFile(path,content,icon='file_txt'){const node=fsGet(path);if(node&&node.type==='file'){node.content=content;}else{const parts=path.replace(/^\/+/,'').split('/').filter(Boolean);const fname=parts.pop();let cur=FS['/'];for(const seg of parts){if(!cur.children)cur.children={};if(!cur.children[seg])cur.children[seg]={type:'dir',children:{}};cur=cur.children[seg];}
+    const fcur = cur.children || (cur.children = {});
+    fcur[fname] = {type:'file',icon,content};
+  }
+  emitFsChange(path);
+}
 
 const IMG_EXT=['jpg','jpeg','png','gif','webp','bmp','svg'];
 const VID_EXT=['mp4','webm','ogv','mov'];
