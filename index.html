@@ -14,6 +14,7 @@
   --radius:14px;--taskbar-h:60px;
 }
 html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:#040608;user-select:none}
+#vsc-termout,.term-out{user-select:text;cursor:text}
 ::selection{background:rgba(91,138,245,0.4)}
 *::-webkit-scrollbar{width:5px;height:5px}
 *::-webkit-scrollbar-track{background:transparent}
@@ -709,11 +710,12 @@ const CHANGELOG=`HueBit OS — Changelog
 
 [v1.4.5b] - Latest
 
-- Fixed: VS Code File menu behavior. 
-  “Import…” now correctly handles loading files from the user’s PC into the mini-OS.
-  “Open File…” now properly opens files from the OS virtual filesystem.
-
-- Fixed: VS Code Open dialog now uses the built-in mini-OS file browser instead of accessing the real hard drive.
+- Fixed: VS Code File menu behavior.
+  “Import…” now correctly loads files from your PC into the mini-OS.
+  “Open File…” now opens files from the OS virtual filesystem (no more "undefined" icons).
+- Fixed: Open dialog shows a clear error when a file can’t be loaded (binary/unsupported files), and keeps the previous file open.
+- Added: real-time sync between editors — saving a file in the Text Editor now updates it in VS Code when open and not dirty.
+- Improved: VS Code terminal now shares the same shell backend as the system terminal (same commands, selectable output, full history, and better multiline tracebacks).
 - Misc: polish for file dialogs, updated changelog system.
 
 [v1.4.5]
@@ -816,6 +818,11 @@ const FS={'/':{type:'dir',children:{
 
 function fsGet(path){if(!path||path==='/')return FS['/'];const parts=path.replace(/^\/+/,'').split('/').filter(Boolean);let n=FS['/'];for(const p of parts){if(!n?.children?.[p])return null;n=n.children[p];}return n;}
 
+const FS_CHANGE_LISTENERS=new Set();
+function onFsChange(fn){FS_CHANGE_LISTENERS.add(fn);return()=>FS_CHANGE_LISTENERS.delete(fn);}
+function emitFsChange(path){for(const fn of FS_CHANGE_LISTENERS)try{fn(path);}catch(e){}}
+function fsWriteFile(path,content,icon='file_txt'){const node=fsGet(path);if(node&&node.type==='file'){node.content=content;}else{const parts=path.replace(/^\/+/,'').split('/').filter(Boolean);const fname=parts.pop();let cur=FS['/'];for(const seg of parts){if(!cur.children)cur.children={};if(!cur.children[seg])cur.children[seg]={type:'dir',children:{}};cur=cur.children[seg];}cur.children=fcur=cur.children||{};fcur[fname]={type:'file',icon,content};}emitFsChange(path);}
+
 const IMG_EXT=['jpg','jpeg','png','gif','webp','bmp','svg'];
 const VID_EXT=['mp4','webm','ogv','mov'];
 const AUD_EXT=['mp3','wav','ogg','flac','aac','m4a'];
@@ -831,7 +838,7 @@ const WM=(()=>{
   const el=id=>document.getElementById('win_'+id);
   function focus(id){if(active===id)return;if(active){el(active)?.classList.remove('focused');document.querySelector(`.tb-app[data-wid="${active}"]`)?.classList.remove('active');}active=id;const e=el(id);if(!e)return;e.style.zIndex=++z;e.classList.add('focused');document.querySelector(`.tb-app[data-wid="${id}"]`)?.classList.add('active');}
   function create({id,title,width,height,content,onMount,imgSrc,iconKey}){if(wins.has(id)){const s=wins.get(id);s.minimized?restore(id):focus(id);return;}const off=(wins.size%8)*28;const L=Math.max(20,(window.innerWidth-width)/2+off);const T=Math.max(10,(window.innerHeight-height)/2+off);const e=document.createElement('div');e.className='window';e.id='win_'+id;e.style.cssText=`left:${L}px;top:${T}px;width:${width}px;height:${height}px;z-index:${++z}`;const iH=imgSrc?`<div class="win-icon-sm"><img src="${imgSrc}" onerror="this.style.display='none'" alt=""></div>`:(ICO[iconKey]?`<div class="win-icon-sm" style="width:17px;height:17px">${ICO[iconKey]()}</div>`:'');e.innerHTML=`<div class="win-titlebar"><div class="traffic"><button class="tb cl"></button><button class="tb mn"></button><button class="tb mx"></button></div>${iH}<div class="win-title">${title}</div></div><div class="win-body">${content}</div><div class="rh n"></div><div class="rh s"></div><div class="rh e"></div><div class="rh w"></div><div class="rh se"></div><div class="rh sw"></div><div class="rh ne"></div><div class="rh nw"></div>`;e.style.opacity='0';e.style.transform='scale(0.9)translateY(18px)';document.body.appendChild(e);wins.set(id,{minimized:false,maximized:false,saved:null});requestAnimationFrame(()=>{e.style.transition='opacity .25s ease,transform .32s cubic-bezier(.2,1.2,.3,1)';e.style.opacity='1';e.style.transform='scale(1)translateY(0)';setTimeout(()=>e.style.transition='',380);});const[cl,mn,mx]=e.querySelectorAll('.tb');cl.onclick=ev=>{ev.stopPropagation();close(id);};mn.onclick=ev=>{ev.stopPropagation();minimize(id);};mx.onclick=ev=>{ev.stopPropagation();toggleMax(id);};e.querySelector('.win-titlebar').addEventListener('dblclick',ev=>{if(!ev.target.classList.contains('tb'))toggleMax(id);});e.addEventListener('mousedown',ev=>{if(!ev.target.classList.contains('tb'))focus(id);});_drag(e,e.querySelector('.win-titlebar'),id);e.querySelectorAll('.rh').forEach(h=>_resize(e,h,id));_addTb(id,title,imgSrc,iconKey);focus(id);if(onMount)setTimeout(()=>onMount(e),14);}
-  function close(id){const e=el(id);if(!e)return;e.style.transition='opacity .2s ease,transform .22s ease';e.style.opacity='0';e.style.transform='scale(0.88)translateY(18px)';setTimeout(()=>{e.remove();wins.delete(id);_removeTb(id);if(active===id)active=null;},220);}
+  function close(id){const e=el(id);if(!e)return;e.__onFsChange?.();e.style.transition='opacity .2s ease,transform .22s ease';e.style.opacity='0';e.style.transform='scale(0.88)translateY(18px)';setTimeout(()=>{e.remove();wins.delete(id);_removeTb(id);if(active===id)active=null;},220);}
   function minimize(id){const e=el(id),s=wins.get(id);if(!e||!s)return;s.minimized=true;e.style.transition='opacity .22s ease,transform .25s cubic-bezier(.4,0,.6,1)';e.style.opacity='0';e.style.transform='scale(0.5)translateY(220px)';setTimeout(()=>e.style.visibility='hidden',260);document.querySelector(`.tb-app[data-wid="${id}"]`)?.classList.remove('active');if(active===id)active=null;}
   function restore(id){const e=el(id),s=wins.get(id);if(!e||!s)return;s.minimized=false;e.style.visibility='visible';e.style.opacity='0';e.style.transform='scale(0.82)translateY(40px)';requestAnimationFrame(()=>{e.style.transition='opacity .25s ease,transform .32s cubic-bezier(.2,1.2,.3,1)';e.style.opacity='1';e.style.transform='scale(1)translateY(0)';setTimeout(()=>e.style.transition='',360);});focus(id);}
   function toggleMax(id){const e=el(id),s=wins.get(id);if(!e||!s)return;e.style.transition='all .3s cubic-bezier(.2,1,.3,1)';if(!s.maximized){s.saved={l:e.style.left,t:e.style.top,w:e.style.width,h:e.style.height};e.style.left='0';e.style.top='0';e.style.width='100vw';e.style.height='100vh';e.classList.add('maximized');s.maximized=true;}else{const r=s.saved;e.style.left=r.l;e.style.top=r.t;e.style.width=r.w;e.style.height=r.h;e.classList.remove('maximized');s.maximized=false;}setTimeout(()=>e.style.transition='',320);}
@@ -865,7 +872,7 @@ function routeOpen(name,item,cwd){const ext=name.split('.').pop().toLowerCase();
 function openFileInEditor(name,content,fsPath){const uid='ed_'+name.replace(/\W/g,'_')+'_'+Date.now();const{content:html,onMount}=buildNotepad({filename:name,initial:content,fsPath});WM.create({id:uid,title:name,width:640,height:460,content:html,onMount,imgSrc:APPS_CFG.notepad.img,iconKey:'notepad'});}
 function openFileInVSCode(name,content,fsPath){const uid='vsc_'+name.replace(/\W/g,'_')+'_'+Date.now();const{content:html,onMount}=buildVSCode({filename:name,initial:content,fsPath});WM.create({id:uid,title:name+' - VS Code',width:900,height:650,content:html,onMount,imgSrc:APPS_CFG.vscode.img,iconKey:'vscode'});}
 
-function showSaveDialog(defaultName,getContent,onSaved){const dirs=Object.entries(FS['/'].children).filter(([,v])=>v.type==='dir').map(([k])=>k);const ov=document.createElement('div');ov.className='save-overlay';ov.innerHTML=`<div class="save-modal"><div class="save-modal-hd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save As</div><div class="save-modal-body"><div class="save-label">Save to folder</div><div class="save-folders">${dirs.map(d=>`<div class="save-folder-btn${d==='Documents'?' active':''}" data-d="${d}">${SI.folder} ${d}</div>`).join('')}</div><div class="save-label" style="margin-top:10px">File name</div><input class="save-input" id="sav-fname" value="${defaultName}" autocomplete="off" spellcheck="false"></div><div class="save-modal-ft"><button class="save-action cancel" id="sav-cancel">Cancel</button><button class="save-action confirm" id="sav-ok">Save</button></div></div>`;document.body.appendChild(ov);let selDir='Documents';ov.querySelectorAll('.save-folder-btn').forEach(b=>b.addEventListener('click',()=>{ov.querySelectorAll('.save-folder-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');selDir=b.dataset.d;}));ov.querySelector('#sav-cancel').onclick=()=>ov.remove();ov.querySelector('#sav-ok').onclick=()=>{const fname=ov.querySelector('#sav-fname').value.trim();if(!fname)return;const parent=fsGet('/'+selDir);if(parent?.children){parent.children[fname]={type:'file',icon:'file_txt',content:getContent()};if(selDir==='Desktop')renderDesktopFsIcons();onSaved?.(selDir,fname);toast('','Saved',`"${fname}" saved to /${selDir}`);autoSave();}ov.remove();};ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});setTimeout(()=>ov.querySelector('#sav-fname').select(),80);}
+function showSaveDialog(defaultName,getContent,onSaved){const dirs=Object.entries(FS['/'].children).filter(([,v])=>v.type==='dir').map(([k])=>k);const ov=document.createElement('div');ov.className='save-overlay';ov.innerHTML=`<div class="save-modal"><div class="save-modal-hd"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save As</div><div class="save-modal-body"><div class="save-label">Save to folder</div><div class="save-folders">${dirs.map(d=>`<div class="save-folder-btn${d==='Documents'?' active':''}" data-d="${d}">${SI.folder} ${d}</div>`).join('')}</div><div class="save-label" style="margin-top:10px">File name</div><input class="save-input" id="sav-fname" value="${defaultName}" autocomplete="off" spellcheck="false"></div><div class="save-modal-ft"><button class="save-action cancel" id="sav-cancel">Cancel</button><button class="save-action confirm" id="sav-ok">Save</button></div></div>`;document.body.appendChild(ov);let selDir='Documents';ov.querySelectorAll('.save-folder-btn').forEach(b=>b.addEventListener('click',()=>{ov.querySelectorAll('.save-folder-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');selDir=b.dataset.d;}));ov.querySelector('#sav-cancel').onclick=()=>ov.remove();ov.querySelector('#sav-ok').onclick=()=>{const fname=ov.querySelector('#sav-fname').value.trim();if(!fname)return;const fullPath='/'+selDir+'/'+fname;fsWriteFile(fullPath,getContent());if(selDir==='Desktop')renderDesktopFsIcons();onSaved?.(selDir,fname);toast('','Saved',`"${fname}" saved to /${selDir}`);autoSave();ov.remove();};ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});setTimeout(()=>ov.querySelector('#sav-fname').select(),80);}
 
 function showOpenDialog(onSelected){
   const ov=document.createElement('div');
@@ -900,7 +907,8 @@ function showOpenDialog(onSelected){
       el.onmouseleave = () => el.style.background='';
       const icon = document.createElement('div');
       icon.style.width='24px'; icon.style.height='24px';
-      icon.innerHTML = item.type==='dir'?SI.folder:SI.file;
+      const iconKey = item.icon || (item.type==='dir' ? 'folder' : 'file_txt');
+      icon.innerHTML = (SI[iconKey] || SI.fileGeneric);
       const text = document.createElement('div');
       text.style.flex='1';
       text.style.fontSize='13px';
@@ -927,6 +935,10 @@ function showOpenDialog(onSelected){
 
   const openSelected = () => {
     if(!sel || sel.item.type!=='file') return;
+    if(sel.item.content===null||sel.item.content===undefined){
+      toast('','Unable to open',`Could not load "${sel.name}" (unsupported or missing content).`);
+      return;
+    }
     const fullPath = cwd==='/'?`/${sel.name}`:`${cwd}/${sel.name}`;
     onSelected(fullPath, sel.name, sel.item.content);
     ov.remove();
@@ -1062,16 +1074,13 @@ function buildNotepad(opts){
       if(!cur) return;
       cur.content=ta.value;
       if(cur.fsPath){
-        const parts=cur.fsPath.replace(/^\/+/,'').split('/').filter(Boolean);
-        const fname=parts.pop(), parent=fsGet('/'+parts.join('/'));
-        if(parent?.children?.[fname]){
-          parent.children[fname].content=ta.value;
-          cur.dirty=false; cur._savedContent=ta.value;
-          renderTabs(); toast('','Saved',`"${fname}" updated.`); return;
-        }
+        fsWriteFile(cur.fsPath, ta.value);
+        cur.dirty=false; cur._savedContent=ta.value;
+        renderTabs(); toast('','Saved',`"${cur.fsPath.split('/').pop()}" updated.`); return;
       }
       showSaveDialog(cur.name,()=>ta.value,(dir,name)=>{
         cur.fsPath='/'+dir+'/'+name;
+        fsWriteFile(cur.fsPath, ta.value);
         cur.name=name; cur.dirty=false; cur._savedContent=ta.value;
         fnEl.textContent=name; renderTabs();
       });
@@ -1156,6 +1165,88 @@ function simplePythonRun(code){
     // skip unsupported
   }
   return output||'(no output)';
+}
+
+// ── SHARED TERMINAL SHELL ─────────────────────────────────────────
+function createShell(outEl, inputEl, onPrompt, extraCmds){
+  let cwd='/', hist=[], hi=-1;
+  const ln = (text, cls='') => {
+    const d = document.createElement('div');
+    if(cls) d.className = 'term-line '+cls;
+    d.textContent = text;
+    outEl.appendChild(d);
+    outEl.scrollTop = outEl.scrollHeight;
+  };
+  const lnh = (html) => {
+    const d = document.createElement('div');
+    d.className = 'term-line';
+    d.innerHTML = html;
+    outEl.appendChild(d);
+    outEl.scrollTop = outEl.scrollHeight;
+  };
+  const getPrompt = () => {
+    if(typeof onPrompt === 'function') return onPrompt(cwd);
+    return '$ ';
+  };
+  const updatePrompt = () => { getPrompt(); };
+
+  const CMD = {
+    help(){ lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');
+      [['help','Show help'],['ls','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['run','Run current file'],['python [code]','Run Python'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));
+    },
+    ls(){CMD.dir();},
+    dir(){const n=fsGet(cwd);if(!n?.children){ln('Not a directory','err');return;}const e=Object.entries(n.children);if(!e.length){ln('(empty)','info');return;}e.forEach(([nm,it])=>lnh(`  ${it.type==='dir'?`<span style="color:#5b8af5">${SI.folder} ${nm}/</span>`:`<span style="color:rgba(255,255,255,0.75)">${SI.fileGeneric} ${nm}</span>`}`));ln(`<span style="color:rgba(255,255,255,0.3)">  ${e.length} item${e.length!==1?'s':''}</span>`);},
+    cd(a){const t=a[0];if(!t||t==='~'){cwd='/';updatePrompt();return;}if(t==='..'){cwd=cwd.split('/').slice(0,-1).join('/')||'/';updatePrompt();return;}const np=t.startsWith('/')?t:(cwd==='/'?'/'+t:cwd+'/'+t);const n=fsGet(np);if(!n)ln(`cd: ${t}: No such file or directory`,'err');else if(n.type!=='dir')ln(`cd: ${t}: Not a directory`,'err');else{cwd=np;updatePrompt();}},
+    pwd(){ln(cwd);},
+    clear(){init();},
+    echo(a){ln(a.join(' '));},
+    whoami(){ln('user  [uid=1000  groups=admin,users]');},
+    date(){ln(new Date().toString());},
+    uname(){ln('HueBit OS 1.4.5 (HTML5/JS) x86_64');},
+    history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
+    cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
+    mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
+    touch(a){if(!a[0]){ln('Usage: touch <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'file',icon:'file_txt',content:''};ln(`Created '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();autoSave();}},
+    rm(a){if(!a[0]){ln('Usage: rm <n>','err');return;}const p=fsGet(cwd);if(p?.children?.[a[0]]){delete p.children[a[0]];ln(`Removed '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();autoSave();}else ln(`rm: ${a[0]}: No such file`,'err');},
+    open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
+    python(a){if(!a[0]){ln('Usage: python <code>','err');return;}try{const r=simplePythonRun(a.join(' '));r.split('\n').forEach(l=>ln(l));}catch(e){ln('Error: '+e.message,'err');}},
+    calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
+    neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.5','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
+  };
+  Object.assign(CMD, extraCmds||{});
+
+  const init = () => {
+    outEl.innerHTML='';
+    updatePrompt();
+    ln('HueBit Shell  v1.4.5','acc');
+    ln('Type "help" for commands.','info');
+    ln('');
+  };
+
+  const run = (raw) => {
+    if(!raw) return;
+    hist.unshift(raw);
+    hi = -1;
+    lnh(`<span style="color:#5b8af5">${getPrompt()}</span><span style="color:#a0c8ff">${raw}</span>`);
+    const [c,...a] = raw.trim().split(/\s+/);
+    if(CMD[c]) CMD[c](a);
+    else ln(`${c}: command not found (try "help")`,'err');
+  };
+
+  const onKey = (e) => {
+    if(e.key==='Enter'){ const r=inputEl.value.trim(); if(!r) return; run(r); inputEl.value=''; }
+    else if(e.key==='ArrowUp'){ hi=Math.min(hi+1,hist.length-1); inputEl.value=hist[hi]||''; e.preventDefault(); }
+    else if(e.key==='ArrowDown'){ hi=Math.max(hi-1,-1); inputEl.value=hi=== -1?'':hist[hi]; e.preventDefault(); }
+    else if(e.key==='Tab'){ e.preventDefault(); const pts=inputEl.value.split(' '); const part=pts.pop(); const n=fsGet(cwd); if(n?.children){ const m=Object.keys(n.children).filter(k=>k.startsWith(part)); if(m.length===1){ pts.push(m[0]); inputEl.value=pts.join(' ')+' '; } } }
+    else if(e.key==='c'&&e.ctrlKey){ ln('^C','info'); inputEl.value=''; }
+  };
+
+  if(inputEl) inputEl.addEventListener('keydown', onKey);
+  outEl.addEventListener('click',()=>{ if(inputEl) inputEl.focus(); });
+
+  init();
+
+  return { run, clear: init };
 }
 
 // ── VS CODE LIGHT EDITOR ──────────────────────────────────────────
@@ -1274,6 +1365,7 @@ function buildVSCode(opts){
     let pyodide = null;
     let pyodideReady = null;
     let pyOutput = [];
+    let vscShell = null;
 
     function initPyodide(){
       if(pyodideReady) return pyodideReady;
@@ -1287,7 +1379,7 @@ function buildVSCode(opts){
 
     async function runCode(){
       showTerm();
-      termOut.innerHTML = '';
+      if(vscShell) vscShell.clear();
       const code = ta.value;
       const ext = currentFileName.split('.').pop().toLowerCase();
       tPrint(`> Running: ${currentFileName}`, '#569cd6');
@@ -1365,17 +1457,11 @@ function buildVSCode(opts){
         const r = new FileReader();
         r.onload = ev => {
           const text = ev.target.result;
-        let targetDir = fsGet('/Documents');
-        if(!targetDir){
-          FS['/'].children = FS['/'].children || {};
-          FS['/'].children['Documents'] = {type:'dir',icon:'folder',children:{}};
-          targetDir = FS['/'].children['Documents'];
-        }
-        targetDir.children = targetDir.children || {};
-        targetDir.children[f.name] = {type:'file', icon:'file_txt', content:text};
-        autoSave();
-        toast('','Imported',`"${f.name}" imported into /Documents`);
-        setFile(f.name, text, '/Documents/'+f.name);
+          const fullPath = '/Documents/'+f.name;
+          fsWriteFile(fullPath, text, 'file_txt');
+          autoSave();
+          toast('','Imported',`"${f.name}" imported into /Documents`);
+          setFile(f.name, text, fullPath);
         };
         r.readAsText(f);
       };
@@ -1384,16 +1470,12 @@ function buildVSCode(opts){
 
     const doSave = () => {
       if(savedFsPath){
-        const parts = savedFsPath.replace(/^\/+/,'').split('/').filter(Boolean);
-        const fname = parts.pop();
-        const parent = fsGet('/'+parts.join('/'));
-        if(parent?.children?.[fname]){
-          parent.children[fname].content = ta.value;
-          origContent = ta.value;
-          dirty.style.display = 'none';
-          toast('','Saved',`"${fname}" updated.`);
-          return;
-        }
+        fsWriteFile(savedFsPath, ta.value);
+        origContent = ta.value;
+        dirty.style.display = 'none';
+        const fname = savedFsPath.split('/').pop();
+        toast('','Saved',`"${fname}" updated.`);
+        return;
       }
       doSaveAs();
     };
@@ -1401,6 +1483,7 @@ function buildVSCode(opts){
     const doSaveAs = () => {
       showSaveDialog(currentFileName, () => ta.value, (dir, name) => {
         savedFsPath = '/'+dir+'/'+name;
+        fsWriteFile(savedFsPath, ta.value);
         currentFileName = name;
         origContent = ta.value;
         tabname.textContent = name;
@@ -1426,6 +1509,18 @@ function buildVSCode(opts){
       openPanel.appendChild(d);
     };
     updateOpenPanel();
+
+    const isDirty = () => dirty.style.display !== 'none';
+    const unsubscribeFs = onFsChange(changedPath => {
+      if(savedFsPath && changedPath === savedFsPath && !isDirty()){
+        const node = fsGet(changedPath);
+        if(node?.content !== undefined){
+          setFile(currentFileName, node.content, changedPath);
+          toast('','Reloaded',`"${currentFileName}" updated from disk.`);
+        }
+      }
+    });
+    win.__onFsChange = unsubscribeFs;
 
     // ── explorer panel ──────────────────────────────
     const buildTree = (path, container, depth) => {
@@ -1494,17 +1589,11 @@ function buildVSCode(opts){
     win.querySelector('#vsc-closetab').onclick = doNew;
 
     // ── terminal input ──────────────────────────────
-    termInp.addEventListener('keydown', e => {
-      if(e.key !== 'Enter') return;
-      const cmd = termInp.value.trim(); termInp.value='';
-      tPrint('$ '+cmd, '#569cd6');
-      if(cmd==='run')        { runCode(); }
-      else if(cmd==='clear') { termOut.innerHTML=''; }
-      else if(cmd==='help')  { tPrint('Commands: run, clear, ls, pwd, help', '#4ec9b0'); }
-      else if(cmd==='pwd')   { tPrint('/'); }
-      else if(cmd==='ls')    { const n=fsGet('/');if(n?.children)Object.keys(n.children).forEach(k=>tPrint('  '+k)); }
-      else if(cmd.startsWith('python')){
-        const code = cmd.replace(/^python\s+/, '');
+    vscShell = createShell(termOut, termInp, () => '$ ', {
+      run(){ runCode(); },
+      python(a){
+        if(!a[0]){ tPrint('Usage: python <code>', '#f48771'); return; }
+        const code = a.join(' ');
         (async () => {
           try {
             await initPyodide();
@@ -1517,8 +1606,6 @@ function buildVSCode(opts){
           } catch(e) { tPrint('Python error: ' + (e?.message||String(e)), '#f48771'); }
         })();
       }
-      else { tPrint(`"${cmd}": not found. Type help.`, '#f48771'); }
-      termOut.scrollTop = termOut.scrollHeight;
     });
 
     // ── dropdown menu system ────────────────────────
@@ -1576,9 +1663,9 @@ function buildVSCode(opts){
           case 'sidebar':    sidebar.style.display=sidebar.style.display==='none'?'flex':'none'; break;
           case 'toggleterm': toggleTerm(); break;
           case 'runcode':    runCode(); break;
-          case 'newterm':    termOut.innerHTML=''; showTerm(); break;
+          case 'newterm':    if(vscShell) vscShell.clear(); showTerm(); break;
           case 'tutorial':   showVscTutorial(); break;
-          case 'clearterm':  termOut.innerHTML=''; break;
+          case 'clearterm':  if(vscShell) vscShell.clear(); break;
         }
       });
     });
@@ -1842,39 +1929,7 @@ function buildTerminal(opts){
   const content=`<div class="term-wrap"><div class="term-out" id="tout"></div><div class="term-row"><span class="term-prompt" id="tprompt">user@huebit:~$&nbsp;</span><input class="term-in" id="tin" autocomplete="off" spellcheck="false"></div></div>`;
   function onMount(win){
     const out=win.querySelector('#tout'),inp=win.querySelector('#tin'),pEl=win.querySelector('#tprompt');
-    let cwd='/',hist=[],hi=-1;
-    const ln=(t,c='')=>{const d=document.createElement('div');d.className='term-line '+c;d.textContent=t;out.appendChild(d);out.scrollTop=out.scrollHeight;};
-    const lnh=h=>{const d=document.createElement('div');d.className='term-line';d.innerHTML=h;out.appendChild(d);out.scrollTop=out.scrollHeight;};
-    const upP=()=>{const s=cwd==='/'?'~':cwd.split('/').pop();pEl.textContent=`user@huebit:${s}$ `;};
-    ln('HueBit Shell  v1.4.5','acc');ln('Type "help" for commands.','info');ln('');
-    const CMD={
-      help(){lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');[['help','Show help'],['ls','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['whoami','User info'],['date','Date & time'],['uname','OS info'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['python [code]','Run Python'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:130px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));},
-      ls(){CMD.dir();},
-      dir(){const n=fsGet(cwd);if(!n?.children){ln('Not a directory','err');return;}const e=Object.entries(n.children);if(!e.length){ln('(empty)','info');return;}e.forEach(([nm,it])=>lnh(`  ${it.type==='dir'?`<span style="color:#5b8af5">${SI.folder} ${nm}/</span>`:`<span style="color:rgba(255,255,255,0.75)">${SI.fileGeneric} ${nm}</span>`}`));lnh(`<span style="color:rgba(255,255,255,0.3)">  ${e.length} item${e.length!==1?'s':''}</span>`);},
-      cd(a){const t=a[0];if(!t||t==='~'){cwd='/';upP();return;}if(t==='..'){cwd=cwd.split('/').slice(0,-1).join('/')||'/';upP();return;}const np=t.startsWith('/')?t:(cwd==='/'?'/'+t:cwd+'/'+t);const n=fsGet(np);if(!n)ln(`cd: ${t}: No such file or directory`,'err');else if(n.type!=='dir')ln(`cd: ${t}: Not a directory`,'err');else{cwd=np;upP();}},
-      pwd(){ln(cwd);},
-      clear(){out.innerHTML='';},
-      echo(a){ln(a.join(' '));},
-      whoami(){ln('user  [uid=1000  groups=admin,users]');},
-      date(){ln(new Date().toString());},
-      uname(){ln('HueBit OS 1.4.5 (HTML5/JS) x86_64');},
-      history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
-      cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
-      mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
-      touch(a){if(!a[0]){ln('Usage: touch <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'file',icon:'file_txt',content:''};ln(`Created '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();autoSave();}},
-      rm(a){if(!a[0]){ln('Usage: rm <n>','err');return;}const p=fsGet(cwd);if(p?.children?.[a[0]]){delete p.children[a[0]];ln(`Removed '${a[0]}'`,'ok');if(cwd==='/Desktop')renderDesktopFsIcons();autoSave();}else ln(`rm: ${a[0]}: No such file`,'err');},
-      open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
-      python(a){if(!a[0]){ln('Usage: python <code>','err');return;}try{const r=simplePythonRun(a.join(' '));r.split('\n').forEach(l=>ln(l));}catch(e){ln('Error: '+e.message,'err');}},
-      calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
-      neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.5','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
-    };
-    inp.addEventListener('keydown',e=>{
-      if(e.key==='Enter'){const r=inp.value.trim();if(!r)return;hist.unshift(r);hi=-1;lnh(`<span style="color:#5b8af5">${pEl.textContent}</span><span style="color:#a0c8ff">${r}</span>`);inp.value='';const[c,...a]=r.split(/\s+/);CMD[c]?CMD[c](a):ln(`${c}: command not found (try "help")`,'err');}
-      else if(e.key==='ArrowUp'){hi=Math.min(hi+1,hist.length-1);inp.value=hist[hi]||'';e.preventDefault();}
-      else if(e.key==='ArrowDown'){hi=Math.max(hi-1,-1);inp.value=hi===-1?'':hist[hi];e.preventDefault();}
-      else if(e.key==='Tab'){e.preventDefault();const pts=inp.value.split(' '),part=pts.pop();const n=fsGet(cwd);if(n?.children){const m=Object.keys(n.children).filter(k=>k.startsWith(part));if(m.length===1){pts.push(m[0]);inp.value=pts.join(' ')+' ';}}}
-      else if(e.key==='c'&&e.ctrlKey){ln('^C','info');inp.value='';}
-    });
+    const shell = createShell(out, inp, cwd=>{const s=cwd==='/'?'~':cwd.split('/').pop();pEl.textContent=`user@huebit:${s}$ `;return pEl.textContent;});
     win.querySelector('.term-wrap').addEventListener('click',()=>inp.focus());
     inp.focus();
   }
