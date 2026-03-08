@@ -1892,8 +1892,10 @@ function buildSettings(opts){
         };
         rBtn.onclick=()=>{
           if(!chk.checked)return;
-          localStorage.removeItem(LS_KEY);
-          toast('','Reset','Cleared. Reloading…');
+          // Completely wipe all saved state so the OS restarts as if first opened
+          localStorage.clear();
+          sessionStorage.clear();
+          toast('','Reset','All data cleared. Reloading…');
           setTimeout(()=>location.reload(),900);
         };
 
