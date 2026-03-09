@@ -726,22 +726,21 @@ function loadAutoSave(){
 const CHANGELOG=`HueBit OS — Changelog
 ═════════════════════
 
-[v1.4.6] - Latest
-
-- Fixed: VS Code File menu behavior.
-  “Import…” now correctly loads files from your PC into the mini-OS.
-  “Open File…” now opens files from the OS virtual filesystem (no more "undefined" icons).
-- Fixed: Open dialog shows a clear error when a file can’t be loaded (binary/unsupported files), and keeps the previous file open.
-- Added: real-time sync between editors — saving a file in the Text Editor now updates it in VS Code when open and not dirty.
-- Improved: VS Code terminal now shares the same shell backend as the system terminal (same commands, selectable output, full history, and better multiline tracebacks).
-- Misc: polish for file dialogs, updated changelog system.
-
-[v1.4.6]
+[v1.4.6] - Lastest
 
 - Fixed: Start menu power buttons now show icons (lock, restart, power).
 - Fixed: Taskbar volume icon now properly updates and shows current level.
 - Fixed: Username changes in Settings immediately update the lock screen and persist.
 - Improved: SVG fallbacks now render in more places when icons fail to load.
+
+[v1.4.5b]
+
+- Fixed: VS Code File menu behavior. 
+  “Import…” now correctly handles loading files from the user’s PC into the mini-OS.
+  “Open File…” now properly opens files from the OS virtual filesystem.
+
+- Fixed: VS Code Open dialog now uses the built-in mini-OS file browser instead of accessing the real hard drive.
+- Misc: polish for file dialogs, updated changelog system.
 
 [v1.4.5]
 
