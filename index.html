@@ -162,23 +162,246 @@ input[type=range].hb-range::-webkit-slider-thumb{-webkit-appearance:none;width:1
 input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:none;cursor:pointer}
 .vol-val{font-size:12px;font-weight:700;color:rgba(255,255,255,0.65);min-width:30px;text-align:right}
 
-.lock-overlay{position:fixed;inset:0;z-index:9999;background:rgba(4,6,12,0.96);backdrop-filter:blur(48px) saturate(1.4);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease}
-.lock-bg-tint{position:absolute;inset:0;background:linear-gradient(135deg,rgba(91,138,245,0.08),rgba(155,89,245,0.06));pointer-events:none}
-.lock-time{font-size:88px;font-weight:100;font-family:var(--mono);letter-spacing:-3px;line-height:1;color:#fff;text-shadow:0 0 80px rgba(91,138,245,0.35)}
-.lock-date{font-size:16px;color:rgba(255,255,255,0.45);letter-spacing:.04em;margin-top:4px}
-.lock-card{margin-top:36px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:28px 32px 24px;display:flex;flex-direction:column;align-items:center;gap:16px;width:300px;backdrop-filter:blur(20px);box-shadow:0 24px 64px rgba(0,0,0,0.5),0 0 0 0.5px rgba(255,255,255,0.05) inset;animation:lockCardIn .55s cubic-bezier(.2,1.2,.3,1) forwards}
-@keyframes lockCardIn{from{opacity:0;transform:translateY(28px)scale(0.94)}to{opacity:1;transform:translateY(0)scale(1)}}
-.lock-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 24px rgba(91,138,245,0.4);flex-shrink:0}
-.lock-username{font-size:15px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:.02em}
-.lock-divider{width:100%;height:1px;background:rgba(255,255,255,0.08)}
-.lock-pass-wrap{width:100%;position:relative;display:flex;align-items:center}
-.lock-pass-wrap input{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:11px 42px 11px 16px;color:#fff;font-size:14px;outline:none;font-family:var(--font);transition:border-color .2s,background .2s;text-align:center;letter-spacing:.08em}
-.lock-pass-wrap input:focus{border-color:rgba(91,138,245,0.7);background:rgba(91,138,245,0.08)}
-.lock-pass-wrap input::placeholder{color:rgba(255,255,255,0.28);letter-spacing:0}
-.lock-submit{position:absolute;right:10px;width:26px;height:26px;border-radius:8px;background:var(--accent);border:none;cursor:pointer;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-.lock-submit:hover{background:#7aadff;transform:scale(1.08)}
-.lock-error{font-size:12px;color:#ff8080;min-height:16px;text-align:center;animation:lockShake .3s ease}
-@keyframes lockShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+/* ── LOCK SCREEN STYLES (START) ─────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@200;300&family=Outfit:wght@300;400;500&display=swap');
+
+/* ── Base overlay ── */
+.lock-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0b0e13;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity .6s ease; overflow: hidden;
+  cursor: default;
+}
+
+/* ── Fondo: aurora lenta ── */
+.lock-aurora {
+  position: absolute; inset: -60%; width: 220%; height: 220%;
+  background:
+    radial-gradient(ellipse 52% 44% at 22% 30%, rgba(72,108,155,.20) 0%, transparent 55%),
+    radial-gradient(ellipse 44% 56% at 80% 68%, rgba(155,108,80,.13) 0%, transparent 52%),
+    radial-gradient(ellipse 36% 52% at 60% 15%, rgba(80,130,148,.11) 0%, transparent 48%),
+    radial-gradient(ellipse 60% 35% at 50% 90%, rgba(50,70,100,.15) 0%, transparent 60%);
+  animation: auroraShift 24s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes auroraShift {
+  0%   { transform: translate(0,0)      rotate(0deg)    scale(1);     }
+  25%  { transform: translate(-2%,3%)   rotate(.6deg)   scale(1.015); }
+  50%  { transform: translate(3%,-2%)   rotate(-.4deg)  scale(.99);   }
+  75%  { transform: translate(-1.5%,1%) rotate(.5deg)   scale(1.01);  }
+  100% { transform: translate(2%,-1.5%) rotate(-.3deg)  scale(1.005); }
+}
+
+/* Grain */
+.lock-grain {
+  position: absolute; inset: 0; opacity: .04; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* ── FASE 1: Pantalla de bloqueo real ── */
+.lock-phase-idle {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) both;
+}
+.lock-phase-idle.hiding {
+  animation: lockIdleOut .55s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes lockIdleOut {
+  to { opacity: 0; transform: translateY(-22px) scale(.97); }
+}
+
+.lock-big-time {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: clamp(96px, 18vw, 172px);
+  font-weight: 200;
+  letter-spacing: -4px; line-height: .95;
+  color: rgba(255,255,255,.92);
+  text-shadow: 0 4px 60px rgba(0,0,0,.3);
+  text-align: center;
+  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) both;
+}
+.lock-big-date {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 300;
+  color: rgba(255,255,255,.38);
+  letter-spacing: .18em; text-transform: uppercase;
+  margin-top: 14px; text-align: center;
+  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .08s both;
+}
+
+/* Indicador "desliza" */
+.lock-cta {
+  margin-top: 52px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .18s both;
+}
+.lock-cta-arrow {
+  width: 28px; height: 28px;
+  border: 1.5px solid rgba(255,255,255,.18);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  animation: ctaBounce 2.4s ease-in-out infinite;
+}
+.lock-cta-arrow svg { opacity: .45; }
+@keyframes ctaBounce {
+  0%,100% { transform: translateY(0);   opacity: .7; }
+  50%      { transform: translateY(-6px); opacity: 1;  }
+}
+.lock-cta-label {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px; font-weight: 300;
+  color: rgba(255,255,255,.25);
+  letter-spacing: .16em; text-transform: uppercase;
+}
+
+/* ── FASE 2: Login card ── */
+.lock-phase-login {
+  position: absolute; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0; pointer-events: none;
+  transform: translateY(32px) scale(.97);
+  transition: none;
+}
+.lock-phase-login.visible {
+  animation: loginIn .6s cubic-bezier(.16,1,.3,1) forwards;
+  pointer-events: all;
+}
+@keyframes loginIn {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lock-phase-login.hiding {
+  animation: loginOut .35s cubic-bezier(.4,0,.2,1) forwards;
+  pointer-events: none;
+}
+@keyframes loginOut {
+  to { opacity: 0; transform: translateY(16px) scale(.98); }
+}
+
+/* Hora pequeña arriba del card */
+.lock-mini-time {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 42px; font-weight: 200;
+  color: rgba(255,255,255,.75);
+  letter-spacing: -1px; line-height: 1;
+  margin-bottom: 6px;
+}
+.lock-mini-date {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px; font-weight: 300;
+  color: rgba(255,255,255,.28);
+  letter-spacing: .15em; text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+/* Card */
+.lock-card {
+  background: rgba(255,255,255,.042);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 22px;
+  padding: 26px 28px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  width: 292px;
+  backdrop-filter: blur(32px) saturate(1.1);
+  box-shadow:
+    0 40px 80px rgba(0,0,0,.48),
+    0 1px 0 rgba(255,255,255,.055) inset,
+    0 -1px 0 rgba(0,0,0,.25) inset;
+}
+
+.lock-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(145deg, #8aa4c4, #6080a0);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.32), 0 0 0 1.5px rgba(255,255,255,.08);
+  flex-shrink: 0; overflow: hidden;
+}
+.lock-username {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px; font-weight: 400;
+  color: rgba(255,255,255,.68); letter-spacing: .01em;
+}
+.lock-divider {
+  width: 100%; height: 1px;
+  background: rgba(255,255,255,.06);
+}
+
+/* Input */
+.lock-pass-wrap { width: 100%; position: relative; display: flex; align-items: center; }
+.lock-pass-wrap input {
+  width: 100%;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 11px;
+  padding: 11px 42px 11px 14px;
+  color: rgba(255,255,255,.88);
+  font-size: 14px; font-family: 'Outfit', sans-serif; font-weight: 300;
+  outline: none; text-align: center; letter-spacing: .12em;
+  transition: border-color .25s, background .25s, box-shadow .25s;
+}
+.lock-pass-wrap input:focus {
+  border-color: rgba(138,168,204,.5);
+  background: rgba(138,168,204,.06);
+  box-shadow: 0 0 0 3px rgba(138,168,204,.08);
+}
+.lock-pass-wrap input::placeholder {
+  color: rgba(255,255,255,.2); letter-spacing: .04em; font-size: 13px;
+}
+.lock-submit {
+  position: absolute; right: 9px;
+  width: 27px; height: 27px; border-radius: 8px;
+  background: rgba(138,168,204,.15);
+  border: 1px solid rgba(138,168,204,.2);
+  cursor: pointer; color: rgba(255,255,255,.6); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; flex-shrink: 0;
+}
+.lock-submit:hover { background: rgba(138,168,204,.3); color: #fff; transform: scale(1.07); }
+
+/* Botón "volver" */
+.lock-back {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px; font-weight: 300;
+  color: rgba(255,255,255,.2); cursor: pointer;
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-top: 6px; padding: 4px 0;
+  transition: color .2s; background: none; border: none;
+}
+.lock-back:hover { color: rgba(255,255,255,.45); }
+
+.lock-hint-btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 300;
+  color: rgba(255,255,255,.3); cursor: pointer;
+  letter-spacing: .05em; padding: 4px 0;
+  transition: color .2s;
+}
+.lock-hint-btn:hover { color: rgba(255,255,255,.58); }
+
+.lock-error {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 300;
+  color: rgba(220,130,110,.9);
+  min-height: 14px; text-align: center;
+  animation: lockShake .38s ease;
+}
+@keyframes lockShake {
+  0%,100% { transform: translateX(0);   }
+  20%      { transform: translateX(-7px); }
+  40%      { transform: translateX(6px);  }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(3px);  }
+}
+
+/* Entrada general */
+@keyframes lockFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+/* ── LOCK SCREEN STYLES (END) ───────────────────────────────────── */
 .lock-hint-btn{font-size:12px;color:rgba(255,255,255,0.25);cursor:pointer;padding:4px 10px;border-radius:8px;transition:all .15s;margin-top:-4px}
 .lock-hint-btn:hover{color:rgba(255,255,255,0.55);background:rgba(255,255,255,0.07)}
 @keyframes lp{0%,100%{opacity:.3}50%{opacity:.7}}
@@ -2147,80 +2370,159 @@ function buildSettings(opts){
 // ── RANGE GRADIENT HELPER ─────────────────────────────────────────
 function updateRangeGradient(input,min,max){const pct=((input.value-min)/(max-min))*100;input.style.background=`linear-gradient(to right,var(--accent) ${pct}%,rgba(255,255,255,0.15) ${pct}%)`;}
 
-// ── LOCK SCREEN ──────────────────────────────────────────────────
-let _lockTimer=null;
-function resetLockTimer(){clearTimeout(_lockTimer);if(OS.lockAfter>0)_lockTimer=setTimeout(()=>lockScreen(),OS.lockAfter*60000);}
+// ── LOCK SCREEN JS (START) ─────────────────────────────────────────
+let _lockTimer = null;
 
-function lockScreen(){
-  if(document.querySelector('.lock-overlay'))return;
-  const ov=document.createElement('div');ov.className='lock-overlay';
+function resetLockTimer() {
+  clearTimeout(_lockTimer);
+  if (OS.lockAfter > 0) _lockTimer = setTimeout(() => lockScreen(), OS.lockAfter * 60000);
+}
+
+function lockScreen() {
+  if (document.querySelector('.lock-overlay')) return;
+
+  const ov = document.createElement('div');
+  ov.className = 'lock-overlay';
   document.body.appendChild(ov);
 
-  const renderLock=()=>{
-    const n=new Date(),p=x=>String(x).padStart(2,'0');
-    const timeStr=`${p(n.getHours())}:${p(n.getMinutes())}`;
-    const dateStr=n.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const needsPw=OS.usePassword&&OS.password;
-    ov.innerHTML=`
-      <div class="lock-bg-tint"></div>
-      <div class="lock-time">${timeStr}</div>
-      <div class="lock-date">${dateStr}</div>
-      <div class="lock-card">
-        <div class="lock-avatar" style="font-size:0" id="lock-av-el"></div>
-        <div class="lock-username">${OS.username||'User'}</div>
-        <div class="lock-divider"></div>
-        ${needsPw?`
-          <div class="lock-pass-wrap">
-            <input type="password" id="lock-pass" placeholder="Password" autocomplete="off" spellcheck="false">
-            <button class="lock-submit" id="lock-submit">→</button>
-          </div>
-          <div class="lock-error" id="lock-err"></div>
-        `:`<div class="lock-hint-btn" id="lock-click-hint">Click to sign in →</div>`}
+  // Fondo
+  ov.innerHTML = `<div class="lock-aurora"></div><div class="lock-grain"></div>`;
+
+  const fmt = x => String(x).padStart(2, '0');
+  const getTime = () => { const n = new Date(); return `${fmt(n.getHours())}:${fmt(n.getMinutes())}`; };
+  const getDate = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  /* ── FASE 1: idle ── */
+  const phaseIdle = document.createElement('div');
+  phaseIdle.className = 'lock-phase-idle';
+  phaseIdle.innerHTML = `
+    <div class="lock-big-time" id="lock-big-time">${getTime()}</div>
+    <div class="lock-big-date" id="lock-big-date">${getDate()}</div>
+    <div class="lock-cta">
+      <div class="lock-cta-arrow">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 2v8M2 7l4 3 4-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-    `;
-    // populate avatar
-    const lockAvEl=ov.querySelector('#lock-av-el');
-    if(lockAvEl){
-      if(OS.avatar){const img=document.createElement('img');img.src=OS.avatar;img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';lockAvEl.appendChild(img);}
-      else{lockAvEl.innerHTML='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';}
+      <span class="lock-cta-label">Click to unlock</span>
+    </div>
+  `;
+  ov.appendChild(phaseIdle);
+
+  /* ── FASE 2: login ── */
+  const phaseLogin = document.createElement('div');
+  phaseLogin.className = 'lock-phase-login';
+  const needsPw = OS.usePassword && OS.password;
+  phaseLogin.innerHTML = `
+    <div class="lock-mini-time" id="lock-mini-time">${getTime()}</div>
+    <div class="lock-mini-date" id="lock-mini-date">${getDate()}</div>
+    <div class="lock-card">
+      <div class="lock-avatar" id="lock-av-el"></div>
+      <div class="lock-username">${OS.username || 'User'}</div>
+      <div class="lock-divider"></div>
+      ${needsPw ? `
+        <div class="lock-pass-wrap">
+          <input type="password" id="lock-pass" placeholder="Password" autocomplete="off" spellcheck="false">
+          <button class="lock-submit" id="lock-submit">→</button>
+        </div>
+        <div class="lock-error" id="lock-err"></div>
+      ` : `<div class="lock-hint-btn" id="lock-click-hint">Click anywhere to sign in</div>`}
+    </div>
+    <button class="lock-back" id="lock-back">↑ Lock screen</button>
+  `;
+  ov.appendChild(phaseLogin);
+
+  // Avatar
+  const avEl = phaseLogin.querySelector('#lock-av-el');
+  if (avEl) {
+    if (OS.avatar) {
+      const img = document.createElement('img');
+      img.src = OS.avatar;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+      avEl.appendChild(img);
+    } else {
+      avEl.innerHTML = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.52)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
     }
-    if(needsPw){
-      const inp=ov.querySelector('#lock-pass');
-      const err=ov.querySelector('#lock-err');
-      const sub=ov.querySelector('#lock-submit');
-      const tryUnlock=()=>{
-        if(inp.value===OS.password){unlock();}
-        else{
-          err.textContent='Incorrect password';
-          err.style.animation='none';
-          requestAnimationFrame(()=>err.style.animation='');
-          inp.value='';inp.style.borderColor='rgba(255,100,100,0.7)';
-          setTimeout(()=>{err.textContent='';inp.style.borderColor='';},2200);
-        }
-      };
-      inp.addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();});
-      sub.addEventListener('click',tryUnlock);
-      setTimeout(()=>inp.focus(),80);
-    }else{
-      const btn=ov.querySelector('#lock-click-hint');
-      const doUnlock=()=>unlock();
-      btn&&btn.addEventListener('click',doUnlock);
-      ov.addEventListener('click',e=>{if(e.target===ov||e.target.classList.contains('lock-bg-tint')||e.target.classList.contains('lock-time')||e.target.classList.contains('lock-date'))doUnlock();});
-      document.addEventListener('keydown',e=>{if(!['Meta','Control','Alt','Shift'].includes(e.key))doUnlock();},{once:true});
-    }
+  }
+
+  /* ── Transición idle → login ── */
+  const goLogin = () => {
+    if (phaseLogin.classList.contains('visible')) return;
+    phaseIdle.classList.add('hiding');
+    setTimeout(() => { phaseIdle.style.display = 'none'; }, 500);
+    phaseLogin.classList.add('visible');
+    if (needsPw) setTimeout(() => phaseLogin.querySelector('#lock-pass')?.focus(), 120);
   };
 
-  const unlock=()=>{
+  const goIdle = () => {
+    phaseLogin.classList.add('hiding');
+    setTimeout(() => {
+      phaseLogin.classList.remove('visible', 'hiding');
+    }, 340);
+    phaseIdle.style.display = '';
+    // re-trigger animation
+    phaseIdle.classList.remove('hiding');
+    void phaseIdle.offsetWidth;
+    phaseIdle.style.animation = 'lockFadeUp .55s cubic-bezier(.16,1,.3,1) both';
+  };
+
+  /* Clic en idle → va a login */
+  phaseIdle.addEventListener('click', goLogin);
+
+  /* Botón volver */
+  phaseLogin.querySelector('#lock-back')?.addEventListener('click', goIdle);
+
+  /* ── Unlock ── */
+  const unlock = () => {
     clearInterval(iv);
-    ov.style.transition='opacity .4s ease';
-    ov.style.opacity='0';
-    setTimeout(()=>ov.remove(),420);
+    ov.style.transition = 'opacity .5s ease';
+    ov.style.opacity = '0';
+    setTimeout(() => ov.remove(), 520);
     resetLockTimer();
   };
 
-  renderLock();
-  const iv=setInterval(renderLock,60000); // update clock every minute
+  /* ── Password ── */
+  if (needsPw) {
+    const inp = phaseLogin.querySelector('#lock-pass');
+    const err = phaseLogin.querySelector('#lock-err');
+    const sub = phaseLogin.querySelector('#lock-submit');
+
+    const tryUnlock = () => {
+      if (inp.value === OS.password) {
+        unlock();
+      } else {
+        err.textContent = 'Incorrect password';
+        err.style.animation = 'none';
+        requestAnimationFrame(() => err.style.animation = '');
+        inp.value = '';
+        inp.style.borderColor = 'rgba(220,100,90,.5)';
+        inp.style.boxShadow = '0 0 0 3px rgba(220,100,90,.07)';
+        setTimeout(() => { err.textContent = ''; inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 2200);
+      }
+    };
+
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+    sub.addEventListener('click', tryUnlock);
+  } else {
+    phaseLogin.querySelector('#lock-click-hint')?.addEventListener('click', unlock);
+  }
+
+  /* ── Reloj ── */
+  const tick = () => {
+    const t = getTime(), d = getDate();
+    const bt = document.getElementById('lock-big-time');
+    const bd = document.getElementById('lock-big-date');
+    const mt = document.getElementById('lock-mini-time');
+    const md = document.getElementById('lock-mini-date');
+    if (bt) bt.textContent = t;
+    if (bd) bd.textContent = d;
+    if (mt) mt.textContent = t;
+    if (md) md.textContent = d;
+  };
+  const iv = setInterval(tick, 15000);
 }
+
+// ── LOCK SCREEN JS (END) ───────────────────────────────────────────
 
 // ── CONTEXT MENU ─────────────────────────────────────────────────
 const ctxEl=document.getElementById('ctx');
