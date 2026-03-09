@@ -263,18 +263,21 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 
 /* ── CTA (idle only) ── */
 .lock-cta {
+  position: absolute;
+  /* se posiciona debajo del reloj desde JS, o con top fijo */
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  margin-top: 52px;
-  /* sale cuando entra el card */
+  margin-top: 0;
+  top: calc(50% + 120px); /* debajo del centro donde vive el reloj idle */
+  left: 50%; transform: translateX(-50%);
   opacity: 1;
-  transition: opacity .3s ease, margin-top .4s ease;
+  transition: opacity .25s ease;
   animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .18s both;
   pointer-events: auto;
+  white-space: nowrap;
 }
 .lock-cta.hidden {
   opacity: 0;
   pointer-events: none;
-  margin-top: 0;
 }
 .lock-cta-arrow {
   width: 28px; height: 28px;
@@ -2461,36 +2464,37 @@ function lockScreen() {
   let inLoginMode = false;
 
   /* ── Idle → Login: reloj hace morph, card sube ── */
-  const goLogin = () => {
-    if (inLoginMode) return;
-    inLoginMode = true;
+const goLogin = () => {
+  if (inLoginMode) return;
+  inLoginMode = true;
 
-    // 1. CTA desaparece
-    cta.classList.add('hidden');
+  // 1. CTA desaparece inmediatamente — fuera del flujo así que no arrastra nada
+  cta.classList.add('hidden');
 
-    // 2. Reloj hace morph (CSS transitions en .login-mode)
-    clockWrap.classList.add('login-mode');
+  // 2. Reloj morfea solo, limpio
+  clockWrap.classList.add('login-mode');
 
-    // 3. Card entra desde abajo (pequeño delay para que el morph arranque primero)
-    setTimeout(() => {
-      card.classList.add('visible');
-      backBtn.classList.add('visible');
-    }, 80);
+  // 3. Card y botón volver entran
+  setTimeout(() => {
+    card.classList.add('visible');
+    backBtn.classList.add('visible');
+  }, 80);
 
-    if (needsPw) setTimeout(() => ov.querySelector('#lock-pass')?.focus(), 220);
-  };
+  if (needsPw) setTimeout(() => ov.querySelector('#lock-pass')?.focus(), 220);
+};
 
   /* ── Login → Idle: todo vuelve ── */
-  const goIdle = () => {
-    if (!inLoginMode) return;
-    inLoginMode = false;
+const goIdle = () => {
+  if (!inLoginMode) return;
+  inLoginMode = false;
 
-    card.classList.remove('visible');
-    backBtn.classList.remove('visible');
-    clockWrap.classList.remove('login-mode');
+  card.classList.remove('visible');
+  backBtn.classList.remove('visible');
+  clockWrap.classList.remove('login-mode');
 
-    setTimeout(() => cta.classList.remove('hidden'), 200);
-  };
+  // Espera a que el morph termine antes de mostrar la CTA
+  setTimeout(() => cta.classList.remove('hidden'), 480);
+};
 
   /* ── Desbloqueo ── */
   const unlock = () => {
