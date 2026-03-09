@@ -201,17 +201,20 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 /* ── CTA flotando sola, fuera del flujo del reloj ── */
 .lock-cta {
   position: absolute;
-  bottom: calc(50% - 200px);
-  left: 50%; transform: translateX(-50%);
+  top: calc(50% + 160px);   /* ← abajo del centro, no bottom */
+  left: 50%;
+  transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  opacity: 1;
-  transition: opacity .25s ease;
-  pointer-events: auto;
   white-space: nowrap;
-  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .18s both;
+  pointer-events: auto;
+
+  /* fade-in inicial sin fill:both para no bloquear la transition */
+  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .18s forwards;
+  opacity: 0; /* empieza invisible, la animación lo muestra */
+  transition: opacity .25s ease;
 }
 .lock-cta.hidden {
-  opacity: 0;
+  opacity: 0 !important;    /* !important gana sobre animation fill */
   pointer-events: none;
 }
 .lock-cta-arrow {
