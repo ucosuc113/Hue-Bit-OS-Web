@@ -238,7 +238,13 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 /* ── lock-content: solo reloj + card ── */
 .lock-content {
   position: relative; z-index: 1;
-  display: flex; flex-direction: column; align-items: center;
+  display: none; /* Hide standalone lock markup until overlay is active */
+  flex-direction: column; align-items: center;
+}
+
+.lock-overlay .lock-content,
+.vsc-tut-overlay .lock-content {
+  display: flex;
 }
 
 .lock-clock-wrap {
@@ -1979,28 +1985,43 @@ function buildVSCode(opts){
     function showVscTutorial() {
       if (win.querySelector('.vsc-tut-overlay')) return;
       const ov = document.createElement('div'); ov.className = 'vsc-tut-overlay';
-      ov.innerHTML = `<div class="vsc-tut-modal">
-          <div class="vsc-tut-header"><span class="vsc-tut-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span>VS Code &mdash; Quick Start</span><button class="vsc-tut-close" id="vsc-tut-x">&#x2715;</button></div>
-          <div class="vsc-tut-body">
-            <p class="vsc-tut-lead">To run any program, first <strong>save it with the correct extension:</strong></p>
-            <div class="vsc-tut-table">
-              <div class="vsc-tut-row"><span class="vsc-tut-lang html">HTML</span><span class="vsc-tut-ext">.html</span><span class="vsc-tut-eg">example.html</span></div>
-              <div class="vsc-tut-row"><span class="vsc-tut-lang js">JS</span><span class="vsc-tut-ext">.js</span><span class="vsc-tut-eg">example.js</span></div>
-              <div class="vsc-tut-row"><span class="vsc-tut-lang py">Python</span><span class="vsc-tut-ext">.py</span><span class="vsc-tut-eg">example.py</span></div>
-              <div class="vsc-tut-row"><span class="vsc-tut-lang css">CSS</span><span class="vsc-tut-ext">.css</span><span class="vsc-tut-eg">example.css</span></div>
-            </div>
-            <div class="vsc-tut-steps">
-              <div class="vsc-tut-step"><span class="vsc-tut-num">1</span>Write your code</div>
-              <div class="vsc-tut-step"><span class="vsc-tut-num">2</span>File &#x2192; Save As&hellip; with the correct extension</div>
-              <div class="vsc-tut-step"><span class="vsc-tut-num">3</span>Press <kbd>F5</kbd> or the <strong>&#x25B6; Run</strong> button</div>
-            </div>
-            <p class="vsc-tut-note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>HTML opens a live preview &middot; JS/Python show output in the terminal &middot; CSS must be used inside an HTML file</p>
-          </div>
-          <div class="vsc-tut-footer">
-            <label class="vsc-tut-nosee"><input type="checkbox" id="vsc-tut-nosee"> Don&#x27;t show again</label>
-            <button class="vsc-tut-ok" id="vsc-tut-ok">Got it &#x2713;</button>
-          </div>
-        </div>`;
+ov.innerHTML = `
+  <div class="lock-aurora"></div>
+  <div class="lock-grain"></div>
+
+  <div class="lock-content">
+    <div class="lock-clock-wrap" id="lock-clock-wrap">
+      <div class="lock-big-time" id="lock-big-time">${getTime()}</div>
+      <div class="lock-big-date" id="lock-big-date">${getDate()}</div>
+    </div>
+
+    <div class="lock-cta" id="lock-cta">
+      <div class="lock-cta-arrow">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 2v8M2 7l4 3 4-3" stroke="white" stroke-width="1.4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="lock-cta-label">Click to unlock</span>
+    </div>
+
+    <div class="lock-card" id="lock-card">
+      <div class="lock-avatar" id="lock-av-el"></div>
+      <div class="lock-username">${OS.username || 'User'}</div>
+      <div class="lock-divider"></div>
+      ${needsPw ? `
+        <div class="lock-pass-wrap">
+          <input type="password" id="lock-pass" placeholder="Password"
+                 autocomplete="off" spellcheck="false">
+          <button class="lock-submit" id="lock-submit">→</button>
+        </div>
+        <div class="lock-error" id="lock-err"></div>
+      ` : `<div class="lock-hint-btn" id="lock-click-hint">Click anywhere to sign in</div>`}
+    </div>
+
+    <button class="lock-back" id="lock-back">↑ Lock screen</button>
+  </div>
+`;
       win.appendChild(ov);
       const close = () => {
         if (ov.querySelector('#vsc-tut-nosee')?.checked) try { localStorage.setItem('huebit-vsc-tut-perm','1'); } catch(e) {}
