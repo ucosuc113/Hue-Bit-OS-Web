@@ -607,9 +607,11 @@ const ICO={
   resmon: mkI(id=>`<svg viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="28" rx="5" fill="url(#${id}a)"/><polyline points="8,28 14,22 20,26 26,16 32,20 40,12" stroke="#5b8af5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="8,34 14,32 20,33 26,30 32,31 40,28" stroke="#28c840" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="10" y="38" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.1)"/><defs><linearGradient id="${id}a" x1="4" y1="8" x2="44" y2="36"><stop stop-color="#0e1628"/><stop offset="1" stop-color="#060e1c"/></linearGradient></defs></svg>`),
 };
 
+const SVG_FALLBACK='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+
 function ensureAppImage(imgEl,path,icoKey){
   if(!path){imgEl.onerror?.();return;}
-  fetch(path,{method:'GET'}).then(r=>{if(r.ok){imgEl.src=path;}else throw new Error('not ok');}).catch(()=>{const d=document.createElement('div');d.style.cssText=`width:${imgEl.width}px;height:${imgEl.height}px;display:flex;align-items:center;justify-content:center`;d.innerHTML=ICO[icoKey]?ICO[icoKey]():'';imgEl.replaceWith(d);});
+  fetch(path,{method:'GET'}).then(r=>{if(r.ok){imgEl.src=path;}else throw new Error('not ok');}).catch(()=>{const d=document.createElement('div');d.style.cssText=`width:${imgEl.width}px;height:${imgEl.height}px;display:flex;align-items:center;justify-content:center`;d.innerHTML=ICO[icoKey]?ICO[icoKey]():SVG_FALLBACK;imgEl.replaceWith(d);});
 }
 
 // ── GLOBAL OS STATE ────────────────────────────────────────────
@@ -618,13 +620,29 @@ const OS={volume:80,accent:'#5b8af5',accent2:'#9b59f5',nightLight:false,animatio
 function setAccent(c1,c2){document.documentElement.style.setProperty('--accent',c1);if(c2)document.documentElement.style.setProperty('--accent2',c2);OS.accent=c1;if(c2)OS.accent2=c2;autoSave();}
 
 function syncAvatar(){
-  const svgFallback='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
   const smAv=document.getElementById('sm-av');
   if(smAv){
     if(OS.avatar){smAv.innerHTML='';const img=document.createElement('img');img.src=OS.avatar;img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';smAv.appendChild(img);}
-    else{smAv.innerHTML=svgFallback;}
+    else{smAv.innerHTML=SVG_FALLBACK;}
   }
-  // lock screen avatar is recreated dynamically in renderLock(), handled there
+  syncLockScreen();
+}
+
+function syncLockScreen(){
+  const unameEl=document.querySelector('.lock-username');
+  if(unameEl)unameEl.textContent=OS.username||'User';
+  const lockAvEl=document.getElementById('lock-av-el');
+  if(lockAvEl){
+    if(OS.avatar){
+      lockAvEl.innerHTML='';
+      const img=document.createElement('img');
+      img.src=OS.avatar;
+      img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%';
+      lockAvEl.appendChild(img);
+    }else{
+      lockAvEl.innerHTML=SVG_FALLBACK;
+    }
+  }
 }
 function setNightLight(on){OS.nightLight=on;let el=document.getElementById('nightlight-ol');if(on&&!el){el=document.createElement('div');el.id='nightlight-ol';el.style.cssText='position:fixed;inset:0;background:rgba(255,110,0,0.11);pointer-events:none;z-index:799;mix-blend-mode:multiply';document.body.appendChild(el);}else if(!on&&el)el.remove();autoSave();}
 
@@ -636,7 +654,7 @@ const LS_KEY='huebit-os-v2';
 // changelog, dev-notes, etc). loadAutoSave() will patch only
 // the SYSTEM_FILES paths in localStorage and leave everything
 // else (user files, settings, wallpaper) completely untouched.
-const BUILD_VERSION='1.4.5';
+const BUILD_VERSION='1.4.6';
 
 let customWallpaperData=null;
 
@@ -708,7 +726,7 @@ function loadAutoSave(){
 const CHANGELOG=`HueBit OS — Changelog
 ═════════════════════
 
-[v1.4.5b] - Latest
+[v1.4.6] - Latest
 
 - Fixed: VS Code File menu behavior.
   “Import…” now correctly loads files from your PC into the mini-OS.
@@ -717,6 +735,13 @@ const CHANGELOG=`HueBit OS — Changelog
 - Added: real-time sync between editors — saving a file in the Text Editor now updates it in VS Code when open and not dirty.
 - Improved: VS Code terminal now shares the same shell backend as the system terminal (same commands, selectable output, full history, and better multiline tracebacks).
 - Misc: polish for file dialogs, updated changelog system.
+
+[v1.4.6]
+
+- Fixed: Start menu power buttons now show icons (lock, restart, power).
+- Fixed: Taskbar volume icon now properly updates and shows current level.
+- Fixed: Username changes in Settings immediately update the lock screen and persist.
+- Improved: SVG fallbacks now render in more places when icons fail to load.
 
 [v1.4.5]
 
@@ -776,7 +801,7 @@ const CHANGELOG=`HueBit OS — Changelog
 // is already available.
 function getSystemFiles(){
   return {
-    '/Desktop/readme.txt':            {type:'file',icon:'file_txt',content:'Welcome to HueBit OS v1.4.5!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nVS Code is now fully functional:\n- File menu: New, Open, Save, Save As, Export\n- Edit: Copy, Paste, Select All, Find\n- View: Toggle Sidebar, Toggle Terminal\n- Run: Run button executes code\n- Terminal: interactive with run/clear/help\n- Explorer: browse and open FS files\n\nAudio files need to be listed in manifest.json.\n\nTerminal: type "help"\nEnjoy!'},
+    '/Desktop/readme.txt':            {type:'file',icon:'file_txt',content:'Welcome to HueBit OS v1.4.6!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nVS Code is now fully functional:\n- File menu: New, Open, Save, Save As, Export\n- Edit: Copy, Paste, Select All, Find\n- View: Toggle Sidebar, Toggle Terminal\n- Run: Run button executes code\n- Terminal: interactive with run/clear/help\n- Explorer: browse and open FS files\n\nAudio files need to be listed in manifest.json.\n\nTerminal: type "help"\nEnjoy!'},
     '/Desktop/changes_log.txt':       {type:'file',icon:'file_txt',content:CHANGELOG},
     '/Documents/Projects/dev-notes.txt':{type:'file',icon:'file_txt',content:'# HueBit OS Dev Notes\n\nStack: HTML5, CSS3, Vanilla JS\nNo frameworks. No dependencies.\nGitHub Pages compatible.\n\n## File routing by extension\n- .txt/.md/.csv/.json → Text Editor\n- .jpg/.png/.gif/.webp/.svg → Image Viewer\n- .mp4/.webm/.ogv → Video Player\n- .mp3/.wav/.ogg/.flac → Audio Player\n- .html → VS Code with preview\n\n## VS Code keyboard shortcuts\n- Ctrl+S: Save\n- Ctrl+R or F5: Run code\n- Ctrl+`: Toggle terminal\n- Ctrl+N: New file\n- Ctrl+O: Open file'},
     '/Documents/todo.txt':            {type:'file',icon:'file_txt',content:'TODO\n────\n[x] Window manager\n[x] Virtual FS\n[x] Terminal\n[x] Wallpaper themes\n[x] Lock screen\n[x] Media apps\n[x] Save dialog\n[x] File drag & drop\n[x] Interactable settings\n[x] Public folder sync via manifest.json\n[x] VS Code fully functional\n[x] Multi-tab text editor\n[x] SVG icon system\n[x] Profile picture\n[ ] More wallpapers\n[ ] World domination'},
@@ -799,7 +824,7 @@ function fsPatch(path, node){
 
 const FS={'/':{type:'dir',children:{
   'Desktop':{type:'dir',children:{
-    'readme.txt':{type:'file',icon:'file_txt',content:'Welcome to HueBit OS v1.4.5!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nVS Code is now fully functional:\n- File menu: New, Open, Save, Save As, Export\n- Edit: Copy, Paste, Select All, Find\n- View: Toggle Sidebar, Toggle Terminal\n- Run: ▶ Run button executes code\n- Terminal: interactive with run/clear/help\n- Explorer: browse and open FS files\n\nAudio files need to be listed in manifest.json.\n\nTerminal: type "help"\nEnjoy!'},
+    'readme.txt':{type:'file',icon:'file_txt',content:'Welcome to HueBit OS v1.4.6!\n─────────────────────────\n\nDouble-click icons to open apps.\nRight-click for context menus.\nDrag files onto desktop to import them.\n\nVS Code is now fully functional:\n- File menu: New, Open, Save, Save As, Export\n- Edit: Copy, Paste, Select All, Find\n- View: Toggle Sidebar, Toggle Terminal\n- Run: ▶ Run button executes code\n- Terminal: interactive with run/clear/help\n- Explorer: browse and open FS files\n\nAudio files need to be listed in manifest.json.\n\nTerminal: type "help"\nEnjoy!'},
     'changes_log.txt':{type:'file',icon:'file_txt',content:CHANGELOG},
   }},
   'Documents':{type:'dir',children:{
@@ -1207,7 +1232,7 @@ function createShell(outEl, inputEl, onPrompt, extraCmds){
     echo(a){ln(a.join(' '));},
     whoami(){ln('user  [uid=1000  groups=admin,users]');},
     date(){ln(new Date().toString());},
-    uname(){ln('HueBit OS 1.4.5 (HTML5/JS) x86_64');},
+    uname(){ln('HueBit OS 1.4.6 (HTML5/JS) x86_64');},
     history(){hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info'));},
     cat(a){if(!a[0]){ln('Usage: cat <file>','err');return;}const p=a[0].startsWith('/')?a[0]:(cwd==='/'?'/'+a[0]:cwd+'/'+a[0]);const n=fsGet(p);if(!n)ln(`cat: ${a[0]}: No such file`,'err');else if(n.type==='dir')ln(`cat: ${a[0]}: Is a directory`,'err');else if(!n.content)ln(`cat: ${a[0]}: Binary/media file`,'err');else n.content.split('\n').forEach(l=>ln(l));},
     mkdir(a){if(!a[0]){ln('Usage: mkdir <n>','err');return;}const p=fsGet(cwd);if(p?.children){p.children[a[0]]={type:'dir',children:{}};ln(`Created '${a[0]}'`,'ok');}},
@@ -1216,14 +1241,14 @@ function createShell(outEl, inputEl, onPrompt, extraCmds){
     open(a){if(APPS_CFG[a[0]]){openApp(a[0]);ln(`Opening ${a[0]}...`,'ok');}else ln(`open: '${a[0]||''}': Unknown app`,'err');},
     python(a){if(!a[0]){ln('Usage: python <code>','err');return;}try{const r=simplePythonRun(a.join(' '));r.split('\n').forEach(l=>ln(l));}catch(e){ln('Error: '+e.message,'err');}},
     calc(a){if(!a[0]){ln('Usage: calc <expr>','err');return;}try{const r=(new Function(`"use strict";return(${a.join(' ').replace(/[^0-9+\-*/.() \^%]/g,'').replace(/\^/g,'**')})`)());lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`);}catch{ln('Invalid expression','err');}},
-    neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.5','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
+    neofetch(){['<span style="color:#5b8af5">  ██╗  ██╗██╗   ██╗███████╗</span>  <b style="color:#9b59f5">user</b>@<b style="color:#5b8af5">huebit</b>','<span style="color:#5b8af5">  ██║  ██║██║   ██║██╔════╝</span>  ──────────────','<span style="color:#5b8af5">  ███████║██║   ██║█████╗  </span>  <span style="color:#9b59f5">OS</span>: HueBit OS 1.4.6','<span style="color:#5b8af5">  ██╔══██║██║   ██║██╔══╝  </span>  <span style="color:#9b59f5">Shell</span>: hsh 1.4','<span style="color:#5b8af5">  ██║  ██║╚██████╔╝███████╗</span>  <span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight,'<span style="color:#5b8af5">  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>  <span style="color:#9b59f5">Theme</span>: Aurora Dark'].forEach(lnh);},
   };
   Object.assign(CMD, extraCmds||{});
 
   const init = () => {
     outEl.innerHTML='';
     updatePrompt();
-    ln('HueBit Shell  v1.4.5','acc');
+    ln('HueBit Shell  v1.4.6','acc');
     ln('Type "help" for commands.','info');
     ln('');
   };
@@ -2072,7 +2097,7 @@ function buildSettings(opts){
 
         const pSec=document.createElement('div');pSec.className='sett-sec';pSec.innerHTML='<h3>Lock Screen</h3>';const lockOptions=[['Never',0],['1 min',1],['5 min',5],['10 min',10],['30 min',30]];const lRow=document.createElement('div');lRow.className='sett-row';lRow.innerHTML='<label>Auto-lock after</label>';const sel=document.createElement('select');sel.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer';lockOptions.forEach(([l,v])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if(v===OS.lockAfter)o.selected=true;sel.appendChild(o);});sel.onchange=()=>{OS.lockAfter=parseInt(sel.value);resetLockTimer();toast('','Lock',sel.value==='0'?'Auto-lock disabled.':`Auto-lock in ${sel.options[sel.selectedIndex].text}.`);autoSave();};lRow.appendChild(sel);pSec.appendChild(lRow);const pwRow=document.createElement('div');pwRow.className='sett-row';pwRow.innerHTML='<label>Use password</label>';const pwToggle=mkToggle('use_pass',OS.usePassword,v=>{OS.usePassword=v;pwInp.style.display=v?'block':'none';if(!v)OS.password='';autoSave();});pwRow.appendChild(pwToggle);pSec.appendChild(pwRow);const pwInp=document.createElement('div');pwInp.className='sett-row col';pwInp.style.display=OS.usePassword?'block':'none';pwInp.innerHTML='<label>Set password</label>';const pwInput=document.createElement('input');pwInput.type='password';pwInput.placeholder='Enter new password';pwInput.style.cssText='background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:8px;font-family:var(--font);font-size:13px;outline:none;width:100%';pwInput.onchange=()=>{OS.password=pwInput.value;autoSave();toast('','Password','Updated.');};pwInp.appendChild(pwInput);pSec.appendChild(pwInp);body.appendChild(pSec);}
       else if(sec==='keyboard'){body.innerHTML=`<div class="sett-sec"><h3>Keyboard Shortcuts</h3><div class="sett-row"><label>Ctrl+S</label><span class="val">Save file</span></div><div class="sett-row"><label>Ctrl+R / F5</label><span class="val">Run code (VS Code)</span></div><div class="sett-row"><label>Ctrl+\`</label><span class="val">Toggle terminal</span></div><div class="sett-row"><label>Space (Media)</label><span class="val">Play / Pause</span></div><div class="sett-row"><label>↑↓ (Terminal)</label><span class="val">History</span></div><div class="sett-row"><label>Tab (Terminal)</label><span class="val">Autocomplete</span></div></div>`;}
-      else if(sec==='about'){body.innerHTML=`<div class="sett-sec"><h3>System Information</h3><div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div><div class="sett-row"><label>Version</label><span class="val">1.4.3</span></div><div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div><div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div><div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div><div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div><div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div></div><div class="sett-sec" style="margin-top:16px"><h3>Changelog — v1.4.5</h3><div style="background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);padding:12px 14px;font-size:12px;line-height:2;color:rgba(255,255,255,0.65)"><span style="color:#78e0a0;font-weight:700">Audio Player fixes</span><br>• Fixed: play() Promise rejection was silently swallowed — caused button stuck at ▶ and timer at 0:00 on browsers with autoplay restrictions or invalid src<br>• Fixed: opening Audio Player without a file no longer deadlocks — clicking ▶ now auto-opens a file picker<br>• Added: Open File button so users can load local audio at any time without drag-and-drop<br>• Fixed: error handler now reports specific error code (Network / Decode / Unsupported) instead of a generic message<br>• Fixed: volume slider now uses parseFloat() preventing silent volume precision bugs<br><span style="color:rgba(255,255,255,0.35);font-size:11px">v1.4.2 → v1.4.5 · Audio Player stability patch</span></div></div><div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="margin-bottom:8px;opacity:.6"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;const t0=Date.now();const iv=setInterval(()=>{const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}const s=Math.floor((Date.now()-t0)/1000);el.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m '+s%60+'s':Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';},1000);}
+      else if(sec==='about'){body.innerHTML=`<div class="sett-sec"><h3>System Information</h3><div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div><div class="sett-row"><label>Version</label><span class="val">1.4.3</span></div><div class="sett-row"><label>Build</label><span class="val">2025.07 stable</span></div><div class="sett-row"><label>Kernel</label><span class="val">HTML5 / V8</span></div><div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div><div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div><div class="sett-row"><label>Session Uptime</label><span id="sv-uptime2" class="val">0s</span></div></div><div class="sett-sec" style="margin-top:16px"><h3>Changelog — v1.4.6</h3><div style="background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.07);padding:12px 14px;font-size:12px;line-height:2;color:rgba(255,255,255,0.65)"><span style="color:#78e0a0;font-weight:700">Audio Player fixes</span><br>• Fixed: play() Promise rejection was silently swallowed — caused button stuck at ▶ and timer at 0:00 on browsers with autoplay restrictions or invalid src<br>• Fixed: opening Audio Player without a file no longer deadlocks — clicking ▶ now auto-opens a file picker<br>• Added: Open File button so users can load local audio at any time without drag-and-drop<br>• Fixed: error handler now reports specific error code (Network / Decode / Unsupported) instead of a generic message<br>• Fixed: volume slider now uses parseFloat() preventing silent volume precision bugs<br><span style="color:rgba(255,255,255,0.35);font-size:11px">v1.4.2 → v1.4.6 · Audio Player stability patch</span></div></div><div style="text-align:center;padding:18px 0 6px;opacity:.35"><div style="margin-bottom:8px;opacity:.6"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div style="font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div></div>`;const t0=Date.now();const iv=setInterval(()=>{const el=body.querySelector('#sv-uptime2');if(!el){clearInterval(iv);return;}const s=Math.floor((Date.now()-t0)/1000);el.textContent=s<60?s+'s':s<3600?Math.floor(s/60)+'m '+s%60+'s':Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';},1000);}
       else if(sec==='reset'){
         const rSec=document.createElement('div');rSec.className='sett-sec';
         rSec.innerHTML='<h3>Factory Reset</h3>';
@@ -2237,7 +2262,7 @@ function drawStars(){const cv=document.getElementById('stars-canvas');cv.width=w
 drawStars();window.addEventListener('resize',drawStars);
 
 // ── VOLUME TRAY ───────────────────────────────────────────────────
-(()=>{const btn=document.getElementById('tray-vol');const popup=document.getElementById('vol-popup');const range=document.getElementById('vol-range');const valEl=document.getElementById('vol-val');let open=false;updateRangeGradient(range,0,100);function openV(){open=true;const r=btn.getBoundingClientRect();popup.style.right=(window.innerWidth-r.right-6)+'px';popup.classList.add('show');}function closeV(){open=false;popup.classList.remove('show');}btn.addEventListener('click',e=>{e.stopPropagation();open?closeV():openV();});range.oninput=()=>{OS.volume=parseInt(range.value);valEl.textContent=OS.volume+'%';updateRangeGradient(range,0,100);btn.innerHTML=OS.volume===0?SI.volMute:OS.volume<40?SI.volMid:OS.volume<70?SI.volLow:SI.volHigh;};document.addEventListener('click',e=>{if(open&&!popup.contains(e.target)&&e.target!==btn)closeV();});})();
+(()=>{const btn=document.getElementById('tray-vol');const popup=document.getElementById('vol-popup');const range=document.getElementById('vol-range');const valEl=document.getElementById('vol-val');let open=false;updateRangeGradient(range,0,100);range.value=OS.volume;valEl.textContent=OS.volume+'%';btn.innerHTML=OS.volume===0?SI.volMute:OS.volume<40?SI.volMid:OS.volume<70?SI.volLow:SI.volHigh;function openV(){open=true;const r=btn.getBoundingClientRect();popup.style.right=(window.innerWidth-r.right-6)+'px';popup.classList.add('show');}function closeV(){open=false;popup.classList.remove('show');}btn.addEventListener('click',e=>{e.stopPropagation();open?closeV():openV();});range.oninput=()=>{OS.volume=parseInt(range.value);valEl.textContent=OS.volume+'%';updateRangeGradient(range,0,100);btn.innerHTML=OS.volume===0?SI.volMute:OS.volume<40?SI.volMid:OS.volume<70?SI.volLow:SI.volHigh;};document.addEventListener('click',e=>{if(open&&!popup.contains(e.target)&&e.target!==btn)closeV();});})();
 
 // ── FILE DROP SYSTEM ──────────────────────────────────────────────
 const dropZone=document.getElementById('drop-zone');
@@ -2498,7 +2523,14 @@ function _makeDraggableIcon(el) {
 // ── START MENU ────────────────────────────────────────────────────
 const ALL_SM_APPS=[...DESK_CFG];
 let smOpen=false,desktopIcons=null; // desktopIcons kept for legacy compat
-function buildStartMenu(){const grid=document.getElementById('sm-grid');ALL_SM_APPS.forEach(app=>{const el=document.createElement('div');el.className='sm-item';el.dataset.q=app.label.toLowerCase();const iW=document.createElement('div');iW.className='si-img';const img=document.createElement('img');img.alt=app.label;img.width=36;img.height=36;img.onerror=function(){const d=document.createElement('div');d.style.cssText='width:36px;height:36px;display:flex;align-items:center;justify-content:center';d.innerHTML=ICO[app.ico]?ICO[app.ico]():'';this.replaceWith(d);};ensureAppImage(img,app.img,app.ico);iW.appendChild(img);const sp=document.createElement('span');sp.textContent=app.label;el.appendChild(iW);el.appendChild(sp);el.addEventListener('click',()=>{openApp(app.id);closeStartMenu();});grid.appendChild(el);});document.getElementById('sm-input').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.sm-item').forEach(el=>el.style.display=el.dataset.q.includes(q)?'':'none');});document.getElementById('sm-lock').onclick=()=>{lockScreen();closeStartMenu();};document.getElementById('sm-restart').onclick=()=>toast('','System','Restarting HueBit OS…');document.getElementById('sm-power').onclick=()=>toast('','System','Shutting down…');}
+function buildStartMenu(){const grid=document.getElementById('sm-grid');ALL_SM_APPS.forEach(app=>{const el=document.createElement('div');el.className='sm-item';el.dataset.q=app.label.toLowerCase();const iW=document.createElement('div');iW.className='si-img';const img=document.createElement('img');img.alt=app.label;img.width=36;img.height=36;img.onerror=function(){const d=document.createElement('div');d.style.cssText='width:36px;height:36px;display:flex;align-items:center;justify-content:center';d.innerHTML=ICO[app.ico]?ICO[app.ico]():'';this.replaceWith(d);};ensureAppImage(img,app.img,app.ico);iW.appendChild(img);const sp=document.createElement('span');sp.textContent=app.label;el.appendChild(iW);el.appendChild(sp);el.addEventListener('click',()=>{openApp(app.id);closeStartMenu();});grid.appendChild(el);});const smInput=document.getElementById('sm-input');smInput.addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.sm-item').forEach(el=>el.style.display=el.dataset.q.includes(q)?'':'none');});
+  const smLock=document.getElementById('sm-lock');
+  const smRestart=document.getElementById('sm-restart');
+  const smPower=document.getElementById('sm-power');
+  if(smLock){smLock.innerHTML=SI.lock;smLock.style.fontSize='';smLock.onclick=()=>{lockScreen();closeStartMenu();};}
+  if(smRestart){smRestart.innerHTML=SI.restart;smRestart.style.fontSize='';smRestart.onclick=()=>toast('','System','Restarting HueBit OS…');}
+  if(smPower){smPower.innerHTML=SI.power;smPower.style.fontSize='';smPower.onclick=()=>toast('','System','Shutting down…');}
+}
 document.getElementById('start-btn').addEventListener('click',e=>{e.stopPropagation();smOpen?closeStartMenu():openStartMenu();});
 function openStartMenu(){document.getElementById('start-menu').classList.add('open');smOpen=true;setTimeout(()=>document.getElementById('sm-input').focus(),60);}
 function closeStartMenu(){document.getElementById('start-menu').classList.remove('open');smOpen=false;}
@@ -2554,7 +2586,7 @@ function showLogoSplash(ms=1100){
   });
 }
 
-function syncSmUsername(){const el=document.getElementById('sm-uname');if(el)el.textContent=OS.username||'User';}
+function syncSmUsername(){const el=document.getElementById('sm-uname');if(el)el.textContent=OS.username||'User';syncLockScreen();}
 
 async function startBootSequence(attempt=1){
   // Remove any existing overlay before starting (retry safe)
