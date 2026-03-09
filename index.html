@@ -200,22 +200,22 @@ input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radiu
 
 /* ── CTA flotando sola, fuera del flujo del reloj ── */
 .lock-cta {
-  position: absolute;
-  top: calc(50% + 160px);   /* ← abajo del centro, no bottom */
-  left: 50%;
-  transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-top: 36px;         /* distancia fija bajo el reloj */
   white-space: nowrap;
   pointer-events: auto;
-
-  /* fade-in inicial sin fill:both para no bloquear la transition */
-  animation: lockFadeUp .9s cubic-bezier(.16,1,.3,1) .18s forwards;
-  opacity: 0; /* empieza invisible, la animación lo muestra */
+  opacity: 0;
+  animation: lockCtaFade .9s ease .4s forwards;  /* solo opacity, sin transform */
   transition: opacity .25s ease;
 }
 .lock-cta.hidden {
-  opacity: 0 !important;    /* !important gana sobre animation fill */
+  opacity: 0 !important;
   pointer-events: none;
+}
+
+@keyframes lockCtaFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .lock-cta-arrow {
   width: 28px; height: 28px;
@@ -773,6 +773,30 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
       <div class="sm-btn" id="sm-power" title="Power" style="font-size:0"></div>
     </div>
   </div>
+</div>
+
+<div class="lock-content">
+  <div class="lock-clock-wrap" id="lock-clock-wrap">
+    <div class="lock-big-time" id="lock-big-time">${getTime()}</div>
+    <div class="lock-big-date" id="lock-big-date">${getDate()}</div>
+  </div>
+
+  <!-- CTA de vuelta en el flujo, pero sin transform en su animación -->
+  <div class="lock-cta" id="lock-cta">
+    <div class="lock-cta-arrow">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M6 2v8M2 7l4 3 4-3" stroke="white" stroke-width="1.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="lock-cta-label">Click to unlock</span>
+  </div>
+
+  <div class="lock-card" id="lock-card">
+    ...
+  </div>
+
+  <button class="lock-back" id="lock-back">↑ Lock screen</button>
 </div>
 
 <div id="ctx"></div>
