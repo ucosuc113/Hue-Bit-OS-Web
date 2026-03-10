@@ -2970,7 +2970,12 @@ async function startBootSequence(attempt=1){
   const boot = createBootOverlay();
 
   try {
-    // Ensure lock screen exists early (so it can render even if later fails)
+    await boot.log('Restoring saved state...');
+    loadManifest();
+    loadAutoSave();
+    syncSmUsername();
+
+    // Ensure lock screen reflects saved password/settings
     lockScreen();
     await boot.log('Initializing lock screen...');
 
@@ -2979,11 +2984,6 @@ async function startBootSequence(attempt=1){
     buildStartMenu();
 
     renderDesktopFsIcons();
-
-    await boot.log('Restoring saved state...');
-    loadManifest();
-    loadAutoSave();
-    syncSmUsername();
 
     await boot.log('Performing system checks...');
     await delay(200);
