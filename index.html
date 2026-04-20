@@ -681,6 +681,18 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 .soc-help-text{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.55}
 .soc-help-text strong{color:rgba(255,255,255,0.65)}
 
+/* ── SOCIAL MOBILE RESPONSIVE ───────────────────────────────────── */
+.soc-mobile-tabs{display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25)}
+.soc-tab-btn{flex:1;padding:11px 6px;border:none;background:none;color:rgba(255,255,255,0.4);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .18s}
+.soc-tab-btn.active{color:#fff;border-bottom-color:var(--accent);background:rgba(91,138,245,0.07)}
+@media(max-width:680px){
+  .soc-mobile-tabs{display:flex}
+  .soc-wrap{flex-direction:column;overflow:hidden}
+  .soc-feed-col{border-right:none;min-width:0;flex:1}
+  .soc-side-col{width:100%;flex-shrink:0}
+  .soc-hidden{display:none!important}
+}
+
 /* ── RESOURCE MONITOR ───────────────────────────────────────────── */
 :root{--rm-accent:#5b8af5}
 .rm-wrap{height:100%;display:flex;flex-direction:column;font-family:var(--font);overflow:hidden}
@@ -3433,9 +3445,13 @@ function buildSocial(opts) {
 
   const content = `
 <div class="soc-wrap">
+  <div class="soc-mobile-tabs">
+    <button class="soc-tab-btn active" data-soc-tab="feed">📰 Feed</button>
+    <button class="soc-tab-btn" data-soc-tab="network">🌐 Network</button>
+  </div>
 
   <!-- LEFT: Feed -->
-  <div class="soc-feed-col">
+  <div class="soc-feed-col" id="soc-feed-col">
     <!-- Compose -->
     <div class="soc-compose">
       <div class="soc-compose-avatar" id="soc-my-av" style="background:${prof.color}">${AVATAR_SVG[prof.emoji]||prof.emoji}</div>
@@ -3468,8 +3484,8 @@ function buildSocial(opts) {
     </div>
   </div>
 
-  <!-- RIGHT: Network panel -->
-  <div class="soc-side-col">
+<!-- RIGHT: Network panel -->
+  <div class="soc-side-col" id="soc-side-col">
 
     <!-- Identity -->
     <div class="soc-panel">
@@ -3632,6 +3648,23 @@ function buildSocial(opts) {
         SOCIAL.saveProfile(p);
         win.querySelector('#soc-my-av').textContent = p.emoji;
         win.querySelector('#soc-id-av').textContent = p.emoji;
+      });
+    });
+
+// Mobile tabs
+    const feedCol = win.querySelector('#soc-feed-col');
+    const sideCol = win.querySelector('#soc-side-col');
+    win.querySelectorAll('.soc-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        win.querySelectorAll('.soc-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (btn.dataset.socTab === 'feed') {
+          feedCol.classList.remove('soc-hidden');
+          sideCol.classList.add('soc-hidden');
+        } else {
+          feedCol.classList.add('soc-hidden');
+          sideCol.classList.remove('soc-hidden');
+        }
       });
     });
 
