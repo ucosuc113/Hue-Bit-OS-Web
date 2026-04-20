@@ -3654,6 +3654,10 @@ function buildSocial(opts) {
 // Mobile tabs
     const feedCol = win.querySelector('#soc-feed-col');
     const sideCol = win.querySelector('#soc-side-col');
+    // On mobile, hide the network panel by default so only the feed shows on open
+    if (window.innerWidth <= 680) {
+      sideCol.classList.add('soc-hidden');
+    }
     win.querySelectorAll('.soc-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         win.querySelectorAll('.soc-tab-btn').forEach(b => b.classList.remove('active'));
