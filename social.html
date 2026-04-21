@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HueBit Social</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#5b8af5;--accent2:#9b59f5;
+  --text:#eaf0ff;--text-dim:rgba(255,255,255,0.45);
+  --font:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Cascadia Code','Consolas','Courier New',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:#0c0e18;user-select:none}
+*::-webkit-scrollbar{width:5px;height:5px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+*::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.3)}
+::selection{background:rgba(91,138,245,0.4)}
+
+/* ── SOCIAL NETWORK ─────────────────────────────────────────────── */
+.soc-wrap{display:flex;height:100vh;overflow:hidden;font-family:var(--font)}
+.soc-feed-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.07);overflow:hidden}
+.soc-side-col{width:280px;flex-shrink:0;overflow-y:auto;background:rgba(0,0,0,0.2);padding:10px}
+.soc-compose{display:flex;gap:10px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
+.soc-compose-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:600}
+.soc-compose-inner{flex:1;display:flex;flex-direction:column;gap:6px}
+.soc-compose-ta{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text);font-family:var(--font);font-size:13px;padding:8px 10px;resize:none;outline:none;transition:border-color .15s}
+.soc-compose-ta:focus{border-color:rgba(91,138,245,0.5);background:rgba(91,138,245,0.05)}
+.soc-compose-toolbar{display:flex;align-items:center;gap:6px}
+.soc-img-url{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:var(--text);font-size:11px;padding:5px 8px;outline:none}
+.soc-char-count{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
+.soc-post-btn{padding:5px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.soc-post-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.soc-ram-bar-wrap{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(0,0,0,0.15);border-bottom:1px solid rgba(255,255,255,0.05)}
+.soc-ram-track{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.soc-ram-fill{height:100%;border-radius:2px;transition:width .5s ease,background .3s}
+.soc-ram-txt{font-size:10px;color:rgba(255,255,255,0.35);white-space:nowrap}
+.soc-feed-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.05)}
+.soc-feed-count{font-size:10px;font-weight:400;color:rgba(255,255,255,0.25)}
+.soc-posts{flex:1;overflow-y:auto;padding:6px}
+.soc-empty{padding:30px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px}
+.soc-post{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;margin-bottom:6px;transition:border-color .15s,background .15s;animation:postIn .25s cubic-bezier(.2,1.2,.3,1)}
+.soc-post:hover{border-color:rgba(91,138,245,0.25);background:rgba(91,138,245,0.05)}
+@keyframes postIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.soc-post-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.soc-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.soc-post-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1}
+.soc-author{font-size:12px;font-weight:700;color:rgba(255,255,255,0.85)}
+.soc-author.is-mine{color:var(--accent)}
+.soc-time{font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto}
+.soc-hop-badge{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(155,89,245,0.2);color:rgba(155,89,245,0.9);border:1px solid rgba(155,89,245,0.2)}
+.soc-post-content{font-size:13px;color:rgba(255,255,255,0.82);line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.soc-post-img{max-width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1)}
+.soc-load-more{padding:8px 12px;display:flex;justify-content:center}
+.soc-load-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;padding:7px 18px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.soc-load-btn:hover{background:rgba(91,138,245,0.15);border-color:rgba(91,138,245,0.3);color:#fff}
+.soc-load-btn:disabled{opacity:.4;cursor:default}
+.soc-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;margin-bottom:8px}
+.soc-panel-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.35);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.soc-identity{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.soc-id-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.soc-id-info{flex:1;min-width:0}
+.soc-name-inp{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#fff;font-size:13px;font-weight:600;padding:4px 7px;outline:none;width:100%;margin-bottom:5px;font-family:var(--font)}
+.soc-peer-id-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.soc-peer-label{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
+.soc-peer-id{font-size:10px;color:var(--accent);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.soc-copy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;padding:1px 5px;flex-shrink:0;transition:all .15s}
+.soc-copy-btn:hover{background:rgba(91,138,245,0.2);color:#fff}
+.soc-status-row{display:flex;align-items:center;gap:4px}
+.soc-status-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
+.soc-color-row{display:flex;gap:5px;flex-wrap:wrap}
+.soc-clr-sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.soc-clr-sw:hover{transform:scale(1.15)}
+.soc-clr-sw.active{border-color:#fff}
+.soc-emoji-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}
+.soc-emoji-sw{width:24px;height:24px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,0.04);transition:all .15s;border:1px solid transparent}
+.soc-emoji-sw:hover{background:rgba(91,138,245,0.2)}
+.soc-emoji-sw.active{border-color:var(--accent);background:rgba(91,138,245,0.15)}
+.soc-connect-row{display:flex;gap:6px}
+.soc-peer-inp{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:#fff;font-size:11px;padding:6px 8px;outline:none;font-family:var(--mono)}
+.soc-connect-btn{background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.soc-connect-btn:hover{filter:brightness(1.15)}
+.soc-conn-list{max-height:100px;overflow-y:auto}
+.soc-no-conn{font-size:11px;color:rgba(255,255,255,0.25);padding:4px 0}
+.soc-conn-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
+.soc-conn-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
+.soc-conn-id{flex:1;font-family:var(--mono);color:rgba(255,255,255,0.7);overflow:hidden;text-overflow:ellipsis}
+.soc-conn-disc{background:none;border:none;color:rgba(255,80,80,0.6);cursor:pointer;font-size:11px;padding:0 2px;transition:color .15s}
+.soc-conn-disc:hover{color:#ff5f5f}
+.soc-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;min-width:16px;height:16px;padding:0 4px;font-weight:700}
+.soc-help-text{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.55}
+.soc-help-text strong{color:rgba(255,255,255,0.65)}
+.soc-contact-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.soc-contact-item:last-child{border-bottom:none}
+.soc-contact-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.soc-contact-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soc-contact-pid{font-size:9px;color:rgba(255,255,255,0.28);font-family:var(--mono)}
+.soc-contact-btns{display:flex;gap:3px;flex-shrink:0}
+.soc-contact-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.45);cursor:pointer;font-size:11px;padding:2px 6px;transition:all .15s}
+.soc-contact-btn.reconnect:hover{background:rgba(91,138,245,0.22);color:#fff;border-color:rgba(91,138,245,0.4)}
+.soc-contact-btn.remove:hover{background:rgba(255,80,80,0.18);color:#ff9090;border-color:rgba(255,80,80,0.3)}
+.soc-conn-add{background:rgba(91,138,245,0.15);border:1px solid rgba(91,138,245,0.3);border-radius:5px;color:rgba(91,138,245,0.9);cursor:pointer;font-size:12px;padding:0 5px;transition:all .15s;line-height:1.4}
+.soc-conn-add:hover{background:rgba(91,138,245,0.3);color:#fff}
+
+/* ── Mobile ─────────────────────────────────────────────────────── */
+.soc-mobile-tabs{display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25)}
+.soc-tab-btn{flex:1;padding:11px 6px;border:none;background:none;color:rgba(255,255,255,0.4);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .18s}
+.soc-tab-btn.active{color:#fff;border-bottom-color:var(--accent);background:rgba(91,138,245,0.07)}
+@media(max-width:640px){
+  .soc-mobile-tabs{display:flex}
+  .soc-wrap{flex-direction:column;overflow:hidden}
+  .soc-feed-col{border-right:none;min-width:0;flex:1}
+  .soc-side-col{width:100%;flex-shrink:0}
+  .soc-hidden{display:none!important}
+}
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+#soc-toasts{position:fixed;top:10px;right:10px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.soc-toast{background:rgba(10,12,22,0.97);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;animation:toastIn .3s cubic-bezier(.2,1.2,.3,1);cursor:pointer}
+.soc-toast-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.soc-toast-msg{font-size:11px;color:rgba(255,255,255,0.5)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div id="soc-toasts"></div>
+
+<div class="soc-wrap">
+  <!-- Mobile tabs (only visible on narrow viewports) -->
+  <div class="soc-mobile-tabs">
+    <button class="soc-tab-btn active" data-soc-tab="feed">📰 Feed</button>
+    <button class="soc-tab-btn" data-soc-tab="network">🌐 Network</button>
+  </div>
+
+  <!-- ── LEFT: Feed ──────────────────────────────────────────────── -->
+  <div class="soc-feed-col" id="soc-feed-col">
+    <!-- Compose -->
+    <div class="soc-compose">
+      <div class="soc-compose-avatar" id="soc-my-av" style="background:var(--accent)"></div>
+      <div class="soc-compose-inner">
+        <textarea class="soc-compose-ta" id="soc-compose-ta"
+          placeholder="What's happening on the network?…" maxlength="500" rows="3"></textarea>
+        <div class="soc-compose-toolbar">
+          <input class="soc-img-url" id="soc-img-url" placeholder="Image URL (optional)">
+          <span class="soc-char-count" id="soc-char-count">0/500</span>
+          <button class="soc-post-btn" id="soc-post-btn">Post</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network RAM bar -->
+    <div class="soc-ram-bar-wrap">
+      <div class="soc-ram-track"><div class="soc-ram-fill" id="soc-ram-fill" style="width:0%"></div></div>
+      <span class="soc-ram-txt" id="soc-ram-txt">Net RAM: 0 MB</span>
+    </div>
+
+    <!-- Feed header -->
+    <div class="soc-feed-hd">
+      <span>Feed</span>
+      <span class="soc-feed-count" id="soc-feed-count"></span>
+    </div>
+
+    <div class="soc-posts" id="soc-posts"></div>
+    <div class="soc-load-more">
+      <button class="soc-load-btn" id="soc-load-btn">Load more posts</button>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Network panel ────────────────────────────────────── -->
+  <div class="soc-side-col" id="soc-side-col">
+
+    <!-- Identity -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">My Identity</div>
+      <div class="soc-identity">
+        <div class="soc-id-av" id="soc-id-av" style="background:var(--accent)"></div>
+        <div class="soc-id-info">
+          <input class="soc-name-inp" id="soc-name-inp" value="" placeholder="Display name" maxlength="32">
+          <div class="soc-peer-id-row">
+            <span class="soc-peer-label">Peer ID:</span>
+            <span class="soc-peer-id" id="soc-peer-id">Connecting…</span>
+            <button class="soc-copy-btn" id="soc-copy-id" title="Copy ID">⎘</button>
+          </div>
+          <div class="soc-status-row">
+            <span class="soc-status-dot"></span>
+            <span id="soc-net-status" style="color:#888;font-size:11px">Initializing…</span>
+          </div>
+        </div>
+      </div>
+      <!-- Color swatches -->
+      <div class="soc-color-row" id="soc-colors"></div>
+      <!-- Emoji swatches -->
+      <div class="soc-emoji-row" id="soc-emojis"></div>
+    </div>
+
+    <!-- Connect to peer -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">Connect to Peer</div>
+      <div class="soc-connect-row">
+        <input class="soc-peer-inp" id="soc-peer-inp" placeholder="Paste peer ID…" autocomplete="off">
+        <button class="soc-connect-btn" id="soc-connect-btn">Connect</button>
+      </div>
+    </div>
+
+    <!-- Active connections -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">Connections <span id="soc-conn-badge" class="soc-badge">0</span></div>
+      <div class="soc-conn-list" id="soc-conn-list"></div>
+    </div>
+
+    <!-- Contacts -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">Contacts <span id="soc-contacts-badge" class="soc-badge">0</span></div>
+      <div class="soc-conn-list" id="soc-contacts-list" style="max-height:140px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Help -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">How it works</div>
+      <div class="soc-help-text">
+        Share your <strong>Peer ID</strong> with others — they paste it in "Connect to Peer", or vice versa.
+        Posts travel peer-to-peer (max 8 hops) and are cached locally so they survive disconnects.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+'use strict';
+
+// ── OS settings received from parent (index.html) via postMessage ──
+let _osUsername = 'User';
+let _osAccent   = '#5b8af5';
+let _osAvatar   = null;
+
+window.addEventListener('message', e => {
+  if (!e.data || e.data.type !== 'os-init') return;
+  if (e.data.username) _osUsername = e.data.username;
+  if (e.data.accent)  { _osAccent = e.data.accent; document.documentElement.style.setProperty('--accent', _osAccent); }
+  if (e.data.avatar !== undefined) _osAvatar = e.data.avatar;
+
+  // Update profile name if still at default
+  const saved = loadProfile();
+  if (!saved || saved.name === 'User' || saved.name === 'Anonymous') {
+    profile.name = _osUsername;
+    saveProfile(profile);
+    const inp = document.getElementById('soc-name-inp');
+    if (inp) inp.value = _osUsername;
+  }
+  renderColors();
+  renderEmojis();
+  updateAvatarEls();
+});
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(title, msg) {
+  const wrap = document.getElementById('soc-toasts');
+  const el   = document.createElement('div');
+  el.className = 'soc-toast';
+  el.innerHTML = `<div class="soc-toast-title">${title}</div><div class="soc-toast-msg">${msg}</div>`;
+  wrap.appendChild(el);
+  el.onclick = () => el.remove();
+  setTimeout(() => {
+    el.style.transition = 'opacity .2s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 200);
+  }, 3200);
+}
+
+// ── AVATAR SVGs ───────────────────────────────────────────────────
+const AVATAR_SVG = {
+  star:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 12.4,7.4 18,8.2 14,12 15,17.6 10,15 5,17.6 6,12 2,8.2 7.6,7.4"/></svg>',
+  bolt:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="11,2 5,11 10,11 9,18 15,9 10,9"/></svg>',
+  target:  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>',
+  moon:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M15 12a7 7 0 1 1-7-7 5 5 0 0 0 7 7z"/></svg>',
+  flame:   '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 2c0 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-1-5-1 1-1 3-3 3 1-3 0-5 0-7z"/></svg>',
+  planet:  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="10" cy="10" r="5"/><ellipse cx="10" cy="10" rx="9" ry="3" transform="rotate(-20,10,10)"/></svg>',
+  diamond: '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 18,9 10,18 2,9"/></svg>',
+  music:   '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M8 15V5l9-2v10"/><circle cx="6" cy="15" r="2.5"/><circle cx="15" cy="13" r="2.5"/></svg>',
+  leaf:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M17 3C9 3 3 9 4 17c3-3 6-5 10-6-2 2-4 5-4 8 5-1 8-6 7-16z"/></svg>',
+  wave:    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M2 10 Q5 6 8 10 Q11 14 14 10 Q17 6 18 10"/></svg>',
+};
+
+const ACCENT_COLORS = ['#5b8af5','#e91e8c','#00c896','#ff6b2b','#f7c535','#a855f7'];
+const EMOJI_KEYS    = ['star','bolt','target','moon','flame','planet','diamond','music','leaf','wave'];
+
+// ── Persistence ───────────────────────────────────────────────────
+const LS_POSTS        = 'huebit-social-posts-v1';
+const LS_PROFILE      = 'huebit-social-profile-v1';
+const LS_PEERID       = 'huebit-social-peerid-v1';
+const LS_KNOWN_PEERS  = 'huebit-social-peers-v1';
+const LS_CONTACTS     = 'huebit-social-contacts-v1';
+
+function loadStoredPosts()  { try{return JSON.parse(localStorage.getItem(LS_POSTS)||'[]');}catch{return[];} }
+function savePosts(p)       { try{localStorage.setItem(LS_POSTS,JSON.stringify(p));}catch{} }
+function loadProfile()      { try{return JSON.parse(localStorage.getItem(LS_PROFILE)||'null');}catch{return null;} }
+function saveProfile(p)     { try{localStorage.setItem(LS_PROFILE,JSON.stringify(p));}catch{} }
+function loadStoredPeerId() { return localStorage.getItem(LS_PEERID)||null; }
+function savePeerId(id)     { try{localStorage.setItem(LS_PEERID,id);}catch{} }
+function loadKnownPeers()   { try{return JSON.parse(localStorage.getItem(LS_KNOWN_PEERS)||'[]');}catch{return[];} }
+function saveKnownPeers()   { try{localStorage.setItem(LS_KNOWN_PEERS,JSON.stringify([...knownPeers]));}catch{} }
+function loadContacts()     { try{return JSON.parse(localStorage.getItem(LS_CONTACTS)||'{}');}catch{return{};} }
+function saveContacts(c)    { try{localStorage.setItem(LS_CONTACTS,JSON.stringify(c));}catch{} }
+
+// ── Constants ────────────────────────────────────────────────────
+const FAKE_RAM_PER_CONN = 12;
+const FAKE_RAM_PER_POST = 0.5;
+const MAX_POSTS_LOADED  = 20;
+const POSTS_PER_PAGE    = 5;
+const MAX_CONNECTIONS   = 20;
+
+// ── State ─────────────────────────────────────────────────────────
+let peer        = null;
+let connections = new Map();
+let knownPeers  = new Set();
+let loadedPosts = [];
+let renderedCount = 0;
+let myPeerId    = null;
+let profile     = loadProfile() || { name: 'User', color: '#5b8af5', emoji: 'star' };
+
+// ── Utilities ────────────────────────────────────────────────────
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function timeAgo(ts){
+  const d=Date.now()-ts;
+  if(d<60000)      return 'just now';
+  if(d<3600000)    return Math.floor(d/60000)+'m ago';
+  if(d<86400000)   return Math.floor(d/3600000)+'h ago';
+  return new Date(ts).toLocaleDateString();
+}
+
+// ── RAM bar ───────────────────────────────────────────────────────
+function updateRAMBar(){
+  const connMB = connections.size * FAKE_RAM_PER_CONN;
+  const postMB = loadedPosts.length * FAKE_RAM_PER_POST;
+  const used   = connMB + postMB;
+  const total  = MAX_CONNECTIONS * FAKE_RAM_PER_CONN;
+  const pct    = Math.min(100, (used/total)*100);
+
+  const fill = document.getElementById('soc-ram-fill');
+  const txt  = document.getElementById('soc-ram-txt');
+  if(fill){ fill.style.width = pct.toFixed(1)+'%'; fill.style.background = pct>80?'#ff5f57':pct>60?'#ffbd2e':'var(--accent)'; }
+  if(txt)  txt.textContent = `Net RAM: ${used.toFixed(1)} MB / ${total} MB  (${connections.size} conn)`;
+
+  // Report to parent (index.html Resource Monitor)
+  try{ window.parent?.postMessage({type:'social-ram', mb: used}, '*'); }catch{}
+}
+
+// ── Post management ───────────────────────────────────────────────
+function mergePost(post){
+  const stored = loadStoredPosts();
+  if(stored.find(p => p.id === post.id)) return false;
+  stored.unshift(post);
+  if(stored.length > 500) stored.splice(500);
+  savePosts(stored);
+  if(loadedPosts.length >= MAX_POSTS_LOADED) loadedPosts.pop();
+  loadedPosts.unshift(post);
+  updateRAMBar();
+  return true;
+}
+
+function makePost(content, imageUrl){
+  return {
+    id:          crypto.randomUUID(),
+    authorId:    myPeerId,
+    authorName:  profile.name || 'Anonymous',
+    authorColor: profile.color,
+    authorEmoji: profile.emoji,
+    content,
+    imageUrl:    imageUrl || null,
+    timestamp:   Date.now(),
+    hops:        0,
+  };
+}
+
+function publishPost(content, imageUrl){
+  if(!content.trim()) return false;
+  const post = makePost(content.trim(), imageUrl);
+  mergePost(post);
+  broadcast({type:'post', post});
+  renderedCount = Math.min(renderedCount+1, loadedPosts.length);
+  renderFeed();
+  return true;
+}
+
+// ── Feed rendering ────────────────────────────────────────────────
+function renderPostEl(post){
+  const el = document.createElement('div');
+  el.className = 'soc-post';
+  const isMine = post.authorId === myPeerId;
+  const img = post.imageUrl
+    ? `<img src="${post.imageUrl}" class="soc-post-img" alt="" onerror="this.style.display='none'">`
+    : '';
+  const hopBadge = post.hops > 0
+    ? `<span class="soc-hop-badge">↗ ${post.hops} hop${post.hops>1?'s':''}</span>`
+    : '';
+  el.innerHTML = `
+    <div class="soc-post-header">
+      <div class="soc-avatar" style="background:${post.authorColor}">${AVATAR_SVG[post.authorEmoji]||'★'}</div>
+      <div class="soc-post-meta">
+        <span class="soc-author${isMine?' is-mine':''}">${escHtml(post.authorName)}</span>
+        ${hopBadge}
+        <span class="soc-time">${timeAgo(post.timestamp)}</span>
+      </div>
+    </div>
+    <div class="soc-post-content">${escHtml(post.content)}</div>
+    ${img}`;
+  return el;
+}
+
+function renderFeed(){
+  const feedEl  = document.getElementById('soc-posts');
+  const countEl = document.getElementById('soc-feed-count');
+  if(!feedEl) return;
+  const toShow = loadedPosts.slice(0, renderedCount);
+  feedEl.innerHTML = '';
+  if(!toShow.length){
+    feedEl.innerHTML = '<div class="soc-empty">No posts yet. Create one or connect to peers!</div>';
+    return;
+  }
+  toShow.forEach(p => feedEl.appendChild(renderPostEl(p)));
+  if(countEl){
+    const total = loadStoredPosts().length;
+    countEl.textContent = `${toShow.length} shown · ${total} cached · ${loadedPosts.length} in memory`;
+  }
+}
+
+function loadMorePosts(){
+  const stored    = loadStoredPosts();
+  const nextBatch = stored.slice(loadedPosts.length, loadedPosts.length + POSTS_PER_PAGE);
+  if(!nextBatch.length) return false;
+  if(loadedPosts.length + nextBatch.length > MAX_POSTS_LOADED){
+    const evict = (loadedPosts.length + nextBatch.length) - MAX_POSTS_LOADED;
+    loadedPosts.splice(loadedPosts.length - evict, evict);
+  }
+  loadedPosts.push(...nextBatch);
+  renderedCount = Math.min(renderedCount + POSTS_PER_PAGE, loadedPosts.length);
+  renderFeed();
+  return true;
+}
+
+// ── Connections list ──────────────────────────────────────────────
+function renderConnList(){
+  const listEl  = document.getElementById('soc-conn-list');
+  const badge   = document.getElementById('soc-conn-badge');
+  if(badge) badge.textContent = connections.size;
+  if(!listEl) return;
+  if(!connections.size){ listEl.innerHTML = '<div class="soc-no-conn">No connections</div>'; return; }
+  const contacts = loadContacts();
+  listEl.innerHTML = '';
+  connections.forEach((conn, id) => {
+    const isContact = !!contacts[id];
+    const el = document.createElement('div');
+    el.className = 'soc-conn-item';
+    el.innerHTML = `
+      <span class="soc-conn-dot"></span>
+      <span class="soc-conn-id">${id.slice(0,8)}…</span>
+      ${!isContact
+        ? `<button class="soc-conn-add" data-id="${id}" title="Save as contact">＋</button>`
+        : `<span style="font-size:10px;color:rgba(91,138,245,0.7);padding:0 3px" title="Saved contact">★</span>`}
+      <button class="soc-conn-disc" data-id="${id}">&times;</button>`;
+    el.querySelector('.soc-conn-disc').onclick = () => disconnect(id);
+    el.querySelector('.soc-conn-add')?.addEventListener('click', () => {
+      const label = prompt('Contact name:', id.slice(0,8)) || id.slice(0,8);
+      addContact(id, label);
+    });
+    listEl.appendChild(el);
+  });
+}
+
+// ── Contacts ──────────────────────────────────────────────────────
+function renderContactsList(){
+  const listEl  = document.getElementById('soc-contacts-list');
+  const badge   = document.getElementById('soc-contacts-badge');
+  const contacts = loadContacts();
+  const entries  = Object.entries(contacts);
+  if(badge) badge.textContent = entries.length;
+  if(!listEl) return;
+  if(!entries.length){ listEl.innerHTML = '<div class="soc-no-conn">No contacts yet.</div>'; return; }
+  listEl.innerHTML = '';
+  entries.forEach(([pid, info]) => {
+    const online = connections.has(pid) && connections.get(pid).open;
+    const el = document.createElement('div');
+    el.className = 'soc-contact-item';
+    el.innerHTML = `
+      <span class="soc-conn-dot" style="background:${online?'#28c840':'rgba(255,255,255,0.18)'}"></span>
+      <div class="soc-contact-info">
+        <span class="soc-contact-label">${escHtml(info.label)}</span>
+        <span class="soc-contact-pid">${pid.slice(0,12)}…</span>
+      </div>
+      <div class="soc-contact-btns">
+        ${!online ? `<button class="soc-contact-btn reconnect" data-pid="${pid}" title="Reconnect">↺</button>` : ''}
+        <button class="soc-contact-btn remove" data-pid="${pid}" title="Remove">✕</button>
+      </div>`;
+    el.querySelector('.reconnect')?.addEventListener('click', () => {
+      connectToPeer(pid);
+      toast('Social', `Reconnecting to ${info.label}…`);
+    });
+    el.querySelector('.remove')?.addEventListener('click', () => {
+      removeContact(pid);
+      toast('Social', `"${info.label}" removed from contacts.`);
+    });
+    listEl.appendChild(el);
+  });
+}
+
+function addContact(peerId, label){
+  if(!peerId || peerId === myPeerId) return false;
+  const c = loadContacts();
+  if(c[peerId]) return false;
+  c[peerId] = { label: label || ('Peer '+peerId.slice(0,6)), addedAt: Date.now() };
+  saveContacts(c);
+  addKnownPeer(peerId);
+  renderContactsList();
+  renderConnList();
+  toast('Social', `"${label}" saved to contacts!`);
+  return true;
+}
+
+function removeContact(peerId){
+  const c = loadContacts();
+  delete c[peerId];
+  saveContacts(c);
+  renderContactsList();
+  renderConnList();
+}
+
+// ── PeerJS / WebRTC ───────────────────────────────────────────────
+function addKnownPeer(id){
+  if(!id || id === myPeerId || knownPeers.has(id)) return;
+  knownPeers.add(id);
+  saveKnownPeers();
+}
+
+function broadcast(data, excludeId = null){
+  connections.forEach((conn, id) => {
+    if(id !== excludeId && conn.open) try{ conn.send(data); }catch{}
+  });
+}
+
+function sendPeerList(conn){
+  if(!conn || !conn.open) return;
+  const peers = [...knownPeers].filter(id => id && id !== conn.peer);
+  if(peers.length) conn.send({type:'peer_list', peers});
+}
+
+function mergePeers(peers){
+  if(!Array.isArray(peers)) return;
+  let added = 0;
+  peers.forEach(pid => {
+    if(!pid || pid === myPeerId || knownPeers.has(pid)) return;
+    knownPeers.add(pid); added++;
+  });
+  if(added) saveKnownPeers();
+  if(connections.size < MAX_CONNECTIONS){
+    for(const pid of [...knownPeers]){
+      if(connections.size >= MAX_CONNECTIONS) break;
+      if(pid !== myPeerId && !connections.has(pid)) connectToPeer(pid, {silent:true});
+    }
+  }
+}
+
+function handleData(conn, data){
+  if(!data || !data.type) return;
+  switch(data.type){
+    case 'post':{
+      const post = {...data.post, hops:(data.post.hops||0)+1};
+      if(mergePost(post)){
+        if(post.hops < 8) broadcast({type:'post', post}, conn.peer);
+        renderedCount = Math.min(renderedCount+1, loadedPosts.length);
+        renderFeed();
+      }
+      break;
+    }
+    case 'sync_req':
+      conn.send({type:'sync_res', posts: loadStoredPosts().slice(0, 50)});
+      break;
+    case 'sync_res':{
+      let n = 0;
+      (data.posts||[]).forEach(p => { if(mergePost(p)) n++; });
+      if(n > 0){ renderedCount = Math.min(renderedCount+n, loadedPosts.length); renderFeed(); }
+      break;
+    }
+    case 'peer_list_request': sendPeerList(conn); break;
+    case 'peer_list': mergePeers(data.peers||[]); break;
+  }
+}
+
+function setupConn(conn){
+  conn.on('open', () => {
+    connections.set(conn.peer, conn);
+    renderConnList(); updateRAMBar(); addKnownPeer(conn.peer);
+    sendPeerList(conn);
+    conn.send({type:'peer_list_request'});
+    conn.send({type:'sync_req'});
+    renderContactsList();
+    toast('Social', `Connected to ${conn.peer.slice(0,8)}…`);
+  });
+  conn.on('data',  data => handleData(conn, data));
+  conn.on('close', () => {
+    connections.delete(conn.peer);
+    renderConnList(); renderContactsList(); updateRAMBar();
+    toast('Social', `Peer ${conn.peer.slice(0,8)} disconnected`);
+  });
+  conn.on('error', () => {
+    connections.delete(conn.peer);
+    renderConnList(); updateRAMBar();
+  });
+}
+
+function connectToPeer(peerId, {silent=false} = {}){
+  if(!peer || !peerId || peerId === myPeerId) return;
+  if(connections.has(peerId)){ if(!silent) toast('Social','Already connected to this peer'); return; }
+  if(connections.size >= MAX_CONNECTIONS){ if(!silent) toast('Social','Max connections reached (RAM limit)'); return; }
+  addKnownPeer(peerId);
+  const conn = peer.connect(peerId, {reliable:true});
+  setupConn(conn);
+}
+
+function disconnect(peerId){
+  const conn = connections.get(peerId);
+  if(conn) try{ conn.close(); }catch{}
+  connections.delete(peerId);
+  renderConnList(); updateRAMBar();
+}
+
+function initPeer(){
+  if(typeof Peer === 'undefined'){
+    const st = document.getElementById('soc-net-status');
+    if(st) st.textContent = 'PeerJS not loaded. Check network.';
+    return;
+  }
+  const storedId = loadStoredPeerId();
+  peer = storedId ? new Peer(storedId) : new Peer();
+
+  peer.on('open', id => {
+    myPeerId = id; savePeerId(id);
+    document.getElementById('soc-peer-id').textContent = id;
+    const st = document.getElementById('soc-net-status');
+    if(st){ st.textContent = 'Online'; st.style.color = '#28c840'; }
+    const savedContacts = loadContacts();
+    Object.keys(savedContacts).forEach(kid => { if(kid && kid !== myPeerId) connectToPeer(kid,{silent:true}); });
+    knownPeers.forEach(kid => { if(kid && kid !== myPeerId && !savedContacts[kid]) connectToPeer(kid,{silent:true}); });
+  });
+  peer.on('connection', conn => {
+    if(connections.size >= MAX_CONNECTIONS){ conn.close(); return; }
+    setupConn(conn);
+  });
+  peer.on('error', err => {
+    const st = document.getElementById('soc-net-status');
+    if(st){ st.textContent = 'Error: '+err.type; st.style.color = '#ff5f57'; }
+    if(err.type === 'unavailable-id'){
+      peer = new Peer();
+      peer.on('open', id => {
+        myPeerId = id; savePeerId(id);
+        document.getElementById('soc-peer-id').textContent = id;
+      });
+    }
+  });
+  peer.on('disconnected', () => {
+    const st = document.getElementById('soc-net-status');
+    if(st){ st.textContent = 'Disconnected'; st.style.color = '#ffbd2e'; }
+  });
+}
+
+// ── Identity UI ───────────────────────────────────────────────────
+function renderColors(){
+  const el = document.getElementById('soc-colors');
+  if(!el) return;
+  el.innerHTML = '';
+  ACCENT_COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'soc-clr-sw' + (profile.color === c ? ' active' : '');
+    sw.style.background = c;
+    sw.title = c;
+    sw.onclick = () => {
+      profile.color = c; saveProfile(profile);
+      el.querySelectorAll('.soc-clr-sw').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      updateAvatarEls();
+    };
+    el.appendChild(sw);
+  });
+}
+
+function renderEmojis(){
+  const el = document.getElementById('soc-emojis');
+  if(!el) return;
+  el.innerHTML = '';
+  EMOJI_KEYS.forEach(e => {
+    const sw = document.createElement('div');
+    sw.className = 'soc-emoji-sw' + (profile.emoji === e ? ' active' : '');
+    sw.dataset.e = e;
+    sw.innerHTML = AVATAR_SVG[e] || e;
+    sw.onclick = () => {
+      profile.emoji = e; saveProfile(profile);
+      el.querySelectorAll('.soc-emoji-sw').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      updateAvatarEls();
+    };
+    el.appendChild(sw);
+  });
+}
+
+function updateAvatarEls(){
+  const myAv = document.getElementById('soc-my-av');
+  const idAv = document.getElementById('soc-id-av');
+  if(myAv){ myAv.style.background = profile.color; myAv.innerHTML = AVATAR_SVG[profile.emoji] || '★'; }
+  if(idAv){ idAv.style.background = profile.color; idAv.innerHTML = AVATAR_SVG[profile.emoji] || '★'; }
+}
+
+// ── Init on DOM ready ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore state
+  knownPeers = new Set(loadKnownPeers());
+  profile    = loadProfile() || { name: _osUsername, color: '#5b8af5', emoji: 'star' };
+
+  // Identity UI
+  document.getElementById('soc-name-inp').value = profile.name;
+  renderColors();
+  renderEmojis();
+  updateAvatarEls();
+
+  // Feed
+  const stored = loadStoredPosts();
+  loadedPosts  = stored.slice(0, MAX_POSTS_LOADED);
+  renderedCount = Math.min(POSTS_PER_PAGE, loadedPosts.length);
+  renderFeed();
+  renderConnList();
+  renderContactsList();
+  updateRAMBar();
+
+  // P2P
+  initPeer();
+
+  // ── Compose ────────────────────────────────────────────────────
+  const ta        = document.getElementById('soc-compose-ta');
+  const charCount = document.getElementById('soc-char-count');
+  ta.addEventListener('input', () => { charCount.textContent = ta.value.length + '/500'; });
+  document.getElementById('soc-post-btn').addEventListener('click', () => {
+    const img = document.getElementById('soc-img-url').value.trim() || null;
+    if(publishPost(ta.value, img)){
+      ta.value = ''; document.getElementById('soc-img-url').value = '';
+      charCount.textContent = '0/500';
+    } else {
+      toast('Social', 'Post cannot be empty');
+    }
+  });
+
+  // ── Connect ────────────────────────────────────────────────────
+  const peerInp = document.getElementById('soc-peer-inp');
+  document.getElementById('soc-connect-btn').addEventListener('click', () => {
+    const id = peerInp.value.trim();
+    if(!id){ toast('Social','Enter a peer ID'); return; }
+    connectToPeer(id);
+    peerInp.value = '';
+  });
+  peerInp.addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('soc-connect-btn').click(); });
+
+  // ── Copy peer ID ───────────────────────────────────────────────
+  document.getElementById('soc-copy-id').addEventListener('click', () => {
+    const id = document.getElementById('soc-peer-id').textContent;
+    if(id && id !== 'Connecting…'){
+      navigator.clipboard.writeText(id).catch(() => {});
+      toast('Social', 'Peer ID copied!');
+    }
+  });
+
+  // ── Load more ──────────────────────────────────────────────────
+  const loadBtn = document.getElementById('soc-load-btn');
+  loadBtn.addEventListener('click', () => {
+    if(!loadMorePosts()){ loadBtn.textContent = 'No more posts'; loadBtn.disabled = true; }
+  });
+
+  // Infinite scroll
+  document.getElementById('soc-posts').addEventListener('scroll', e => {
+    const el = e.target;
+    if(el.scrollTop + el.clientHeight >= el.scrollHeight - 60) loadMorePosts();
+  });
+
+  // ── Profile name ───────────────────────────────────────────────
+  document.getElementById('soc-name-inp').addEventListener('change', e => {
+    profile.name = e.target.value.trim() || 'Anonymous';
+    saveProfile(profile);
+  });
+
+  // ── Mobile tabs ────────────────────────────────────────────────
+  const feedCol = document.getElementById('soc-feed-col');
+  const sideCol = document.getElementById('soc-side-col');
+  if(window.innerWidth <= 640) sideCol.classList.add('soc-hidden');
+  document.querySelectorAll('.soc-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.soc-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if(btn.dataset.socTab === 'feed'){
+        feedCol.classList.remove('soc-hidden');
+        sideCol.classList.add('soc-hidden');
+      } else {
+        feedCol.classList.add('soc-hidden');
+        sideCol.classList.remove('soc-hidden');
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>

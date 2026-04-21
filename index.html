@@ -607,102 +607,7 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 .vsc-tut-ok{background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:7px 18px;cursor:pointer;transition:all .15s;font-family:var(--font)}
 .vsc-tut-ok:hover{filter:brightness(1.15);transform:translateY(-1px)}
 
-/* ── SOCIAL NETWORK ─────────────────────────────────────────── */
-.soc-wrap{display:flex;height:100%;overflow:hidden;font-family:var(--font)}
-.soc-feed-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.07);overflow:hidden}
-.soc-side-col{width:280px;flex-shrink:0;overflow-y:auto;background:rgba(0,0,0,0.2);padding:10px}
-.soc-compose{display:flex;gap:10px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
-.soc-compose-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:600}
-.soc-compose-inner{flex:1;display:flex;flex-direction:column;gap:6px}
-.soc-compose-ta{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text);font-family:var(--font);font-size:13px;padding:8px 10px;resize:none;outline:none;transition:border-color .15s}
-.soc-compose-ta:focus{border-color:rgba(91,138,245,0.5);background:rgba(91,138,245,0.05)}
-.soc-compose-toolbar{display:flex;align-items:center;gap:6px}
-.soc-img-url{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:var(--text);font-size:11px;padding:5px 8px;outline:none}
-.soc-char-count{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
-.soc-post-btn{padding:5px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.soc-post-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
-.soc-ram-bar-wrap{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(0,0,0,0.15);border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-ram-track{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
-.soc-ram-fill{height:100%;border-radius:2px;transition:width .5s ease,background .3s}
-.soc-ram-txt{font-size:10px;color:rgba(255,255,255,0.35);white-space:nowrap}
-.soc-feed-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-feed-count{font-size:10px;font-weight:400;color:rgba(255,255,255,0.25)}
-.soc-posts{flex:1;overflow-y:auto;padding:6px}
-.soc-empty{padding:30px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px}
-.soc-post{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;margin-bottom:6px;transition:border-color .15s,background .15s;animation:postIn .25s cubic-bezier(.2,1.2,.3,1)}
-.soc-post:hover{border-color:rgba(91,138,245,0.25);background:rgba(91,138,245,0.05)}
-@keyframes postIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.soc-post-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.soc-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
-.soc-post-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1}
-.soc-author{font-size:12px;font-weight:700;color:rgba(255,255,255,0.85)}
-.soc-author.is-mine{color:var(--accent)}
-.soc-time{font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto}
-.soc-hop-badge{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(155,89,245,0.2);color:rgba(155,89,245,0.9);border:1px solid rgba(155,89,245,0.2)}
-.soc-post-content{font-size:13px;color:rgba(255,255,255,0.82);line-height:1.5;word-break:break-word;white-space:pre-wrap}
-.soc-post-img{max-width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1)}
-.soc-load-more{padding:8px 12px;display:flex;justify-content:center}
-.soc-load-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;padding:7px 18px;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.soc-load-btn:hover{background:rgba(91,138,245,0.15);border-color:rgba(91,138,245,0.3);color:#fff}
-.soc-load-btn:disabled{opacity:.4;cursor:default}
-.soc-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;margin-bottom:8px}
-.soc-panel-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.35);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.soc-identity{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
-.soc-id-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
-.soc-id-info{flex:1;min-width:0}
-.soc-name-inp{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#fff;font-size:13px;font-weight:600;padding:4px 7px;outline:none;width:100%;margin-bottom:5px;font-family:var(--font)}
-.soc-peer-id-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.soc-peer-label{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
-.soc-peer-id{font-size:10px;color:var(--accent);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.soc-copy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;padding:1px 5px;flex-shrink:0;transition:all .15s}
-.soc-copy-btn:hover{background:rgba(91,138,245,0.2);color:#fff}
-.soc-status-row{display:flex;align-items:center;gap:4px}
-.soc-status-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
-.soc-color-row{display:flex;gap:5px;flex-wrap:wrap}
-.soc-clr-sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
-.soc-clr-sw:hover{transform:scale(1.15)}
-.soc-clr-sw.active{border-color:#fff}
-.soc-emoji-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}
-.soc-emoji-sw{width:24px;height:24px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,0.04);transition:all .15s;border:1px solid transparent}
-.soc-emoji-sw:hover{background:rgba(91,138,245,0.2)}
-.soc-emoji-sw.active{border-color:var(--accent);background:rgba(91,138,245,0.15)}
-.soc-connect-row{display:flex;gap:6px}
-.soc-peer-inp{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:#fff;font-size:11px;padding:6px 8px;outline:none;font-family:var(--mono)}
-.soc-connect-btn{background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.soc-connect-btn:hover{filter:brightness(1.15)}
-.soc-conn-list{max-height:100px;overflow-y:auto}
-.soc-no-conn{font-size:11px;color:rgba(255,255,255,0.25);padding:4px 0}
-.soc-conn-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
-.soc-conn-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
-.soc-conn-id{flex:1;font-family:var(--mono);color:rgba(255,255,255,0.7);overflow:hidden;text-overflow:ellipsis}
-.soc-conn-disc{background:none;border:none;color:rgba(255,80,80,0.6);cursor:pointer;font-size:11px;padding:0 2px;transition:color .15s}
-.soc-conn-disc:hover{color:#ff5f5f}
-.soc-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;min-width:16px;height:16px;padding:0 4px;font-weight:700}
-.soc-help-text{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.55}
-.soc-help-text strong{color:rgba(255,255,255,0.65)}
-.soc-contact-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-contact-item:last-child{border-bottom:none}
-.soc-contact-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.soc-contact-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.soc-contact-pid{font-size:9px;color:rgba(255,255,255,0.28);font-family:var(--mono)}
-.soc-contact-btns{display:flex;gap:3px;flex-shrink:0}
-.soc-contact-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.45);cursor:pointer;font-size:11px;padding:2px 6px;transition:all .15s}
-.soc-contact-btn.reconnect:hover{background:rgba(91,138,245,0.22);color:#fff;border-color:rgba(91,138,245,0.4)}
-.soc-contact-btn.remove:hover{background:rgba(255,80,80,0.18);color:#ff9090;border-color:rgba(255,80,80,0.3)}
-.soc-conn-add{background:rgba(91,138,245,0.15);border:1px solid rgba(91,138,245,0.3);border-radius:5px;color:rgba(91,138,245,0.9);cursor:pointer;font-size:12px;padding:0 5px;transition:all .15s;line-height:1.4}
-.soc-conn-add:hover{background:rgba(91,138,245,0.3);color:#fff}
 
-/* ── SOCIAL MOBILE RESPONSIVE ───────────────────────────────────── */
-.soc-mobile-tabs{display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25)}
-.soc-tab-btn{flex:1;padding:11px 6px;border:none;background:none;color:rgba(255,255,255,0.4);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .18s}
-.soc-tab-btn.active{color:#fff;border-bottom-color:var(--accent);background:rgba(91,138,245,0.07)}
-@media(max-width:680px){
-  .soc-mobile-tabs{display:flex}
-  .soc-wrap{flex-direction:column;overflow:hidden}
-  .soc-feed-col{border-right:none;min-width:0;flex:1}
-  .soc-side-col{width:100%;flex-shrink:0}
-  .soc-hidden{display:none!important}
-}
 
 /* ── RESOURCE MONITOR ───────────────────────────────────────────── */
 :root{--rm-accent:#5b8af5}
@@ -831,7 +736,6 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 <div id="ctx"></div>
 <div id="toasts"></div>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 'use strict';
 
@@ -933,7 +837,7 @@ const LS_KEY='huebit-os-v2';
 // changelog, dev-notes, etc). loadAutoSave() will patch only
 // the SYSTEM_FILES paths in localStorage and leave everything
 // else (user files, settings, wallpaper) completely untouched.
-const BUILD_VERSION='1.4.6b';
+const BUILD_VERSION='1.7.0';
 
 let customWallpaperData=null;
 
@@ -1004,6 +908,19 @@ function loadAutoSave(){
 // ── FAKE FILESYSTEM ────────────────────────────────────────────
 const CHANGELOG=`HueBit OS — Changelog
 ═════════════════════
+
+[v1.7.0] - Social Network Module Separation
+
+- Architecture: Social Network completamente extraída a social.html independiente.
+  index.html la carga via iframe, permitiendo desarrollarla sin tocar el OS principal.
+- Added: Real RAM tracking en Resource Monitor via performance.memory (Chrome/Chromium).
+  En otros navegadores, muestra simulado con indicador claro "real data / simulated".
+- Added: Canal postMessage entre index.html y social.html para sincronizar usuario,
+  color de acento y avatar del OS al abrir la app.
+- Added: social.html reporta uso de RAM de red en tiempo real al Resource Monitor.
+- Removed: Toda la lógica social (SOCIAL object, AVATAR_SVG, soc-* CSS, PeerJS) del
+  bundle principal — boot más rápido, código mucho más limpio.
+- Fixed: PeerJS ahora solo se carga al abrir Social Network, no en cada arranque del OS.
 
 [v1.4.6b] - Mobile Responsive Patch
 
@@ -3044,760 +2961,36 @@ async function startBootSequence(attempt=1){
 // Start boot sequence after DOM is ready
 startBootSequence();
 
-// ── SOCIAL ─── P2P Social Network (PeerJS / WebRTC) ──────────────
+// ── SOCIAL ─── iframe module (social.html) ───────────────────────
 
-// ── Global Social State ──────────────────────────────────────────
-const SOCIAL = (() => {
-  const LS_POSTS      = 'huebit-social-posts-v1';
-  const LS_PROFILE    = 'huebit-social-profile-v1';
-  const LS_PEERID     = 'huebit-social-peerid-v1';
-  const LS_KNOWN_PEERS = 'huebit-social-peers-v1';
-  const LS_CONTACTS    = 'huebit-social-contacts-v1';
+let _socMsgListenerAdded = false;
 
-  const FAKE_RAM_PER_CONN = 12;   // MB per active P2P connection
-  const FAKE_RAM_PER_POST = 0.5;  // MB per post loaded in memory
-  const MAX_POSTS_LOADED  = 20;   // posts kept in JS memory at once
-  const POSTS_PER_PAGE    = 5;    // posts revealed per lazy-load tick
-  const MAX_CONNECTIONS   = 20;   // hard cap (fake RAM limit: 240MB)
+function buildSocial(opts){
+  const content = `<iframe src="./social.html"
+    id="soc-iframe"
+    style="width:100%;height:100%;border:none;background:#0c0e18"
+    allow="clipboard-read; clipboard-write"></iframe>`;
 
-  let peer = null;
-  let connections = new Map();  // connId -> DataConnection
-  let knownPeers = new Set();   // peer IDs we have learned about
-  let loadedPosts = [];         // posts currently rendered (up to MAX_POSTS_LOADED)
-  let renderedCount = 0;        // how many posts are visible in the feed
-  let profile = { name: '', color: '#5b8af5', emoji: 'star' };
-  let myPeerId = null;
-  let feedEl = null, feedCountEl = null, connListEl = null;
-  let ramBarEl = null, ramTextEl = null;
-
-  /* ── Persistence helpers ──────────────────────────────────────── */
-  function loadStoredPosts() {
-    try { return JSON.parse(localStorage.getItem(LS_POSTS) || '[]'); }
-    catch(e) { return []; }
-  }
-  function savePosts(posts) {
-    try { localStorage.setItem(LS_POSTS, JSON.stringify(posts)); } catch(e) {}
-  }
-  function loadProfile() {
-    try { return JSON.parse(localStorage.getItem(LS_PROFILE) || 'null'); } catch(e) { return null; }
-  }
-  function saveProfile(p) {
-    try { localStorage.setItem(LS_PROFILE, JSON.stringify(p)); } catch(e) {}
-  }
-  function loadStoredPeerId() {
-    return localStorage.getItem(LS_PEERID) || null;
-  }
-  function savePeerId(id) {
-    try { localStorage.setItem(LS_PEERID, id); } catch(e) {}
-  }
-
-  function loadKnownPeers() {
-    try { return JSON.parse(localStorage.getItem(LS_KNOWN_PEERS) || '[]'); } catch(e) { return []; }
-  }
-  function saveKnownPeers() {
-    try { localStorage.setItem(LS_KNOWN_PEERS, JSON.stringify(Array.from(knownPeers))); } catch(e) {}
-  }
-  function addKnownPeer(id) {
-    if (!id || id === myPeerId) return;
-    if (knownPeers.has(id)) return;
-    knownPeers.add(id);
-    saveKnownPeers();
-  }
-
-  /* ── Contacts ─────────────────────────────────────────────────── */
-  function loadContacts() {
-    try { return JSON.parse(localStorage.getItem(LS_CONTACTS) || '{}'); } catch(e) { return {}; }
-  }
-  function saveContacts(c) {
-    try { localStorage.setItem(LS_CONTACTS, JSON.stringify(c)); } catch(e) {}
-  }
-  function addContact(peerId, label) {
-    if (!peerId || peerId === myPeerId) return false;
-    const c = loadContacts();
-    if (c[peerId]) return false;
-    c[peerId] = { label: label || ('Peer ' + peerId.slice(0,6)), addedAt: Date.now() };
-    saveContacts(c);
-    addKnownPeer(peerId);
-    renderContactsList();
-    renderConnList();
-    return true;
-  }
-  function removeContact(peerId) {
-    const c = loadContacts();
-    delete c[peerId];
-    saveContacts(c);
-    renderContactsList();
-    renderConnList();
-  }
-  function getContacts() { return loadContacts(); }
-
-  let contactsListEl = null;
-  function initContactsList(el) { contactsListEl = el; renderContactsList(); }
-
-function renderContactsList() {
-    if (!contactsListEl || !document.contains(contactsListEl)) return;
-    const contacts = loadContacts();
-    const entries = Object.entries(contacts);
-    if (!entries.length) {
-      contactsListEl.innerHTML = '<div class="soc-no-conn">No contacts yet. Add peers via the Connections panel.</div>';
-      return;
-    }
-    contactsListEl.innerHTML = '';
-    entries.forEach(([pid, info]) => {
-      const online = connections.has(pid) && connections.get(pid).open;
-      const row = document.createElement('div');
-      row.className = 'soc-contact-item';
-      row.innerHTML = `
-        <span class="soc-conn-dot" style="background:${online ? '#28c840' : 'rgba(255,255,255,0.18)'}"></span>
-        <div class="soc-contact-info">
-          <span class="soc-contact-label">${escHtml(info.label)}</span>
-          <span class="soc-contact-pid">${pid.slice(0,12)}…</span>
-        </div>
-        <div class="soc-contact-btns">
-          ${!online ? `<button class="soc-contact-btn reconnect" data-pid="${pid}" title="Reconnect">↺</button>` : ''}
-          <button class="soc-contact-btn remove" data-pid="${pid}" title="Remove">✕</button>
-        </div>
-      `;
-      row.querySelector('.reconnect')?.addEventListener('click', () => {
-        connectToPeer(pid);
-        toast('', 'Social', `Reconnecting to ${info.label}…`);
+  function onMount(win){
+    // One-time listener: receives live RAM usage reports from social.html
+    if(!_socMsgListenerAdded){
+      _socMsgListenerAdded = true;
+      window.addEventListener('message', e => {
+        if(e.data?.type === 'social-ram') window.RESMON?.setSocialUsage(e.data.mb || 0);
       });
-      row.querySelector('.remove')?.addEventListener('click', () => {
-        removeContact(pid);
-        toast('', 'Social', `"${info.label}" removed from contacts.`);
-      });
-      contactsListEl.appendChild(row);
-    });
-  }
-
-  /* ── Fake-RAM update ───────────────────────────────────────────── */
-  function updateFakeRam() {
-    const connMB  = connections.size * FAKE_RAM_PER_CONN;
-    const postMB  = loadedPosts.length * FAKE_RAM_PER_POST;
-    if (window.RESMON) window.RESMON.setSocialUsage(connMB + postMB);
-    // update mini-bar in social window
-    if (ramBarEl && document.contains(ramBarEl) && ramTextEl) {
-      const total = MAX_CONNECTIONS * FAKE_RAM_PER_CONN;
-      const used  = connMB + postMB;
-      const pct   = Math.min(100, (used / total) * 100);
-      const pctStr = pct.toFixed(1);
-      ramBarEl.style.width = pctStr + '%';
-      ramBarEl.style.background = pct > 80 ? '#ff5f5f' : pct > 60 ? '#ffbd2e' : '#5b8af5';
-      ramTextEl.textContent = `Net RAM: ${used.toFixed(1)} MB / ${total} MB (${connections.size} conn)`;
     }
-  }
-
-  /* ── Post management ───────────────────────────────────────────── */
-  function mergePost(post) {
-    // Returns true if the post was NEW (not already stored)
-    const stored = loadStoredPosts();
-    if (stored.find(p => p.id === post.id)) return false;
-    stored.unshift(post);
-    // Keep max 500 posts in storage
-    if (stored.length > 500) stored.splice(500);
-    savePosts(stored);
-// Add to in-memory list, evict oldest if at cap
-    if (loadedPosts.length >= MAX_POSTS_LOADED) {
-      loadedPosts.pop();
-    }
-    loadedPosts.unshift(post);
-    updateFakeRam();
-    return true;
-  }
-
-  function makePost(content, imageUrl) {
-    return {
-      id:          crypto.randomUUID(),
-      authorId:    myPeerId,
-      authorName:  profile.name || 'Anonymous',
-      authorColor: profile.color,
-      authorEmoji: profile.emoji,
-      content,
-      imageUrl:    imageUrl || null,
-      timestamp:   Date.now(),
-      hops:        0,   // propagation count
-    };
-  }
-
-  /* ── Rendering ────────────────────────────────────────────────── */
-  function timeAgo(ts) {
-    const diff = Date.now() - ts;
-    if (diff < 60000)       return 'just now';
-    if (diff < 3600000)     return Math.floor(diff / 60000) + 'm ago';
-    if (diff < 86400000)    return Math.floor(diff / 3600000) + 'h ago';
-    return new Date(ts).toLocaleDateString();
-  }
-
-  function renderPostEl(post) {
-    const el = document.createElement('div');
-    el.className = 'soc-post';
-    el.dataset.postId = post.id;
-    const isMine = post.authorId === myPeerId;
-    const img = post.imageUrl
-      ? `<img src="${post.imageUrl}" class="soc-post-img" alt="" onerror="this.style.display='none'">`
-      : '';
-    const hopBadge = post.hops > 0
-      ? `<span class="soc-hop-badge">${SI.shareIcon || '↗'} ${post.hops} hop${post.hops > 1 ? 's' : ''}</span>`
-      : '';
-    el.innerHTML = `
-      <div class="soc-post-header">
-        <div class="soc-avatar" style="background:${post.authorColor}">${AVATAR_SVG[post.authorEmoji]||post.authorEmoji||AVATAR_SVG.star}</div>
-        <div class="soc-post-meta">
-          <span class="soc-author${isMine ? ' is-mine' : ''}">${escHtml(post.authorName)}</span>
-          ${hopBadge}
-          <span class="soc-time">${timeAgo(post.timestamp)}</span>
-        </div>
-      </div>
-      <div class="soc-post-content">${escHtml(post.content)}</div>
-      ${img}
-    `;
-    return el;
-  }
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-function renderFeed() {
-    if (!feedEl || !document.contains(feedEl)) return;
-    const toShow = loadedPosts.slice(0, renderedCount);
-    feedEl.innerHTML = '';
-    if (toShow.length === 0) {
-      feedEl.innerHTML = '<div class="soc-empty">No posts yet. Create one or connect to peers!</div>';
-      return;
-    }
-    toShow.forEach(post => feedEl.appendChild(renderPostEl(post)));
-    if (feedCountEl) {
-      const total = loadStoredPosts().length;
-      feedCountEl.textContent = `${toShow.length} shown · ${total} cached · ${loadedPosts.length} in memory`;
-    }
-  }
-
-  function loadMorePosts() {
-    const stored = loadStoredPosts();
-    const nextBatch = stored.slice(loadedPosts.length, loadedPosts.length + POSTS_PER_PAGE);
-    if (nextBatch.length === 0) return false;
-    // Evict oldest posts from memory if over cap
-    if (loadedPosts.length + nextBatch.length > MAX_POSTS_LOADED) {
-      const evict = (loadedPosts.length + nextBatch.length) - MAX_POSTS_LOADED;
-      loadedPosts.splice(loadedPosts.length - evict, evict);
-    }
-    loadedPosts.push(...nextBatch);
-    renderedCount = Math.min(renderedCount + POSTS_PER_PAGE, loadedPosts.length);
-    updateFakeRam();
-    renderFeed();
-    return true;
-  }
-
-  function initFeed(el, countEl, ramBar, ramTxt) {
-    feedEl      = el;
-    feedCountEl = countEl;
-    ramBarEl    = ramBar;
-    ramTextEl   = ramTxt;
-    // Init loadedPosts from storage
-    const stored = loadStoredPosts();
-    loadedPosts  = stored.slice(0, MAX_POSTS_LOADED);
-    renderedCount = Math.min(POSTS_PER_PAGE, loadedPosts.length);
-    renderFeed();
-    updateFakeRam();
-  }
-
-  function initConnList(el) {
-    connListEl = el;
-    renderConnList();
-  }
-
-function renderConnList() {
-    if (!connListEl || !document.contains(connListEl)) return;
-    if (connections.size === 0) {
-      connListEl.innerHTML = '<div class="soc-no-conn">No connections</div>';
-      return;
-    }
-    connListEl.innerHTML = '';
-    const contacts = loadContacts();
-    connections.forEach((conn, id) => {
-      const isContact = !!contacts[id];
-      const el = document.createElement('div');
-      el.className = 'soc-conn-item';
-      el.innerHTML = `
-        <span class="soc-conn-dot"></span>
-        <span class="soc-conn-id">${id.slice(0,8)}…</span>
-        ${!isContact ? `<button class="soc-conn-add" data-id="${id}" title="Save as contact">＋</button>` : `<span style="font-size:10px;color:rgba(91,138,245,0.7);padding:0 3px" title="Saved contact">★</span>`}
-        <button class="soc-conn-disc" data-id="${id}">&times;</button>
-      `;
-      el.querySelector('.soc-conn-disc').onclick = () => disconnect(id);
-      el.querySelector('.soc-conn-add')?.addEventListener('click', () => {
-        const label = prompt('Contact name:', id.slice(0,8)) || id.slice(0,8);
-        if (addContact(id, label)) toast('', 'Social', `"${label}" saved to contacts!`);
-        else toast('', 'Social', 'Already a contact.');
-      });
-      connListEl.appendChild(el);
+    // Send OS settings to the social app once it loads
+    const iframe = win.querySelector('#soc-iframe');
+    iframe.addEventListener('load', () => {
+      iframe.contentWindow?.postMessage({
+        type:     'os-init',
+        username: OS.username || 'User',
+        accent:   OS.accent   || '#5b8af5',
+        avatar:   OS.avatar   || null,
+      }, '*');
     });
   }
-
-  /* ── Peer.js / WebRTC ─────────────────────────────────────────── */
-  function broadcast(data, excludeId = null) {
-    connections.forEach((conn, id) => {
-      if (id !== excludeId && conn.open) {
-        try { conn.send(data); } catch(e) {}
-      }
-    });
-  }
-
-  function sendPeerList(conn) {
-    if (!conn || !conn.open) return;
-    const peers = Array.from(knownPeers).filter(id => id && id !== conn.peer);
-    if (peers.length === 0) return;
-    conn.send({ type: 'peer_list', peers });
-  }
-
-  function mergePeers(peers) {
-    if (!Array.isArray(peers)) return;
-    let added = 0;
-    peers.forEach(pid => {
-      if (!pid || pid === myPeerId) return;
-      if (!knownPeers.has(pid)) {
-        knownPeers.add(pid);
-        added++;
-      }
-    });
-    if (added) saveKnownPeers();
-    // Try to connect to any new peers (respecting max connections)
-    if (connections.size < MAX_CONNECTIONS) {
-      for (const pid of Array.from(knownPeers)) {
-        if (connections.size >= MAX_CONNECTIONS) break;
-        if (pid === myPeerId) continue;
-        if (!connections.has(pid)) connectToPeer(pid, { silent: true });
-      }
-    }
-  }
-
-  function handleData(conn, data) {
-    if (!data || !data.type) return;
-    switch (data.type) {
-      case 'post': {
-        const post = { ...data.post, hops: (data.post.hops || 0) + 1 };
-        const isNew = mergePost(post);
-        if (isNew) {
-          // Propagate to other peers (limit hops to avoid infinite loops)
-          if (post.hops < 8) broadcast({ type: 'post', post }, conn.peer);
-          renderedCount = Math.min(renderedCount + 1, loadedPosts.length);
-          renderFeed();
-        }
-        break;
-      }
-      case 'sync_req': {
-        // Peer asked for our recent posts
-        const myPosts = loadStoredPosts().slice(0, 50);
-        conn.send({ type: 'sync_res', posts: myPosts });
-        break;
-      }
-case 'sync_res': {
-        // Receive posts from a peer
-        const posts = data.posts || [];
-        let newCount = 0;
-        posts.forEach(p => { if (mergePost(p)) newCount++; });
-        if (newCount > 0) {
-          renderedCount = Math.min(renderedCount + newCount, loadedPosts.length);
-          renderFeed();
-        }
-        break;
-      }
-      case 'peer_list_request': {
-        // Peer wants our list of known peers
-        sendPeerList(conn);
-        break;
-      }
-      case 'peer_list': {
-        mergePeers(data.peers || []);
-        break;
-      }
-    }
-  }
-
-  function setupConn(conn) {
-    conn.on('open', () => {
-      connections.set(conn.peer, conn);
-      renderConnList();
-      updateFakeRam();
-      addKnownPeer(conn.peer);
-      // Exchange peer list and posts
-      sendPeerList(conn);
-      conn.send({ type: 'peer_list_request' });
-      conn.send({ type: 'sync_req' });
-renderContactsList();
-      toast('', 'Social', `Connected to ${conn.peer.slice(0,8)}…`);
-    });
-    conn.on('data', data => handleData(conn, data));
-    conn.on('close', () => {
-      connections.delete(conn.peer);
-      renderConnList();
-      renderContactsList();
-      updateFakeRam();
-      toast('', 'Social', `Peer ${conn.peer.slice(0,8)} disconnected`);
-    });
-    conn.on('error', () => {
-      connections.delete(conn.peer);
-      renderConnList();
-      updateFakeRam();
-    });
-  }
-
-  function connectToPeer(peerId, {silent=false} = {}) {
-    if (!peer || !peerId) return;
-    if (peerId === myPeerId) return;
-    if (connections.has(peerId)) { if (!silent) toast('','Social','Already connected to this peer'); return; }
-    if (connections.size >= MAX_CONNECTIONS) { if (!silent) toast('','Social','Max connections reached (RAM limit)'); return; }
-    addKnownPeer(peerId);
-    const conn = peer.connect(peerId, { reliable: true });
-    setupConn(conn);
-  }
-
-  function disconnect(peerId) {
-    const conn = connections.get(peerId);
-    if (conn) { try { conn.close(); } catch(e) {} }
-    connections.delete(peerId);
-    renderConnList();
-    updateFakeRam();
-  }
-
-  function initPeer(statusEl, peerIdEl) {
-    // Load known peers from storage, used to auto-expand the mesh
-    knownPeers = new Set(loadKnownPeers());
-
-    // Check if PeerJS is loaded
-    if (typeof Peer === 'undefined') {
-      if (statusEl) statusEl.textContent = 'PeerJS not loaded. Check network.';
-      return;
-    }
-
-    const storedId = loadStoredPeerId();
-    peer = storedId ? new Peer(storedId) : new Peer();
-
-    peer.on('open', id => {
-      myPeerId = id;
-      savePeerId(id);
-      if (peerIdEl) peerIdEl.textContent = id;
-      if (statusEl) { statusEl.textContent = 'Online'; statusEl.style.color = '#28c840'; }
-// Auto-connect to saved contacts first
-      const savedContacts = loadContacts();
-      Object.keys(savedContacts).forEach(kid => {
-        if (kid && kid !== myPeerId) connectToPeer(kid, { silent: true });
-      });
-      // Then known peers not yet in contacts
-      knownPeers.forEach(kid => {
-        if (kid && kid !== myPeerId && !savedContacts[kid]) connectToPeer(kid, { silent: true });
-      });
-    });
-    peer.on('connection', conn => {
-      if (connections.size >= MAX_CONNECTIONS) { conn.close(); return; }
-      setupConn(conn);
-    });
-    peer.on('error', err => {
-      if (statusEl) { statusEl.textContent = 'Error: ' + err.type; statusEl.style.color = '#ff5f57'; }
-      // If ID already taken (previous session), generate new ID
-      if (err.type === 'unavailable-id') {
-        peer = new Peer();
-        peer.on('open', id => {
-          myPeerId = id; savePeerId(id);
-          if (peerIdEl) peerIdEl.textContent = id;
-          if (statusEl) { statusEl.textContent = 'Online'; statusEl.style.color = '#28c840'; }
-        });
-      }
-    });
-    peer.on('disconnected', () => {
-      if (statusEl) { statusEl.textContent = 'Disconnected'; statusEl.style.color = '#ffbd2e'; }
-    });
-  }
-
-  function publishPost(content, imageUrl) {
-    if (!content.trim()) return false;
-    const post = makePost(content.trim(), imageUrl);
-    mergePost(post);
-    broadcast({ type: 'post', post });
-    renderedCount = Math.min(renderedCount + 1, loadedPosts.length);
-    renderFeed();
-    return true;
-  }
-
-  return {
-    init(opts) {
-      profile = loadProfile() || { name: OS.username || 'User', color: OS.accent || '#5b8af5', emoji: 'star' };
-      return this;
-    },
-initPeer, initFeed, initConnList, initContactsList,
-    connectToPeer, disconnect, publishPost, loadMorePosts,
-    addContact, removeContact, getContacts,
-    getMyId() { return myPeerId; },
-    getProfile() { return profile; },
-    saveProfile(p) { profile = p; saveProfile(p); },
-    getConnCount() { return connections.size; },
-  };
-})();
-
-// ── App builder ───────────────────────────────────────────────────
-const AVATAR_SVG={'star':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 12.4,7.4 18,8.2 14,12 15,17.6 10,15 5,17.6 6,12 2,8.2 7.6,7.4"/></svg>','bolt':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="11,2 5,11 10,11 9,18 15,9 10,9"/></svg>','target':'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>','moon':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M15 12a7 7 0 1 1-7-7 5 5 0 0 0 7 7z"/></svg>','flame':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 2c0 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-1-5-1 1-1 3-3 3 1-3 0-5 0-7z"/></svg>','planet':'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="10" cy="10" r="5"/><ellipse cx="10" cy="10" rx="9" ry="3" transform="rotate(-20,10,10)"/></svg>','diamond':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 18,9 10,18 2,9"/></svg>','music':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M8 15V5l9-2v10"/><circle cx="6" cy="15" r="2.5"/><circle cx="15" cy="13" r="2.5"/></svg>','leaf':'<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M17 3C9 3 3 9 4 17c3-3 6-5 10-6-2 2-4 5-4 8 5-1 8-6 7-16z"/></svg>','wave':'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M2 10 Q5 6 8 10 Q11 14 14 10 Q17 6 18 10"/></svg>'};
-function buildSocial(opts) {
-  SOCIAL.init();
-  const prof = SOCIAL.getProfile();
-
-  const content = `
-<div class="soc-wrap">
-  <div class="soc-mobile-tabs">
-    <button class="soc-tab-btn active" data-soc-tab="feed">📰 Feed</button>
-    <button class="soc-tab-btn" data-soc-tab="network">🌐 Network</button>
-  </div>
-
-  <!-- LEFT: Feed -->
-  <div class="soc-feed-col" id="soc-feed-col">
-    <!-- Compose -->
-    <div class="soc-compose">
-      <div class="soc-compose-avatar" id="soc-my-av" style="background:${prof.color}">${AVATAR_SVG[prof.emoji]||prof.emoji}</div>
-      <div class="soc-compose-inner">
-        <textarea class="soc-compose-ta" id="soc-compose-ta" placeholder="What's happening on the network?…" maxlength="500" rows="3"></textarea>
-        <div class="soc-compose-toolbar">
-          <input class="soc-img-url" id="soc-img-url" placeholder="Image URL (optional)" />
-          <div class="soc-char-count" id="soc-char-count">0/500</div>
-          <button class="soc-post-btn" id="soc-post-btn">Post</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- RAM bar -->
-    <div class="soc-ram-bar-wrap">
-      <div class="soc-ram-track"><div class="soc-ram-fill" id="soc-ram-fill" style="width:0%"></div></div>
-      <span class="soc-ram-txt" id="soc-ram-txt">Net RAM: 0 MB</span>
-    </div>
-
-    <!-- Feed header -->
-    <div class="soc-feed-hd">
-      <span>Feed</span>
-      <span class="soc-feed-count" id="soc-feed-count"></span>
-    </div>
-
-    <!-- Posts -->
-    <div class="soc-posts" id="soc-posts"></div>
-    <div class="soc-load-more" id="soc-load-more">
-      <button class="soc-load-btn" id="soc-load-btn">Load more posts</button>
-    </div>
-  </div>
-
-<!-- RIGHT: Network panel -->
-  <div class="soc-side-col" id="soc-side-col">
-
-    <!-- Identity -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">My Identity</div>
-      <div class="soc-identity">
-        <div class="soc-id-av" id="soc-id-av" style="background:${prof.color}">${AVATAR_SVG[prof.emoji]||prof.emoji}</div>
-        <div class="soc-id-info">
-          <input class="soc-name-inp" id="soc-name-inp" value="${escSocHtml(prof.name)}" placeholder="Display name" maxlength="32">
-          <div class="soc-peer-id-row">
-            <span class="soc-peer-label">Peer ID:</span>
-            <span class="soc-peer-id" id="soc-peer-id">Connecting…</span>
-            <button class="soc-copy-btn" id="soc-copy-id" title="Copy ID">⎘</button>
-          </div>
-          <div class="soc-status-row">
-            <span class="soc-status-dot"></span>
-            <span id="soc-net-status" style="color:#888;font-size:11px">Initializing…</span>
-          </div>
-        </div>
-      </div>
-      <!-- Color swatches -->
-      <div class="soc-color-row" id="soc-colors">
-        ${['#5b8af5','#e91e8c','#00c896','#ff6b2b','#f7c535','#a855f7'].map(c=>
-          `<div class="soc-clr-sw${c===prof.color?' active':''}" data-c="${c}" style="background:${c}"></div>`
-        ).join('')}
-      </div>
-      <!-- Emoji swatches -->
-      <div class="soc-emoji-row" id="soc-emojis">
-        ${['star','bolt','target','moon','flame','planet','diamond','music','leaf','wave'].map(e=>
-          `<div class=\"soc-emoji-sw${e===prof.emoji?' active':''}\" data-e=\"${e}\">${AVATAR_SVG[e]||e}</div>`
-        ).join('')}
-      </div>
-    </div>
-
-    <!-- Connect to peer -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Connect to Peer</div>
-      <div class="soc-connect-row">
-        <input class="soc-peer-inp" id="soc-peer-inp" placeholder="Paste peer ID…" autocomplete="off">
-        <button class="soc-connect-btn" id="soc-connect-btn">Connect</button>
-      </div>
-    </div>
-
-    <!-- Active connections -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Connections <span id="soc-conn-badge" class="soc-badge">0</span></div>
-      <div class="soc-conn-list" id="soc-conn-list"></div>
-    </div>
-
-<!-- Contacts -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Contacts <span id="soc-contacts-badge" class="soc-badge">0</span></div>
-      <div class="soc-conn-list" id="soc-contacts-list" style="max-height:140px;overflow-y:auto"></div>
-    </div>
-
-    <!-- Instructions -->
-    <div class="soc-panel soc-help-panel">
-      <div class="soc-panel-hd">How it works</div>
-      <div class="soc-help-text">
-        Share your <strong>Peer ID</strong> with others. They paste it in "Connect to Peer" — or vice versa.
-        Posts travel peer-to-peer: if A connected to B, and B disconnects, A still has B's posts.
-        Posts are cached locally and survive offline.
-      </div>
-    </div>
-  </div>
-
-</div>`;
-
-  function escSocHtml(s) {
-    return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function onMount(win) {
-    const feedEl     = win.querySelector('#soc-posts');
-    const countEl    = win.querySelector('#soc-feed-count');
-    const ramFill    = win.querySelector('#soc-ram-fill');
-    const ramTxt     = win.querySelector('#soc-ram-txt');
-    const statusEl   = win.querySelector('#soc-net-status');
-    const peerIdEl   = win.querySelector('#soc-peer-id');
-    const connListEl = win.querySelector('#soc-conn-list');
-    const connBadge  = win.querySelector('#soc-conn-badge');
-    const peerInp    = win.querySelector('#soc-peer-inp');
-    const connBtn    = win.querySelector('#soc-connect-btn');
-    const copyBtn    = win.querySelector('#soc-copy-id');
-    const composeTA  = win.querySelector('#soc-compose-ta');
-    const imgUrlInp  = win.querySelector('#soc-img-url');
-    const postBtn    = win.querySelector('#soc-post-btn');
-    const charCount  = win.querySelector('#soc-char-count');
-    const nameInp    = win.querySelector('#soc-name-inp');
-    const loadBtn    = win.querySelector('#soc-load-btn');
-
-    SOCIAL.initFeed(feedEl, countEl, ramFill, ramTxt);
-    SOCIAL.initConnList(connListEl);
-    SOCIAL.initContactsList(win.querySelector('#soc-contacts-list'));
-    SOCIAL.initPeer(statusEl, peerIdEl);
-
-    // Contacts badge
-    const contactsBadge = win.querySelector('#soc-contacts-badge');
-    const refreshBadge = () => {
-      if (contactsBadge) contactsBadge.textContent = Object.keys(SOCIAL.getContacts()).length;
-    };
-    refreshBadge();
-    setInterval(refreshBadge, 2500);
-
-    // Update connection badge
-    const origRenderConn = SOCIAL.initConnList;
-    const updateBadge = () => {
-      if (connBadge) connBadge.textContent = SOCIAL.getConnCount();
-    };
-    // Poll badge every 2s
-    const badgeIv = setInterval(updateBadge, 2000);
-    win.addEventListener('remove', () => clearInterval(badgeIv));
-
-    // Compose
-    composeTA.addEventListener('input', () => {
-      charCount.textContent = composeTA.value.length + '/500';
-    });
-
-    postBtn.addEventListener('click', () => {
-      const ok = SOCIAL.publishPost(composeTA.value, imgUrlInp.value.trim() || null);
-      if (ok) { composeTA.value = ''; imgUrlInp.value = ''; charCount.textContent = '0/500'; }
-      else toast('', 'Social', 'Post cannot be empty');
-    });
-
-    // Connect
-    connBtn.addEventListener('click', () => {
-      const id = peerInp.value.trim();
-      if (!id) { toast('', 'Social', 'Enter a peer ID'); return; }
-      SOCIAL.connectToPeer(id);
-      peerInp.value = '';
-    });
-    peerInp.addEventListener('keydown', e => { if (e.key === 'Enter') connBtn.click(); });
-
-    // Copy peer ID
-    copyBtn.addEventListener('click', () => {
-      const id = peerIdEl.textContent;
-      if (id && id !== 'Connecting…') {
-        navigator.clipboard.writeText(id).catch(() => {});
-        toast('', 'Social', 'Peer ID copied!');
-      }
-    });
-
-    // Load more posts
-    loadBtn.addEventListener('click', () => {
-      const more = SOCIAL.loadMorePosts();
-      if (!more) { loadBtn.textContent = 'No more posts'; loadBtn.disabled = true; }
-    });
-
-    // Profile: name
-    nameInp.addEventListener('change', () => {
-      const p = SOCIAL.getProfile();
-      p.name = nameInp.value.trim() || 'Anonymous';
-      SOCIAL.saveProfile(p);
-    });
-
-    // Profile: color
-    win.querySelectorAll('.soc-clr-sw').forEach(sw => {
-      sw.addEventListener('click', () => {
-        win.querySelectorAll('.soc-clr-sw').forEach(s => s.classList.remove('active'));
-        sw.classList.add('active');
-        const p = SOCIAL.getProfile();
-        p.color = sw.dataset.c;
-        SOCIAL.saveProfile(p);
-        win.querySelector('#soc-my-av').style.background = p.color;
-        win.querySelector('#soc-id-av').style.background = p.color;
-      });
-    });
-
-    // Profile: emoji
-    win.querySelectorAll('.soc-emoji-sw').forEach(sw => {
-      sw.addEventListener('click', () => {
-        win.querySelectorAll('.soc-emoji-sw').forEach(s => s.classList.remove('active'));
-        sw.classList.add('active');
-        const p = SOCIAL.getProfile();
-        p.emoji = sw.dataset.e;
-        SOCIAL.saveProfile(p);
-        win.querySelector('#soc-my-av').textContent = p.emoji;
-        win.querySelector('#soc-id-av').textContent = p.emoji;
-      });
-    });
-
-// Mobile tabs
-    const feedCol = win.querySelector('#soc-feed-col');
-    const sideCol = win.querySelector('#soc-side-col');
-    // On mobile, hide the network panel by default so only the feed shows on open
-    if (window.innerWidth <= 680) {
-      sideCol.classList.add('soc-hidden');
-    }
-    win.querySelectorAll('.soc-tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        win.querySelectorAll('.soc-tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (btn.dataset.socTab === 'feed') {
-          feedCol.classList.remove('soc-hidden');
-          sideCol.classList.add('soc-hidden');
-        } else {
-          feedCol.classList.add('soc-hidden');
-          sideCol.classList.remove('soc-hidden');
-        }
-      });
-    });
-
-    // Scroll-based infinite load
-    feedEl.addEventListener('scroll', () => {
-      if (feedEl.scrollTop + feedEl.clientHeight >= feedEl.scrollHeight - 60) {
-        SOCIAL.loadMorePosts();
-      }
-    });
-  }
-
   return { content, onMount };
-}
-
-function escSocHtml(s) {
-  return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 
@@ -3852,14 +3045,34 @@ window.RESMON = (() => {
     }
   }
 
-  function getRAMInfo() {
-    const wins   = getOpenWindows();
-    const winMB  = wins.reduce((s, w) => s + w.mb, 0);
-    const totalUsed = winMB + socialUsage + 12; // 12 MB for OS baseline
+function getRAMInfo() {
+    // Real RAM — Chrome/Chromium (performance.memory API)
+    const mem = performance?.memory;
+    if(mem && mem.jsHeapSizeLimit > 0){
+      const usedMB  = mem.usedJSHeapSize  / (1024 * 1024);
+      const allocMB = mem.totalJSHeapSize / (1024 * 1024);
+      const limitMB = mem.jsHeapSizeLimit / (1024 * 1024);
+      return {
+        total:  Math.round(limitMB),
+        used:   parseFloat(usedMB.toFixed(1)),
+        pct:    Math.min(100, (usedMB / limitMB) * 100),
+        isReal: true,
+        breakdown: [
+          { label: 'JS Heap Used',      mb: parseFloat(usedMB.toFixed(1)),  color: '#5b8af5' },
+          { label: 'JS Heap Allocated', mb: parseFloat(allocMB.toFixed(1)), color: '#9b59f5' },
+          ...(socialUsage > 0 ? [{ label: 'Social (live)',  mb: socialUsage, color: '#28c840' }] : []),
+        ],
+      };
+    }
+    // Fallback — simulated from open windows
+    const wins      = getOpenWindows();
+    const winMB     = wins.reduce((s, w) => s + w.mb, 0);
+    const totalUsed = winMB + socialUsage + 12;
     return {
-      total: TOTAL_RAM,
-      used:  Math.min(TOTAL_RAM, totalUsed),
-      pct:   Math.min(100, (totalUsed / TOTAL_RAM) * 100),
+      total:  TOTAL_RAM,
+      used:   Math.min(TOTAL_RAM, totalUsed),
+      pct:    Math.min(100, (totalUsed / TOTAL_RAM) * 100),
+      isReal: false,
       breakdown: [
         { label: 'OS Baseline', mb: 12, color: '#5b8af5' },
         ...wins.map(w => ({ label: w.title.slice(0,20), mb: w.mb, color: '#9b59f5' })),
@@ -3983,7 +3196,7 @@ function buildResmon(opts) {
         fill.style.background = info.pct > 80 ? '#ff5f57' : info.pct > 60 ? '#ffbd2e' : 'var(--rm-accent)';
       }
       if (txt)  txt.textContent = fmtMB(info.used) + ' / ' + fmtMB(info.total);
-      if (sub)  sub.textContent = `${pct}% used — ${fmtMB(info.total - info.used)} free`;
+      if (sub)  sub.textContent = `${pct}% used — ${fmtMB(info.total - info.used)} free  ${info.isReal ? '🟢 real data' : '⚪ simulated'}`;
 
       // Breakdown mini chart
       const bkEl = win.querySelector('#rm-breakdown');
