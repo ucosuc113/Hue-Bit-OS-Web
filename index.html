@@ -680,6 +680,17 @@ textarea.ed-ta::selection{background:rgba(91,138,245,0.35)}
 .soc-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;min-width:16px;height:16px;padding:0 4px;font-weight:700}
 .soc-help-text{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.55}
 .soc-help-text strong{color:rgba(255,255,255,0.65)}
+.soc-contact-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.soc-contact-item:last-child{border-bottom:none}
+.soc-contact-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.soc-contact-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soc-contact-pid{font-size:9px;color:rgba(255,255,255,0.28);font-family:var(--mono)}
+.soc-contact-btns{display:flex;gap:3px;flex-shrink:0}
+.soc-contact-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.45);cursor:pointer;font-size:11px;padding:2px 6px;transition:all .15s}
+.soc-contact-btn.reconnect:hover{background:rgba(91,138,245,0.22);color:#fff;border-color:rgba(91,138,245,0.4)}
+.soc-contact-btn.remove:hover{background:rgba(255,80,80,0.18);color:#ff9090;border-color:rgba(255,80,80,0.3)}
+.soc-conn-add{background:rgba(91,138,245,0.15);border:1px solid rgba(91,138,245,0.3);border-radius:5px;color:rgba(91,138,245,0.9);cursor:pointer;font-size:12px;padding:0 5px;transition:all .15s;line-height:1.4}
+.soc-conn-add:hover{background:rgba(91,138,245,0.3);color:#fff}
 
 /* ── SOCIAL MOBILE RESPONSIVE ───────────────────────────────────── */
 .soc-mobile-tabs{display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25)}
@@ -3041,6 +3052,7 @@ const SOCIAL = (() => {
   const LS_PROFILE    = 'huebit-social-profile-v1';
   const LS_PEERID     = 'huebit-social-peerid-v1';
   const LS_KNOWN_PEERS = 'huebit-social-peers-v1';
+  const LS_CONTACTS    = 'huebit-social-contacts-v1';
 
   const FAKE_RAM_PER_CONN = 12;   // MB per active P2P connection
   const FAKE_RAM_PER_POST = 0.5;  // MB per post loaded in memory
@@ -3090,6 +3102,72 @@ const SOCIAL = (() => {
     if (knownPeers.has(id)) return;
     knownPeers.add(id);
     saveKnownPeers();
+  }
+
+  /* ── Contacts ─────────────────────────────────────────────────── */
+  function loadContacts() {
+    try { return JSON.parse(localStorage.getItem(LS_CONTACTS) || '{}'); } catch(e) { return {}; }
+  }
+  function saveContacts(c) {
+    try { localStorage.setItem(LS_CONTACTS, JSON.stringify(c)); } catch(e) {}
+  }
+  function addContact(peerId, label) {
+    if (!peerId || peerId === myPeerId) return false;
+    const c = loadContacts();
+    if (c[peerId]) return false;
+    c[peerId] = { label: label || ('Peer ' + peerId.slice(0,6)), addedAt: Date.now() };
+    saveContacts(c);
+    addKnownPeer(peerId);
+    renderContactsList();
+    renderConnList();
+    return true;
+  }
+  function removeContact(peerId) {
+    const c = loadContacts();
+    delete c[peerId];
+    saveContacts(c);
+    renderContactsList();
+    renderConnList();
+  }
+  function getContacts() { return loadContacts(); }
+
+  let contactsListEl = null;
+  function initContactsList(el) { contactsListEl = el; renderContactsList(); }
+
+  function renderContactsList() {
+    if (!contactsListEl) return;
+    const contacts = loadContacts();
+    const entries = Object.entries(contacts);
+    if (!entries.length) {
+      contactsListEl.innerHTML = '<div class="soc-no-conn">No contacts yet. Add peers via the Connections panel.</div>';
+      return;
+    }
+    contactsListEl.innerHTML = '';
+    entries.forEach(([pid, info]) => {
+      const online = connections.has(pid) && connections.get(pid).open;
+      const row = document.createElement('div');
+      row.className = 'soc-contact-item';
+      row.innerHTML = `
+        <span class="soc-conn-dot" style="background:${online ? '#28c840' : 'rgba(255,255,255,0.18)'}"></span>
+        <div class="soc-contact-info">
+          <span class="soc-contact-label">${escHtml(info.label)}</span>
+          <span class="soc-contact-pid">${pid.slice(0,12)}…</span>
+        </div>
+        <div class="soc-contact-btns">
+          ${!online ? `<button class="soc-contact-btn reconnect" data-pid="${pid}" title="Reconnect">↺</button>` : ''}
+          <button class="soc-contact-btn remove" data-pid="${pid}" title="Remove">✕</button>
+        </div>
+      `;
+      row.querySelector('.reconnect')?.addEventListener('click', () => {
+        connectToPeer(pid);
+        toast('', 'Social', `Reconnecting to ${info.label}…`);
+      });
+      row.querySelector('.remove')?.addEventListener('click', () => {
+        removeContact(pid);
+        toast('', 'Social', `"${info.label}" removed from contacts.`);
+      });
+      contactsListEl.appendChild(row);
+    });
   }
 
   /* ── Fake-RAM update ───────────────────────────────────────────── */
@@ -3228,22 +3306,30 @@ const SOCIAL = (() => {
     renderConnList();
   }
 
-  function renderConnList() {
+function renderConnList() {
     if (!connListEl) return;
     if (connections.size === 0) {
       connListEl.innerHTML = '<div class="soc-no-conn">No connections</div>';
       return;
     }
     connListEl.innerHTML = '';
+    const contacts = loadContacts();
     connections.forEach((conn, id) => {
+      const isContact = !!contacts[id];
       const el = document.createElement('div');
       el.className = 'soc-conn-item';
       el.innerHTML = `
         <span class="soc-conn-dot"></span>
         <span class="soc-conn-id">${id.slice(0,8)}…</span>
+        ${!isContact ? `<button class="soc-conn-add" data-id="${id}" title="Save as contact">＋</button>` : `<span style="font-size:10px;color:rgba(91,138,245,0.7);padding:0 3px" title="Saved contact">★</span>`}
         <button class="soc-conn-disc" data-id="${id}">&times;</button>
       `;
       el.querySelector('.soc-conn-disc').onclick = () => disconnect(id);
+      el.querySelector('.soc-conn-add')?.addEventListener('click', () => {
+        const label = prompt('Contact name:', id.slice(0,8)) || id.slice(0,8);
+        if (addContact(id, label)) toast('', 'Social', `"${label}" saved to contacts!`);
+        else toast('', 'Social', 'Already a contact.');
+      });
       connListEl.appendChild(el);
     });
   }
@@ -3335,12 +3421,14 @@ const SOCIAL = (() => {
       sendPeerList(conn);
       conn.send({ type: 'peer_list_request' });
       conn.send({ type: 'sync_req' });
+renderContactsList();
       toast('', 'Social', `Connected to ${conn.peer.slice(0,8)}…`);
     });
     conn.on('data', data => handleData(conn, data));
     conn.on('close', () => {
       connections.delete(conn.peer);
       renderConnList();
+      renderContactsList();
       updateFakeRam();
       toast('', 'Social', `Peer ${conn.peer.slice(0,8)} disconnected`);
     });
@@ -3387,9 +3475,14 @@ const SOCIAL = (() => {
       savePeerId(id);
       if (peerIdEl) peerIdEl.textContent = id;
       if (statusEl) { statusEl.textContent = 'Online'; statusEl.style.color = '#28c840'; }
-      // Auto-connect to known peers (mesh expansion)
-      knownPeers.forEach(kid => {
+// Auto-connect to saved contacts first
+      const savedContacts = loadContacts();
+      Object.keys(savedContacts).forEach(kid => {
         if (kid && kid !== myPeerId) connectToPeer(kid, { silent: true });
+      });
+      // Then known peers not yet in contacts
+      knownPeers.forEach(kid => {
+        if (kid && kid !== myPeerId && !savedContacts[kid]) connectToPeer(kid, { silent: true });
       });
     });
     peer.on('connection', conn => {
@@ -3428,8 +3521,9 @@ const SOCIAL = (() => {
       profile = loadProfile() || { name: OS.username || 'User', color: OS.accent || '#5b8af5', emoji: 'star' };
       return this;
     },
-    initPeer, initFeed, initConnList,
+initPeer, initFeed, initConnList, initContactsList,
     connectToPeer, disconnect, publishPost, loadMorePosts,
+    addContact, removeContact, getContacts,
     getMyId() { return myPeerId; },
     getProfile() { return profile; },
     saveProfile(p) { profile = p; saveProfile(p); },
@@ -3534,6 +3628,12 @@ function buildSocial(opts) {
       <div class="soc-conn-list" id="soc-conn-list"></div>
     </div>
 
+<!-- Contacts -->
+    <div class="soc-panel">
+      <div class="soc-panel-hd">Contacts <span id="soc-contacts-badge" class="soc-badge">0</span></div>
+      <div class="soc-conn-list" id="soc-contacts-list" style="max-height:140px;overflow-y:auto"></div>
+    </div>
+
     <!-- Instructions -->
     <div class="soc-panel soc-help-panel">
       <div class="soc-panel-hd">How it works</div>
@@ -3572,7 +3672,16 @@ function buildSocial(opts) {
 
     SOCIAL.initFeed(feedEl, countEl, ramFill, ramTxt);
     SOCIAL.initConnList(connListEl);
+    SOCIAL.initContactsList(win.querySelector('#soc-contacts-list'));
     SOCIAL.initPeer(statusEl, peerIdEl);
+
+    // Contacts badge
+    const contactsBadge = win.querySelector('#soc-contacts-badge');
+    const refreshBadge = () => {
+      if (contactsBadge) contactsBadge.textContent = Object.keys(SOCIAL.getContacts()).length;
+    };
+    refreshBadge();
+    setInterval(refreshBadge, 2500);
 
     // Update connection badge
     const origRenderConn = SOCIAL.initConnList;
