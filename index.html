@@ -3196,11 +3196,12 @@ function renderContactsList() {
     // Keep max 500 posts in storage
     if (stored.length > 500) stored.splice(500);
     savePosts(stored);
-    // Also add to loadedPosts in memory if under cap
-    if (loadedPosts.length < MAX_POSTS_LOADED) {
-      loadedPosts.unshift(post);
-      updateFakeRam();
+// Add to in-memory list, evict oldest if at cap
+    if (loadedPosts.length >= MAX_POSTS_LOADED) {
+      loadedPosts.pop();
     }
+    loadedPosts.unshift(post);
+    updateFakeRam();
     return true;
   }
 
