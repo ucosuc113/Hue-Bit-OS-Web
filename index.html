@@ -3134,8 +3134,8 @@ const SOCIAL = (() => {
   let contactsListEl = null;
   function initContactsList(el) { contactsListEl = el; renderContactsList(); }
 
-  function renderContactsList() {
-    if (!contactsListEl) return;
+function renderContactsList() {
+    if (!contactsListEl || !document.contains(contactsListEl)) return;
     const contacts = loadContacts();
     const entries = Object.entries(contacts);
     if (!entries.length) {
@@ -3176,7 +3176,7 @@ const SOCIAL = (() => {
     const postMB  = loadedPosts.length * FAKE_RAM_PER_POST;
     if (window.RESMON) window.RESMON.setSocialUsage(connMB + postMB);
     // update mini-bar in social window
-    if (ramBarEl && ramTextEl) {
+    if (ramBarEl && document.contains(ramBarEl) && ramTextEl) {
       const total = MAX_CONNECTIONS * FAKE_RAM_PER_CONN;
       const used  = connMB + postMB;
       const pct   = Math.min(100, (used / total) * 100);
@@ -3257,8 +3257,8 @@ const SOCIAL = (() => {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function renderFeed() {
-    if (!feedEl) return;
+function renderFeed() {
+    if (!feedEl || !document.contains(feedEl)) return;
     const toShow = loadedPosts.slice(0, renderedCount);
     feedEl.innerHTML = '';
     if (toShow.length === 0) {
@@ -3307,7 +3307,7 @@ const SOCIAL = (() => {
   }
 
 function renderConnList() {
-    if (!connListEl) return;
+    if (!connListEl || !document.contains(connListEl)) return;
     if (connections.size === 0) {
       connListEl.innerHTML = '<div class="soc-no-conn">No connections</div>';
       return;
@@ -3391,12 +3391,15 @@ function renderConnList() {
         conn.send({ type: 'sync_res', posts: myPosts });
         break;
       }
-      case 'sync_res': {
+case 'sync_res': {
         // Receive posts from a peer
         const posts = data.posts || [];
         let newCount = 0;
         posts.forEach(p => { if (mergePost(p)) newCount++; });
-        if (newCount > 0) renderFeed();
+        if (newCount > 0) {
+          renderedCount = Math.min(renderedCount + newCount, loadedPosts.length);
+          renderFeed();
+        }
         break;
       }
       case 'peer_list_request': {
