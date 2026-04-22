@@ -2632,9 +2632,6 @@ const DESK_CFG=[
   {id:'resmon',     label:'Res. Monitor',  img:'./public/resmon.png',     ico:'resmon'},
 ];
 
-function buildDesktop(){const area=document.getElementById('icon-area');DESK_CFG.forEach((app,i)=>{const el=document.createElement('div');el.className='desk-icon';el.style.top=(22+i*90)+'px';el.style.left='16px';el.dataset.id=app.id;const imgWrapper=document.createElement('div');imgWrapper.className='di-img';const img=document.createElement('img');img.alt=app.label;img.width=52;img.height=52;img.onerror=function(){const d=document.createElement('div');d.style.cssText='width:52px;height:52px;display:flex;align-items:center;justify-content:center';d.innerHTML=ICO[app.ico]?ICO[app.ico]():'';this.replaceWith(d);};ensureAppImage(img,app.img,app.ico);imgWrapper.appendChild(img);const sp=document.createElement('span');sp.textContent=app.label;el.appendChild(imgWrapper);el.appendChild(sp);el.style.opacity='0';el.style.transform='translateX(-22px)';setTimeout(()=>{el.style.transition='opacity .4s ease,transform .5s cubic-bezier(.2,1.2,.3,1)';el.style.opacity='1';el.style.transform='translateX(0)';setTimeout(()=>el.style.transition='',560);},60+i*55);let clicks=0,ct;el.addEventListener('click',e=>{document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');clicks++;clearTimeout(ct);ct=setTimeout(()=>{if(clicks>=2)openApp(app.id);clicks=0;},280);e.stopPropagation();});el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');ctxMenu(e.clientX,e.clientY,[{label:`Open ${app.label}`,fn:()=>openApp(app.id)}]);});_makeDraggableIcon(el);area.appendChild(el);});}
-
-
 // ── DESKTOP ICON GRID SYSTEM ────────────────────────────────────
 const DESK_GRID = {
   iconSize: 80,      // px per cell (80 = default, 60 = small, 100 = large)
