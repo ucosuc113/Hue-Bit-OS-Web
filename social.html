@@ -2,230 +2,680 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HueBit Social</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>HueBit Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
 :root{
-  --accent:#5b8af5;--accent2:#9b59f5;
-  --text:#eaf0ff;--text-dim:rgba(255,255,255,0.45);
-  --font:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
-  --mono:'Cascadia Code','Consolas','Courier New',monospace;
+  --bg:#0d0b09;
+  --surface:#121009;
+  --elevated:#1c1912;
+  --overlay:#23201a;
+  --accent:#c8845a;
+  --accent-2:#dfa070;
+  --accent-glow:rgba(200,132,90,.2);
+  --accent-dim:rgba(200,132,90,.1);
+  --green:#5cbf8a;
+  --red:#e07070;
+  --text:#ede8de;
+  --text-dim:rgba(237,232,222,.58);
+  --text-faint:rgba(237,232,222,.3);
+  --border:rgba(255,230,190,.07);
+  --border-hi:rgba(255,230,190,.12);
+  --bubble-sent:#162336;
+  --bubble-recv:#201e14;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'Cascadia Code','Consolas',monospace;
 }
-html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:#0c0e18;user-select:none}
-*::-webkit-scrollbar{width:5px;height:5px}
-*::-webkit-scrollbar-track{background:transparent}
-*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
-*::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.3)}
-::selection{background:rgba(91,138,245,0.4)}
 
-/* ── SOCIAL NETWORK ─────────────────────────────────────────────── */
-.soc-wrap{display:flex;height:100vh;overflow:hidden;font-family:var(--font)}
-.soc-feed-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.07);overflow:hidden}
-.soc-side-col{width:280px;flex-shrink:0;overflow-y:auto;background:rgba(0,0,0,0.2);padding:10px}
-.soc-compose{display:flex;gap:10px;padding:12px;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02)}
-.soc-compose-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:600}
-.soc-compose-inner{flex:1;display:flex;flex-direction:column;gap:6px}
-.soc-compose-ta{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text);font-family:var(--font);font-size:13px;padding:8px 10px;resize:none;outline:none;transition:border-color .15s}
-.soc-compose-ta:focus{border-color:rgba(91,138,245,0.5);background:rgba(91,138,245,0.05)}
-.soc-compose-toolbar{display:flex;align-items:center;gap:6px}
-.soc-img-url{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:var(--text);font-size:11px;padding:5px 8px;outline:none}
-.soc-char-count{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
-.soc-post-btn{padding:5px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.soc-post-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
-.soc-ram-bar-wrap{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(0,0,0,0.15);border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-ram-track{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
-.soc-ram-fill{height:100%;border-radius:2px;transition:width .5s ease,background .3s}
-.soc-ram-txt{font-size:10px;color:rgba(255,255,255,0.35);white-space:nowrap}
-.soc-feed-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-feed-count{font-size:10px;font-weight:400;color:rgba(255,255,255,0.25)}
-.soc-posts{flex:1;overflow-y:auto;padding:6px}
-.soc-empty{padding:30px 20px;text-align:center;color:rgba(255,255,255,0.25);font-size:13px}
-.soc-post{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 12px;margin-bottom:6px;transition:border-color .15s,background .15s;animation:postIn .25s cubic-bezier(.2,1.2,.3,1)}
-.soc-post:hover{border-color:rgba(91,138,245,0.25);background:rgba(91,138,245,0.05)}
-@keyframes postIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.soc-post-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.soc-avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
-.soc-post-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1}
-.soc-author{font-size:12px;font-weight:700;color:rgba(255,255,255,0.85)}
-.soc-author.is-mine{color:var(--accent)}
-.soc-time{font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto}
-.soc-hop-badge{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(155,89,245,0.2);color:rgba(155,89,245,0.9);border:1px solid rgba(155,89,245,0.2)}
-.soc-post-content{font-size:13px;color:rgba(255,255,255,0.82);line-height:1.5;word-break:break-word;white-space:pre-wrap}
-.soc-post-img{max-width:100%;border-radius:8px;margin-top:8px;border:1px solid rgba(255,255,255,0.1)}
-.soc-load-more{padding:8px 12px;display:flex;justify-content:center}
-.soc-load-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px;padding:7px 18px;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.soc-load-btn:hover{background:rgba(91,138,245,0.15);border-color:rgba(91,138,245,0.3);color:#fff}
-.soc-load-btn:disabled{opacity:.4;cursor:default}
-.soc-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px;margin-bottom:8px}
-.soc-panel-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.35);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.soc-identity{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
-.soc-id-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
-.soc-id-info{flex:1;min-width:0}
-.soc-name-inp{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#fff;font-size:13px;font-weight:600;padding:4px 7px;outline:none;width:100%;margin-bottom:5px;font-family:var(--font)}
-.soc-peer-id-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.soc-peer-label{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap}
-.soc-peer-id{font-size:10px;color:var(--accent);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.soc-copy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;padding:1px 5px;flex-shrink:0;transition:all .15s}
-.soc-copy-btn:hover{background:rgba(91,138,245,0.2);color:#fff}
-.soc-status-row{display:flex;align-items:center;gap:4px}
-.soc-status-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
-.soc-color-row{display:flex;gap:5px;flex-wrap:wrap}
-.soc-clr-sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
-.soc-clr-sw:hover{transform:scale(1.15)}
-.soc-clr-sw.active{border-color:#fff}
-.soc-emoji-row{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}
-.soc-emoji-sw{width:24px;height:24px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,0.04);transition:all .15s;border:1px solid transparent}
-.soc-emoji-sw:hover{background:rgba(91,138,245,0.2)}
-.soc-emoji-sw.active{border-color:var(--accent);background:rgba(91,138,245,0.15)}
-.soc-connect-row{display:flex;gap:6px}
-.soc-peer-inp{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:7px;color:#fff;font-size:11px;padding:6px 8px;outline:none;font-family:var(--mono)}
-.soc-connect-btn{background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;transition:all .15s;font-family:var(--font)}
-.soc-connect-btn:hover{filter:brightness(1.15)}
-.soc-conn-list{max-height:100px;overflow-y:auto}
-.soc-no-conn{font-size:11px;color:rgba(255,255,255,0.25);padding:4px 0}
-.soc-conn-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
-.soc-conn-dot{width:6px;height:6px;border-radius:50%;background:#28c840;flex-shrink:0}
-.soc-conn-id{flex:1;font-family:var(--mono);color:rgba(255,255,255,0.7);overflow:hidden;text-overflow:ellipsis}
-.soc-conn-disc{background:none;border:none;color:rgba(255,80,80,0.6);cursor:pointer;font-size:11px;padding:0 2px;transition:color .15s}
-.soc-conn-disc:hover{color:#ff5f5f}
-.soc-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:99px;font-size:10px;min-width:16px;height:16px;padding:0 4px;font-weight:700}
-.soc-help-text{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.55}
-.soc-help-text strong{color:rgba(255,255,255,0.65)}
-.soc-contact-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
-.soc-contact-item:last-child{border-bottom:none}
-.soc-contact-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.soc-contact-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.soc-contact-pid{font-size:9px;color:rgba(255,255,255,0.28);font-family:var(--mono)}
-.soc-contact-btns{display:flex;gap:3px;flex-shrink:0}
-.soc-contact-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:5px;color:rgba(255,255,255,0.45);cursor:pointer;font-size:11px;padding:2px 6px;transition:all .15s}
-.soc-contact-btn.reconnect:hover{background:rgba(91,138,245,0.22);color:#fff;border-color:rgba(91,138,245,0.4)}
-.soc-contact-btn.remove:hover{background:rgba(255,80,80,0.18);color:#ff9090;border-color:rgba(255,80,80,0.3)}
-.soc-conn-add{background:rgba(91,138,245,0.15);border:1px solid rgba(91,138,245,0.3);border-radius:5px;color:rgba(91,138,245,0.9);cursor:pointer;font-size:12px;padding:0 5px;transition:all .15s;line-height:1.4}
-.soc-conn-add:hover{background:rgba(91,138,245,0.3);color:#fff}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,225,180,.1);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,225,180,.18)}
 
-/* ── Mobile ─────────────────────────────────────────────────────── */
-.soc-mobile-tabs{display:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25)}
-.soc-tab-btn{flex:1;padding:11px 6px;border:none;background:none;color:rgba(255,255,255,0.4);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .18s}
-.soc-tab-btn.active{color:#fff;border-bottom-color:var(--accent);background:rgba(91,138,245,0.07)}
+/* ─── Layout ─────────────────────────── */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ─── Sidebar ────────────────────────── */
+.sidebar{
+  width:320px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  overflow:hidden;
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+}
+
+.sb-header{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 14px 12px;
+  background:var(--elevated);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+
+.my-av{
+  width:42px;height:42px;border-radius:50%;
+  flex-shrink:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:#fff;
+  user-select:none;overflow:hidden;
+  transition:transform .15s,box-shadow .2s;
+  box-shadow:0 0 0 2px transparent;
+}
+.my-av:hover{transform:scale(1.06);box-shadow:0 0 0 2px var(--accent)}
+.my-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+.my-info{flex:1;min-width:0}
+.my-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.my-status{font-size:11px;color:var(--text-faint);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;transition:color .15s}
+.my-status:hover{color:var(--accent)}
+
+.sb-btns{display:flex;gap:2px}
+.icon-btn{
+  width:34px;height:34px;border-radius:50%;border:none;
+  background:transparent;color:var(--text-dim);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;
+  transition:background .12s,color .12s;
+}
+.icon-btn:hover{background:rgba(255,225,180,.07);color:var(--text)}
+
+.sb-search{
+  padding:9px 12px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.search-row{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,225,180,.04);
+  border:1px solid var(--border);
+  border-radius:22px;padding:7px 13px;
+  transition:border-color .15s;
+}
+.search-row:focus-within{border-color:rgba(200,132,90,.3)}
+.search-inp{background:none;border:none;color:var(--text);font-family:var(--font);font-size:13px;outline:none;flex:1}
+.search-inp::placeholder{color:var(--text-faint)}
+
+.chat-list{flex:1;overflow-y:auto;padding-bottom:4px}
+
+.chat-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 14px;cursor:pointer;
+  transition:background .12s;
+  position:relative;user-select:none;
+}
+.chat-item:hover{background:rgba(255,225,180,.03)}
+.chat-item.active{background:rgba(200,132,90,.09)}
+.chat-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:52%;
+  background:var(--accent);border-radius:0 3px 3px 0;
+  box-shadow:0 0 10px var(--accent-glow);
+}
+
+.ci-av{
+  width:46px;height:46px;border-radius:50%;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;color:#fff;
+  position:relative;user-select:none;overflow:hidden;
+}
+.ci-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ci-dot{
+  position:absolute;bottom:1px;right:1px;
+  width:11px;height:11px;border-radius:50%;
+  background:var(--green);border:2px solid var(--surface);
+  transition:opacity .3s;
+}
+.ci-av.offline .ci-dot{display:none}
+
+.ci-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ci-top{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.ci-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-time{font-size:11px;color:var(--text-faint);flex-shrink:0}
+.ci-bot{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.ci-preview{font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.ci-badge{
+  flex-shrink:0;min-width:18px;height:18px;border-radius:99px;
+  background:var(--accent);color:var(--bg);
+  font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 5px;
+}
+
+.new-chat-btn{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 14px;cursor:pointer;
+  color:var(--accent);font-size:13px;font-weight:700;
+  transition:background .12s;
+  border-top:1px solid var(--border);margin-top:4px;
+}
+.new-chat-btn:hover{background:var(--accent-dim)}
+.new-chat-icon{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--accent-dim);border:1.5px dashed rgba(200,132,90,.35);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+
+.empty-list{padding:28px 20px;text-align:center;color:var(--text-faint);font-size:13px;line-height:1.7}
+
+/* ─── Chat panel ──────────────────────── */
+.chat-panel{
+  flex:1;display:flex;flex-direction:column;
+  background:var(--bg);overflow:hidden;position:relative;
+}
+.chat-panel::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 55% at 50% 30%,rgba(200,132,90,.025) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* No chat */
+.no-chat{
+  position:absolute;inset:0;z-index:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;
+}
+.no-chat-icon{
+  width:68px;height:68px;border-radius:50%;
+  background:var(--accent-dim);
+  border:2px solid rgba(200,132,90,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  animation:floatBob 3.5s ease-in-out infinite;
+}
+@keyframes floatBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.no-chat-title{font-size:20px;font-weight:800}
+.no-chat-sub{font-size:13px;color:var(--text-dim);text-align:center;max-width:215px;line-height:1.65}
+.no-chat-action{
+  margin-top:6px;padding:10px 24px;
+  background:var(--accent);color:var(--bg);
+  border:none;border-radius:22px;
+  font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 16px rgba(200,132,90,.3);
+}
+.no-chat-action:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 22px rgba(200,132,90,.4)}
+
+/* Chat header */
+.chat-header{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;
+  background:var(--elevated);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;z-index:2;position:relative;
+}
+.back-btn{
+  display:none;width:32px;height:32px;
+  align-items:center;justify-content:center;
+  background:none;border:none;color:var(--text-dim);cursor:pointer;
+  font-size:22px;border-radius:50%;transition:background .12s;flex-shrink:0;
+}
+.back-btn:hover{background:rgba(255,225,180,.07);color:var(--text)}
+.ch-av{
+  width:38px;height:38px;border-radius:50%;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;overflow:hidden;
+}
+.ch-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ch-info{flex:1;min-width:0}
+.ch-name{font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-status{font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;gap:4px}
+.ch-status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0}
+.ch-status.online{color:var(--green)}
+.ch-actions{display:flex;gap:2px}
+
+/* Messages */
+.messages-area{
+  flex:1;overflow-y:auto;
+  padding:14px 16px 8px;
+  display:flex;flex-direction:column;
+  gap:1px;z-index:1;position:relative;
+}
+
+.date-sep{display:flex;align-items:center;gap:10px;margin:10px 0;align-self:stretch}
+.date-sep::before,.date-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.date-sep-lbl{font-size:11px;color:var(--text-faint);white-space:nowrap;padding:0 6px}
+
+.msg-row{display:flex;margin-bottom:1px;animation:msgIn .18s cubic-bezier(.2,1,.3,1) both}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg-row.sent{justify-content:flex-end}
+.msg-row.recv{justify-content:flex-start}
+.msg-row.sent+.msg-row.recv,.msg-row.recv+.msg-row.sent{margin-top:8px}
+
+.bubble{
+  display:inline-block;
+  max-width:min(70%,400px);
+  padding:7px 11px 5px;
+  border-radius:14px;
+  font-size:14.5px;line-height:1.5;
+  word-break:break-word;white-space:pre-wrap;
+}
+.msg-row.sent .bubble{
+  background:linear-gradient(145deg,var(--bubble-sent),#111d2e);
+  border-bottom-right-radius:4px;
+  border:1px solid rgba(56,100,180,.12);
+  box-shadow:0 1px 4px rgba(0,0,0,.2),0 1px 2px rgba(200,132,90,.04);
+}
+.msg-row.sent.first .bubble{border-top-right-radius:14px}
+.msg-row.recv .bubble{
+  background:linear-gradient(145deg,var(--bubble-recv),#191710);
+  border-bottom-left-radius:4px;
+  border:1px solid rgba(255,225,180,.07);
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+.msg-row.recv.first .bubble{border-top-left-radius:14px}
+
+/* Bubble footer — float trick so bubble hugs text width */
+.bubble-foot{float:right;margin:2px -2px -2px 8px;display:flex;align-items:center;gap:3px}
+.bubble-time{font-size:10.5px;color:var(--text-faint);white-space:nowrap}
+.tick{font-size:12px;line-height:1}
+.tick.queued{color:var(--text-faint)}
+.tick.sent{color:var(--text-faint)}
+.tick.delivered{color:var(--text-dim)}
+.tick.read{color:var(--accent-2)}
+
+/* Clearfix so bubble contains the float */
+.bubble::after{content:'';display:table;clear:both}
+
+.sys-msg{
+  align-self:center;
+  font-size:11.5px;color:var(--text-faint);
+  background:rgba(255,225,180,.04);
+  border-radius:99px;padding:4px 13px;
+  margin:4px 0;
+}
+
+/* ─── Input bar ───────────────────────── */
+.input-bar{
+  display:flex;align-items:flex-end;gap:8px;
+  padding:8px 12px 10px;
+  background:var(--elevated);
+  border-top:1px solid var(--border);
+  flex-shrink:0;z-index:5;position:relative;
+}
+
+.emoji-btn{
+  width:38px;height:38px;border-radius:50%;border:none;
+  background:transparent;color:var(--text-faint);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:20px;flex-shrink:0;
+  transition:color .12s,transform .1s;
+}
+.emoji-btn:hover{color:var(--accent);transform:scale(1.1)}
+
+.ta-wrap{
+  flex:1;display:flex;align-items:flex-end;
+  background:rgba(255,225,180,.05);
+  border:1px solid var(--border);
+  border-radius:22px;padding:7px 14px;
+  transition:border-color .15s;
+}
+.ta-wrap:focus-within{border-color:rgba(200,132,90,.35)}
+.msg-ta{
+  flex:1;background:none;border:none;
+  color:var(--text);font-family:var(--font);
+  font-size:14px;outline:none;resize:none;
+  max-height:110px;line-height:1.45;
+}
+.msg-ta::placeholder{color:var(--text-faint)}
+
+.send-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--accent);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;color:var(--bg);
+  box-shadow:0 2px 12px rgba(200,132,90,.28);
+}
+.send-btn:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.07)}
+.send-btn:active:not(:disabled){transform:scale(0.95)}
+.send-btn:disabled{background:rgba(255,225,180,.08);cursor:default;color:var(--text-faint);box-shadow:none}
+
+/* ─── Emoji picker ────────────────────── */
+.emoji-picker{
+  position:absolute;bottom:62px;left:10px;
+  width:272px;
+  background:var(--overlay);
+  border:1px solid var(--border-hi);
+  border-radius:14px;padding:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55);
+  z-index:20;display:none;
+}
+.emoji-picker.open{display:block;animation:emPop .15s cubic-bezier(.2,1,.3,1)}
+@keyframes emPop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
+.em-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:1px}
+.em{
+  font-size:20px;text-align:center;padding:4px 0;
+  cursor:pointer;border-radius:7px;
+  transition:background .1s,transform .1s;
+  user-select:none;
+}
+.em:hover{background:rgba(255,225,180,.08);transform:scale(1.2)}
+
+/* ─── Modals ──────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(14px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;animation:ovIn .15s ease;
+}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.overlay.hidden{display:none}
+
+.modal{
+  background:var(--overlay);
+  border:1px solid var(--border-hi);
+  border-radius:20px;padding:24px;
+  width:100%;max-width:380px;
+  box-shadow:0 24px 60px rgba(0,0,0,.65);
+  animation:modIn .22s cubic-bezier(.2,1.15,.3,1);
+}
+@keyframes modIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+
+.modal-title{font-size:18px;font-weight:800;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.55}
+
+.field{margin-bottom:13px}
+.field-lbl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px}
+.modal-inp{
+  width:100%;
+  background:rgba(255,225,180,.04);
+  border:1px solid rgba(255,225,180,.1);
+  border-radius:10px;color:var(--text);
+  font-family:var(--font);font-size:13px;
+  padding:10px 12px;outline:none;
+  transition:border-color .15s,background .15s;
+}
+.modal-inp:focus{border-color:rgba(200,132,90,.45);background:rgba(200,132,90,.04)}
+.modal-inp.mono{font-family:var(--mono);font-size:12px}
+
+.peer-box{
+  background:rgba(255,225,180,.04);
+  border:1px solid rgba(255,225,180,.08);
+  border-radius:10px;padding:10px 12px;
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:16px;
+}
+.peer-val{flex:1;font-family:var(--mono);font-size:12px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-btn{
+  background:var(--accent-dim);border:1px solid rgba(200,132,90,.25);
+  border-radius:6px;color:var(--accent);
+  font-size:11px;font-weight:700;padding:4px 9px;cursor:pointer;
+  transition:all .15s;font-family:var(--font);
+}
+.copy-btn:hover{background:rgba(200,132,90,.22)}
+
+.modal-btns{display:flex;gap:9px;margin-top:20px}
+.mbtn{
+  flex:1;padding:11px;border-radius:10px;border:none;
+  font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.mbtn.primary{background:var(--accent);color:var(--bg)}
+.mbtn.primary:hover{filter:brightness(1.1)}
+.mbtn.secondary{background:rgba(255,225,180,.07);color:var(--text)}
+.mbtn.secondary:hover{background:rgba(255,225,180,.12)}
+.mbtn.danger{background:rgba(224,112,112,.12);color:var(--red);border:1px solid rgba(224,112,112,.2)}
+.mbtn.danger:hover{background:rgba(224,112,112,.22)}
+
+/* Profile avatar upload */
+.p-av-area{display:flex;justify-content:center;margin-bottom:20px}
+.p-av-wrap{position:relative;width:76px;height:76px;border-radius:50%;cursor:pointer}
+.p-av-inner{
+  width:100%;height:100%;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:800;color:#fff;overflow:hidden;
+  transition:filter .15s;
+}
+.p-av-inner img{width:100%;height:100%;object-fit:cover}
+.p-av-overlay{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;opacity:0;transition:opacity .15s;
+}
+.p-av-wrap:hover .p-av-overlay{opacity:1}
+.p-av-wrap:hover .p-av-inner{filter:brightness(.65)}
+
+.color-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.clr-sw{
+  width:22px;height:22px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all .12s;
+}
+.clr-sw:hover{transform:scale(1.15)}
+.clr-sw.active{border-color:#fff;transform:scale(1.1)}
+
+/* ─── Toasts ──────────────────────────── */
+#toasts{
+  position:fixed;top:12px;right:12px;z-index:9999;
+  display:flex;flex-direction:column;gap:6px;pointer-events:none;
+}
+.toast{
+  background:var(--overlay);backdrop-filter:blur(12px);
+  border:1px solid var(--border-hi);
+  border-left:3px solid var(--accent);
+  border-radius:10px;padding:10px 14px;
+  min-width:180px;max-width:265px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  pointer-events:auto;cursor:pointer;
+  animation:toastIn .24s cubic-bezier(.2,1.2,.3,1);
+}
+.toast.warn{border-left-color:#f4b860}
+.toast.error{border-left-color:var(--red)}
+.toast-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.toast-msg{font-size:11px;color:var(--text-dim)}
+@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* ─── Mobile ──────────────────────────── */
 @media(max-width:640px){
-  .soc-mobile-tabs{display:flex}
-  .soc-wrap{flex-direction:column;overflow:hidden}
-  .soc-feed-col{border-right:none;min-width:0;flex:1}
-  .soc-side-col{width:100%;flex-shrink:0}
-  .soc-hidden{display:none!important}
+  html{font-size:16px}
+  .sidebar{
+    width:100%;position:absolute;inset:0;z-index:10;
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar.slide-out{transform:translateX(-100%)}
+  .chat-panel{
+    position:absolute;inset:0;z-index:10;
+    transform:translateX(100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  .chat-panel.slide-in{transform:none}
+  .back-btn{display:flex!important}
+  .bubble{max-width:82%;font-size:15px}
+
+  /* Emoji picker full width on mobile */
+  .emoji-picker{
+    position:fixed;bottom:0;left:0;right:0;width:auto;
+    border-radius:16px 16px 0 0;
+    padding:12px 12px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 30px rgba(0,0,0,.5);
+  }
+  .em-grid{grid-template-columns:repeat(8,1fr)}
+  .em{font-size:22px;padding:6px 0}
+
+  .input-bar{padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
+  .chat-item{padding:11px 14px}
+  .ci-av{width:50px;height:50px;font-size:18px}
 }
 
-/* ── Toast ───────────────────────────────────────────────────────── */
-#soc-toasts{position:fixed;top:10px;right:10px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.soc-toast{background:rgba(10,12,22,0.97);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;animation:toastIn .3s cubic-bezier(.2,1.2,.3,1);cursor:pointer}
-.soc-toast-title{font-size:12px;font-weight:700;margin-bottom:2px}
-.soc-toast-msg{font-size:11px;color:rgba(255,255,255,0.5)}
-@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@media(min-width:641px)and(max-width:900px){
+  .sidebar{width:275px}
+  .bubble{max-width:74%}
+}
+
+@media(min-width:1200px){
+  .sidebar{width:350px}
+  .bubble{max-width:min(62%,440px);font-size:15px}
+  .messages-area{padding:16px 22px 10px}
+  .ch-name{font-size:16px}
+  .ci-name{font-size:15px}
+  .my-name{font-size:15px}
+}
+
+/* ── Iframe / OS compatibility ──────────────────── */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+.app {
+  height: 100dvh;
+}
+.input-bar {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+@media(max-width:640px){
+  .emoji-picker{
+    position:fixed;bottom:0;left:0;right:0;width:auto;
+  
+  }}
 </style>
 </head>
 <body>
 
-<div id="soc-toasts"></div>
+<div id="toasts"></div>
 
-<div class="soc-wrap">
-  <!-- Mobile tabs (only visible on narrow viewports) -->
-  <div class="soc-mobile-tabs">
-    <button class="soc-tab-btn active" data-soc-tab="feed">📰 Feed</button>
-    <button class="soc-tab-btn" data-soc-tab="network">🌐 Network</button>
-  </div>
-
-  <!-- ── LEFT: Feed ──────────────────────────────────────────────── -->
-  <div class="soc-feed-col" id="soc-feed-col">
-    <!-- Compose -->
-    <div class="soc-compose">
-      <div class="soc-compose-avatar" id="soc-my-av" style="background:var(--accent)"></div>
-      <div class="soc-compose-inner">
-        <textarea class="soc-compose-ta" id="soc-compose-ta"
-          placeholder="What's happening on the network?…" maxlength="500" rows="3"></textarea>
-        <div class="soc-compose-toolbar">
-          <input class="soc-img-url" id="soc-img-url" placeholder="Image URL (optional)">
-          <span class="soc-char-count" id="soc-char-count">0/500</span>
-          <button class="soc-post-btn" id="soc-post-btn">Post</button>
-        </div>
+<!-- New Chat Modal -->
+<div class="overlay hidden" id="connect-modal">
+  <div class="modal">
+    <div class="modal-title">💬 New Chat</div>
+    <div class="modal-sub">Share your Peer ID or paste someone else's to connect directly.</div>
+    <div class="field">
+      <label class="field-lbl">Your Peer ID</label>
+      <div class="peer-box">
+        <span class="peer-val" id="m-my-id">Connecting…</span>
+        <button class="copy-btn" id="m-copy-id">Copy</button>
       </div>
     </div>
-
-    <!-- Network RAM bar -->
-    <div class="soc-ram-bar-wrap">
-      <div class="soc-ram-track"><div class="soc-ram-fill" id="soc-ram-fill" style="width:0%"></div></div>
-      <span class="soc-ram-txt" id="soc-ram-txt">Net RAM: 0 MB</span>
+    <div class="field">
+      <label class="field-lbl">Connect to Peer ID</label>
+      <input class="modal-inp mono" id="m-peer-inp" placeholder="Paste peer ID here…" autocomplete="off">
     </div>
-
-    <!-- Feed header -->
-    <div class="soc-feed-hd">
-      <span>Feed</span>
-      <span class="soc-feed-count" id="soc-feed-count"></span>
+    <div class="field">
+      <label class="field-lbl">Contact name (optional)</label>
+      <input class="modal-inp" id="m-name-inp" placeholder="Name for this contact…" maxlength="32">
     </div>
-
-    <div class="soc-posts" id="soc-posts"></div>
-    <div class="soc-load-more">
-      <button class="soc-load-btn" id="soc-load-btn">Load more posts</button>
+    <div class="modal-btns">
+      <button class="mbtn secondary" id="m-cancel">Cancel</button>
+      <button class="mbtn primary" id="m-connect">Connect</button>
     </div>
   </div>
+</div>
 
-  <!-- ── RIGHT: Network panel ────────────────────────────────────── -->
-  <div class="soc-side-col" id="soc-side-col">
-
-    <!-- Identity -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">My Identity</div>
-      <div class="soc-identity">
-        <div class="soc-id-av" id="soc-id-av" style="background:var(--accent)"></div>
-        <div class="soc-id-info">
-          <input class="soc-name-inp" id="soc-name-inp" value="" placeholder="Display name" maxlength="32">
-          <div class="soc-peer-id-row">
-            <span class="soc-peer-label">Peer ID:</span>
-            <span class="soc-peer-id" id="soc-peer-id">Connecting…</span>
-            <button class="soc-copy-btn" id="soc-copy-id" title="Copy ID">⎘</button>
-          </div>
-          <div class="soc-status-row">
-            <span class="soc-status-dot"></span>
-            <span id="soc-net-status" style="color:#888;font-size:11px">Initializing…</span>
-          </div>
-        </div>
+<!-- Profile Modal -->
+<div class="overlay hidden" id="profile-modal">
+  <div class="modal">
+    <div class="modal-title">👤 My Profile</div>
+    <div class="modal-sub">Customize how others see you.</div>
+    <div class="p-av-area">
+      <div class="p-av-wrap" id="p-av-wrap" title="Change photo">
+        <div class="p-av-inner" id="p-av-inner"></div>
+        <div class="p-av-overlay">📷</div>
       </div>
-      <!-- Color swatches -->
-      <div class="soc-color-row" id="soc-colors"></div>
-      <!-- Emoji swatches -->
-      <div class="soc-emoji-row" id="soc-emojis"></div>
+      <input type="file" id="p-photo-inp" accept="image/*" style="display:none">
     </div>
-
-    <!-- Connect to peer -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Connect to Peer</div>
-      <div class="soc-connect-row">
-        <input class="soc-peer-inp" id="soc-peer-inp" placeholder="Paste peer ID…" autocomplete="off">
-        <button class="soc-connect-btn" id="soc-connect-btn">Connect</button>
+    <div class="field">
+      <label class="field-lbl">Display Name</label>
+      <input class="modal-inp" id="p-name-inp" maxlength="32" placeholder="Your name…">
+    </div>
+    <div class="field">
+      <label class="field-lbl">Accent Color</label>
+      <div class="color-row" id="p-colors"></div>
+    </div>
+    <div class="field">
+      <label class="field-lbl">Your Peer ID</label>
+      <div class="peer-box">
+        <span class="peer-val" id="p-my-id">Connecting…</span>
+        <button class="copy-btn" id="p-copy-id">Copy</button>
       </div>
     </div>
+    <div class="modal-btns">
+      <button class="mbtn secondary" id="p-cancel">Close</button>
+      <button class="mbtn primary" id="p-save">Save</button>
+    </div>
+  </div>
+</div>
 
-    <!-- Active connections -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Connections <span id="soc-conn-badge" class="soc-badge">0</span></div>
-      <div class="soc-conn-list" id="soc-conn-list"></div>
+<!-- Rename Modal -->
+<div class="overlay hidden" id="rename-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Rename Contact</div>
+    <div class="field">
+      <label class="field-lbl">New name</label>
+      <input class="modal-inp" id="rn-inp" maxlength="32" placeholder="Contact name…">
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn danger" id="rn-remove">Remove</button>
+      <button class="mbtn secondary" id="rn-cancel">Cancel</button>
+      <button class="mbtn primary" id="rn-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-header">
+      <div class="my-av" id="sb-my-av" title="Edit profile"></div>
+      <div class="my-info">
+        <div class="my-name" id="sb-my-name">—</div>
+        <div class="my-status" id="sb-peer-id" title="Click to copy">Connecting…</div>
+      </div>
+      <div class="sb-btns">
+        <button class="icon-btn" id="sb-profile-btn" title="My profile">⚙</button>
+        <button class="icon-btn" id="sb-new-btn" title="New chat">✎</button>
+      </div>
+    </div>
+    <div class="sb-search">
+      <div class="search-row">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0;opacity:.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="search-inp" id="search-inp" placeholder="Search chats…">
+      </div>
+    </div>
+    <div class="chat-list" id="chat-list"></div>
+  </div>
+
+  <div class="chat-panel" id="chat-panel">
+    <div class="no-chat" id="no-chat">
+      <div class="no-chat-icon">💬</div>
+      <div class="no-chat-title">HueBit Chat</div>
+      <div class="no-chat-sub">P2P messaging — no servers, no tracking, just peers.</div>
+      <button class="no-chat-action" id="nc-new-btn">Start a chat</button>
     </div>
 
-    <!-- Contacts -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">Contacts <span id="soc-contacts-badge" class="soc-badge">0</span></div>
-      <div class="soc-conn-list" id="soc-contacts-list" style="max-height:140px;overflow-y:auto"></div>
-    </div>
-
-    <!-- Help -->
-    <div class="soc-panel">
-      <div class="soc-panel-hd">How it works</div>
-      <div class="soc-help-text">
-        Share your <strong>Peer ID</strong> with others — they paste it in "Connect to Peer", or vice versa.
-        Posts travel peer-to-peer (max 8 hops) and are cached locally so they survive disconnects.
+    <div class="chat-header" id="chat-header" style="display:none">
+      <button class="back-btn" id="back-btn">‹</button>
+      <div class="ch-av" id="ch-av"></div>
+      <div class="ch-info">
+        <div class="ch-name" id="ch-name">—</div>
+        <div class="ch-status" id="ch-status">offline</div>
+      </div>
+      <div class="ch-actions">
+        <button class="icon-btn" id="ch-rename-btn" title="Rename / remove">✏</button>
       </div>
     </div>
 
+    <div class="messages-area" id="messages-area" style="display:none"></div>
+
+    <div class="emoji-picker" id="emoji-picker">
+      <div class="em-grid" id="em-grid"></div>
+    </div>
+
+    <div class="input-bar" id="input-bar" style="display:none">
+      <button class="emoji-btn" id="emoji-btn" title="Emoji">😊</button>
+      <div class="ta-wrap">
+        <textarea class="msg-ta" id="msg-ta" placeholder="Type a message…" rows="1"></textarea>
+      </div>
+      <button class="send-btn" id="send-btn" disabled aria-label="Send">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -233,36 +683,134 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:v
 <script>
 'use strict';
 
-// ── OS settings received from parent (index.html) via postMessage ──
-let _osUsername = 'User';
-let _osAccent   = '#5b8af5';
-let _osAvatar   = null;
-
+/* ── OS bridge ─────────────────────────────────── */
+let _osUser = 'User', _osAccent = '#c8845a';
 window.addEventListener('message', e => {
   if (!e.data || e.data.type !== 'os-init') return;
-  if (e.data.username) _osUsername = e.data.username;
-  if (e.data.accent)  { _osAccent = e.data.accent; document.documentElement.style.setProperty('--accent', _osAccent); }
-  if (e.data.avatar !== undefined) _osAvatar = e.data.avatar;
-
-  // Update profile name if still at default
+  if (e.data.username) _osUser = e.data.username;
+  if (e.data.accent)   _osAccent = e.data.accent;
   const saved = loadProfile();
   if (!saved || saved.name === 'User' || saved.name === 'Anonymous') {
-    profile.name = _osUsername;
+    profile.name  = _osUser;
+    profile.color = _osAccent;
     saveProfile(profile);
-    const inp = document.getElementById('soc-name-inp');
-    if (inp) inp.value = _osUsername;
+    updateSidebarProfile();
   }
-  renderColors();
-  renderEmojis();
-  updateAvatarEls();
 });
 
-// ── Toast ─────────────────────────────────────────────────────────
-function toast(title, msg) {
-  const wrap = document.getElementById('soc-toasts');
+/* ── Constants ─────────────────────────────────── */
+const LS_PROFILE  = 'huebit-profile-v3';
+const LS_PEERID   = 'huebit-peerid-v1';
+const LS_CONTACTS = 'huebit-contacts-v1';
+const LS_CONVS    = 'huebit-convs-v1';
+const LS_PEERS    = 'huebit-peers-v1';
+const LS_QUEUE    = 'huebit-queue-v1';
+const MAX_MSG     = 200;
+const ACCENT_COLORS = ['#c8845a','#d96f6f','#5f9ee8','#5cc08a','#9b76d4','#c9aa4f'];
+const EMOJIS = [
+  '😀','😂','🥲','😊','😍','🥰','😎','🤔',
+  '😅','😭','😤','🤯','😴','🤗','🥳','😈',
+  '💀','🫡','😏','🙃','😬','🫠','😇','🤩',
+  '👍','👎','👏','🙏','🤝','👋','🫶','💪',
+  '❤️','🔥','💯','✨','🎉','⭐','🌈','💔',
+  '🥺','😡','😂','🤣','💀','🫣','🤭','😮',
+  '🍕','🍔','☕','🍜','🍣','🍦','🎂','🍺',
+  '🎵','🎮','📱','💻','🌙','🏆','🚀','💡',
+];
+
+/* ── Storage ────────────────────────────────────── */
+const ls = {
+  get: k  => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  str: k  => localStorage.getItem(k) || null,
+  setStr: (k,v) => { try { localStorage.setItem(k, v); } catch {} },
+};
+const loadProfile   = () => ls.get(LS_PROFILE);
+const saveProfile   = p  => ls.set(LS_PROFILE, p);
+const loadPeerId    = () => ls.str(LS_PEERID);
+const savePeerId    = id => ls.setStr(LS_PEERID, id);
+const loadContacts  = () => ls.get(LS_CONTACTS) || {};
+const saveContacts  = c  => ls.set(LS_CONTACTS, c);
+const loadAllConvs  = () => ls.get(LS_CONVS) || {};
+const saveConv      = (pid, msgs) => {
+  const all = loadAllConvs();
+  all[pid]  = msgs.slice(-MAX_MSG);
+  ls.set(LS_CONVS, all);
+};
+const getConv       = pid => loadAllConvs()[pid] || [];
+const loadKnownPeers= () => ls.get(LS_PEERS) || [];
+const saveKnownPeers= () => ls.set(LS_PEERS, [...knownPeers]);
+const loadSavedQueue= () => ls.get(LS_QUEUE) || {};
+const savePendingQueue = () => {
+  const obj = {};
+  pendingQueue.forEach((msgs, pid) => { if (msgs.length) obj[pid] = msgs; });
+  ls.set(LS_QUEUE, obj);
+};
+
+/* ── State ──────────────────────────────────────── */
+let peer         = null;
+let connections  = new Map();   // pid → DataConnection
+let knownPeers   = new Set();
+let peerProfiles = new Map();   // pid → {name, color}
+let peerPhotos   = new Map();   // pid → dataURL
+let activeChat   = null;
+let unread       = new Map();
+let myPeerId     = null;
+let searchQ      = '';
+let profile      = loadProfile() || { name: 'User', color: '#c8845a', photo: null };
+let renameTarget = null;
+let pendingQueue = new Map();   // pid → [msg]
+let emojiOpen    = false;
+
+/* ── Utils ──────────────────────────────────────── */
+const esc = s => String(s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function timeStr(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString() === now.toDateString())
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+function dateLabel(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Today';
+  if (d.toDateString() === new Date(Date.now() - 86400000).toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+function initials(name) {
+  return String(name || '?').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+function getPeerName(pid) {
+  const c = loadContacts()[pid];
+  if (c?.label) return c.label;
+  const pp = peerProfiles.get(pid);
+  if (pp?.name) return pp.name;
+  return pid.slice(0, 8) + '…';
+}
+function getPeerColor(pid) {
+  return peerProfiles.get(pid)?.color || '#6b7280';
+}
+function getPeerPhoto(pid) {
+  return peerPhotos.get(pid) || null;
+}
+function isOnline(pid) {
+  const c = connections.get(pid);
+  return !!(c && c.open);
+}
+
+function buildAvHTML(name, color, photo) {
+  if (photo) return `<img src="${esc(photo)}" alt="${esc(initials(name))}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  return `<span style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${esc(color)};font-weight:800;color:#fff">${esc(initials(name))}</span>`;
+}
+
+/* ── Toast ──────────────────────────────────────── */
+function toast(title, msg, type = '') {
+  const wrap = document.getElementById('toasts');
   const el   = document.createElement('div');
-  el.className = 'soc-toast';
-  el.innerHTML = `<div class="soc-toast-title">${title}</div><div class="soc-toast-msg">${msg}</div>`;
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.innerHTML = `<div class="toast-title">${esc(title)}</div>${msg ? `<div class="toast-msg">${esc(msg)}</div>` : ''}`;
   wrap.appendChild(el);
   el.onclick = () => el.remove();
   setTimeout(() => {
@@ -272,540 +820,751 @@ function toast(title, msg) {
   }, 3200);
 }
 
-// ── AVATAR SVGs ───────────────────────────────────────────────────
-const AVATAR_SVG = {
-  star:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 12.4,7.4 18,8.2 14,12 15,17.6 10,15 5,17.6 6,12 2,8.2 7.6,7.4"/></svg>',
-  bolt:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="11,2 5,11 10,11 9,18 15,9 10,9"/></svg>',
-  target:  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="1" fill="currentColor"/></svg>',
-  moon:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M15 12a7 7 0 1 1-7-7 5 5 0 0 0 7 7z"/></svg>',
-  flame:   '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 2c0 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-1-5-1 1-1 3-3 3 1-3 0-5 0-7z"/></svg>',
-  planet:  '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="10" cy="10" r="5"/><ellipse cx="10" cy="10" rx="9" ry="3" transform="rotate(-20,10,10)"/></svg>',
-  diamond: '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><polygon points="10,2 18,9 10,18 2,9"/></svg>',
-  music:   '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M8 15V5l9-2v10"/><circle cx="6" cy="15" r="2.5"/><circle cx="15" cy="13" r="2.5"/></svg>',
-  leaf:    '<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M17 3C9 3 3 9 4 17c3-3 6-5 10-6-2 2-4 5-4 8 5-1 8-6 7-16z"/></svg>',
-  wave:    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M2 10 Q5 6 8 10 Q11 14 14 10 Q17 6 18 10"/></svg>',
-};
-
-const ACCENT_COLORS = ['#5b8af5','#e91e8c','#00c896','#ff6b2b','#f7c535','#a855f7'];
-const EMOJI_KEYS    = ['star','bolt','target','moon','flame','planet','diamond','music','leaf','wave'];
-
-// ── Persistence ───────────────────────────────────────────────────
-const LS_POSTS        = 'huebit-social-posts-v1';
-const LS_PROFILE      = 'huebit-social-profile-v1';
-const LS_PEERID       = 'huebit-social-peerid-v1';
-const LS_KNOWN_PEERS  = 'huebit-social-peers-v1';
-const LS_CONTACTS     = 'huebit-social-contacts-v1';
-
-function loadStoredPosts()  { try{return JSON.parse(localStorage.getItem(LS_POSTS)||'[]');}catch{return[];} }
-function savePosts(p)       { try{localStorage.setItem(LS_POSTS,JSON.stringify(p));}catch{} }
-function loadProfile()      { try{return JSON.parse(localStorage.getItem(LS_PROFILE)||'null');}catch{return null;} }
-function saveProfile(p)     { try{localStorage.setItem(LS_PROFILE,JSON.stringify(p));}catch{} }
-function loadStoredPeerId() { return localStorage.getItem(LS_PEERID)||null; }
-function savePeerId(id)     { try{localStorage.setItem(LS_PEERID,id);}catch{} }
-function loadKnownPeers()   { try{return JSON.parse(localStorage.getItem(LS_KNOWN_PEERS)||'[]');}catch{return[];} }
-function saveKnownPeers()   { try{localStorage.setItem(LS_KNOWN_PEERS,JSON.stringify([...knownPeers]));}catch{} }
-function loadContacts()     { try{return JSON.parse(localStorage.getItem(LS_CONTACTS)||'{}');}catch{return{};} }
-function saveContacts(c)    { try{localStorage.setItem(LS_CONTACTS,JSON.stringify(c));}catch{} }
-
-// ── Constants ────────────────────────────────────────────────────
-const FAKE_RAM_PER_CONN = 12;
-const FAKE_RAM_PER_POST = 0.5;
-const MAX_POSTS_LOADED  = 20;
-const POSTS_PER_PAGE    = 5;
-const MAX_CONNECTIONS   = 20;
-
-// ── State ─────────────────────────────────────────────────────────
-let peer        = null;
-let connections = new Map();
-let knownPeers  = new Set();
-let loadedPosts = [];
-let renderedCount = 0;
-let myPeerId    = null;
-let profile     = loadProfile() || { name: 'User', color: '#5b8af5', emoji: 'star' };
-
-// ── Utilities ────────────────────────────────────────────────────
-function escHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function timeAgo(ts){
-  const d=Date.now()-ts;
-  if(d<60000)      return 'just now';
-  if(d<3600000)    return Math.floor(d/60000)+'m ago';
-  if(d<86400000)   return Math.floor(d/3600000)+'h ago';
-  return new Date(ts).toLocaleDateString();
+/* ── Tick/status ────────────────────────────────── */
+function tickHTML(status) {
+  switch (status) {
+    case 'queued':    return '<span class="tick queued" title="Queued — will send when online">○</span>';
+    case 'sent':      return '<span class="tick sent" title="Sent">✓</span>';
+    case 'delivered': return '<span class="tick delivered" title="Delivered">✓✓</span>';
+    case 'read':      return '<span class="tick read" title="Read">✓✓</span>';
+    default:          return '<span class="tick sent">✓</span>';
+  }
 }
 
-// ── RAM bar ───────────────────────────────────────────────────────
-function updateRAMBar(){
-  const connMB = connections.size * FAKE_RAM_PER_CONN;
-  const postMB = loadedPosts.length * FAKE_RAM_PER_POST;
-  const used   = connMB + postMB;
-  const total  = MAX_CONNECTIONS * FAKE_RAM_PER_CONN;
-  const pct    = Math.min(100, (used/total)*100);
-
-  const fill = document.getElementById('soc-ram-fill');
-  const txt  = document.getElementById('soc-ram-txt');
-  if(fill){ fill.style.width = pct.toFixed(1)+'%'; fill.style.background = pct>80?'#ff5f57':pct>60?'#ffbd2e':'var(--accent)'; }
-  if(txt)  txt.textContent = `Net RAM: ${used.toFixed(1)} MB / ${total} MB  (${connections.size} conn)`;
-
-  // Report to parent (index.html Resource Monitor)
-  try{ window.parent?.postMessage({type:'social-ram', mb: used}, '*'); }catch{}
+function updateMsgStatus(pid, msgId, newStatus) {
+  const ORDER = ['queued', 'sent', 'delivered', 'read'];
+  const msgs  = getConv(pid);
+  const msg   = msgs.find(m => m.id === msgId);
+  if (!msg) return;
+  const ci = ORDER.indexOf(msg.status || 'sent');
+  const ni = ORDER.indexOf(newStatus);
+  if (ni > ci) {
+    msg.status = newStatus;
+    saveConv(pid, msgs);
+    if (activeChat === pid) renderMessages(pid);
+  }
 }
 
-// ── Post management ───────────────────────────────────────────────
-function mergePost(post){
-  const stored = loadStoredPosts();
-  if(stored.find(p => p.id === post.id)) return false;
-  stored.unshift(post);
-  if(stored.length > 500) stored.splice(500);
-  savePosts(stored);
-  if(loadedPosts.length >= MAX_POSTS_LOADED) loadedPosts.pop();
-  loadedPosts.unshift(post);
-  updateRAMBar();
-  return true;
+function markAllRead(pid, upToTs) {
+  const ORDER = ['queued', 'sent', 'delivered', 'read'];
+  const msgs  = getConv(pid);
+  let changed = false;
+  msgs.forEach(m => {
+    if (m.from !== myPeerId || m.ts > upToTs) return;
+    const ci = ORDER.indexOf(m.status || 'sent');
+    if (ci < ORDER.indexOf('read')) { m.status = 'read'; changed = true; }
+  });
+  if (changed) {
+    saveConv(pid, msgs);
+    if (activeChat === pid) renderMessages(pid);
+  }
 }
 
-function makePost(content, imageUrl){
-  return {
-    id:          crypto.randomUUID(),
-    authorId:    myPeerId,
-    authorName:  profile.name || 'Anonymous',
-    authorColor: profile.color,
-    authorEmoji: profile.emoji,
-    content,
-    imageUrl:    imageUrl || null,
-    timestamp:   Date.now(),
-    hops:        0,
-  };
+/* ── Pending queue ──────────────────────────────── */
+function initQueue() {
+  const saved = loadSavedQueue();
+  Object.entries(saved).forEach(([pid, msgs]) => {
+    if (msgs && msgs.length) pendingQueue.set(pid, msgs);
+  });
 }
 
-function publishPost(content, imageUrl){
-  if(!content.trim()) return false;
-  const post = makePost(content.trim(), imageUrl);
-  mergePost(post);
-  broadcast({type:'post', post});
-  renderedCount = Math.min(renderedCount+1, loadedPosts.length);
-  renderFeed();
-  return true;
+function enqueueMsg(pid, msg) {
+  if (!pendingQueue.has(pid)) pendingQueue.set(pid, []);
+  pendingQueue.get(pid).push(msg);
+  savePendingQueue();
 }
 
-// ── Feed rendering ────────────────────────────────────────────────
-function renderPostEl(post){
-  const el = document.createElement('div');
-  el.className = 'soc-post';
-  const isMine = post.authorId === myPeerId;
-  const img = post.imageUrl
-    ? `<img src="${post.imageUrl}" class="soc-post-img" alt="" onerror="this.style.display='none'">`
-    : '';
-  const hopBadge = post.hops > 0
-    ? `<span class="soc-hop-badge">↗ ${post.hops} hop${post.hops>1?'s':''}</span>`
-    : '';
-  el.innerHTML = `
-    <div class="soc-post-header">
-      <div class="soc-avatar" style="background:${post.authorColor}">${AVATAR_SVG[post.authorEmoji]||'★'}</div>
-      <div class="soc-post-meta">
-        <span class="soc-author${isMine?' is-mine':''}">${escHtml(post.authorName)}</span>
-        ${hopBadge}
-        <span class="soc-time">${timeAgo(post.timestamp)}</span>
+function flushQueue(pid) {
+  const queue = pendingQueue.get(pid);
+  if (!queue || !queue.length) return;
+  const conn = connections.get(pid);
+  if (!conn || !conn.open) return;
+
+  const toSend = [...queue];
+  pendingQueue.set(pid, []);
+  savePendingQueue();
+
+  let sent = 0;
+  const conv = getConv(pid);
+  const convIds = new Set(conv.map(m => m.id));
+
+  toSend.forEach(msg => {
+    try {
+      conn.send({ type: 'chat', msg });
+      msg.status = 'sent';
+      if (!convIds.has(msg.id)) {
+        conv.push(msg);
+        convIds.add(msg.id);
+      } else {
+        const existing = conv.find(m => m.id === msg.id);
+        if (existing) existing.status = 'sent';
+      }
+      sent++;
+    } catch {
+      msg.status = 'queued';
+      enqueueMsg(pid, msg);
+    }
+  });
+
+  if (sent > 0) {
+    saveConv(pid, conv);
+    toast(getPeerName(pid), `${sent} queued message${sent > 1 ? 's' : ''} sent!`);
+    renderMessages(pid);
+    renderChatList();
+  }
+}
+
+/* ── Chat list ──────────────────────────────────── */
+function getChatPeers() {
+  const ids = new Set([...Object.keys(loadContacts()), ...connections.keys()]);
+  return [...ids];
+}
+
+function renderChatList() {
+  const listEl = document.getElementById('chat-list');
+  if (!listEl) return;
+  const peers = getChatPeers();
+  const q     = searchQ.toLowerCase().trim();
+  listEl.innerHTML = '';
+
+  let filtered = peers.filter(pid =>
+    !q || getPeerName(pid).toLowerCase().includes(q) || pid.toLowerCase().includes(q)
+  );
+
+  if (!filtered.length && !q) {
+    listEl.innerHTML = `<div class="empty-list">No contacts yet.<br>Tap <strong>✎</strong> to start chatting!</div>`;
+  }
+
+  filtered.sort((a, b) => {
+    const ao = isOnline(a), bo = isOnline(b);
+    if (ao !== bo) return ao ? -1 : 1;
+    const at = getConv(a).slice(-1)[0]?.ts || 0;
+    const bt = getConv(b).slice(-1)[0]?.ts || 0;
+    return bt - at;
+  });
+
+  filtered.forEach(pid => {
+    const name   = getPeerName(pid);
+    const color  = getPeerColor(pid);
+    const photo  = getPeerPhoto(pid);
+    const online = isOnline(pid);
+    const msgs   = getConv(pid).filter(m => !m.system);
+    const queued = (pendingQueue.get(pid) || []).length;
+    const last   = msgs.slice(-1)[0];
+    const ub     = unread.get(pid) || 0;
+
+    let preview = 'Tap to chat';
+    if (last) {
+      preview = (last.from === myPeerId ? '✓ ' : '') + last.text;
+    } else if (online) {
+      preview = '🔗 Connected';
+    } else if (queued) {
+      preview = `⏳ ${queued} message${queued > 1 ? 's' : ''} queued`;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'chat-item' + (activeChat === pid ? ' active' : '');
+    el.dataset.pid = pid;
+    el.innerHTML = `
+      <div class="ci-av ${online ? '' : 'offline'}" style="${photo ? '' : 'background:' + esc(color)}">
+        ${buildAvHTML(name, color, photo)}
+        ${online ? '<span class="ci-dot"></span>' : ''}
       </div>
-    </div>
-    <div class="soc-post-content">${escHtml(post.content)}</div>
-    ${img}`;
-  return el;
+      <div class="ci-body">
+        <div class="ci-top">
+          <span class="ci-name">${esc(name)}</span>
+          <span class="ci-time">${last ? timeStr(last.ts) : ''}</span>
+        </div>
+        <div class="ci-bot">
+          <span class="ci-preview">${esc(preview)}</span>
+          ${ub > 0 ? `<span class="ci-badge">${ub}</span>` : ''}
+        </div>
+      </div>`;
+    el.addEventListener('click', () => openChat(pid));
+    listEl.appendChild(el);
+  });
+
+  const btn = document.createElement('div');
+  btn.className = 'new-chat-btn';
+  btn.innerHTML = `<div class="new-chat-icon">+</div><span>New Chat</span>`;
+  btn.addEventListener('click', showConnectModal);
+  listEl.appendChild(btn);
 }
 
-function renderFeed(){
-  const feedEl  = document.getElementById('soc-posts');
-  const countEl = document.getElementById('soc-feed-count');
-  if(!feedEl) return;
-  const toShow = loadedPosts.slice(0, renderedCount);
-  feedEl.innerHTML = '';
-  if(!toShow.length){
-    feedEl.innerHTML = '<div class="soc-empty">No posts yet. Create one or connect to peers!</div>';
+/* ── Open / close chat ──────────────────────────── */
+function openChat(pid) {
+  activeChat = pid;
+  unread.set(pid, 0);
+
+  // Send read receipt
+  const conn = connections.get(pid);
+  if (conn && conn.open) {
+    try { conn.send({ type: 'read', upToTs: Date.now() }); } catch {}
+  }
+
+  renderChatList();
+  renderMessages(pid);
+
+  document.getElementById('no-chat').style.display      = 'none';
+  document.getElementById('chat-header').style.display  = '';
+  document.getElementById('messages-area').style.display = '';
+  document.getElementById('input-bar').style.display    = '';
+
+  // Update header
+  updateChatHeader(pid);
+
+  document.getElementById('chat-panel').classList.add('slide-in');
+  document.getElementById('sidebar').classList.add('slide-out');
+  setTimeout(() => document.getElementById('msg-ta').focus(), 100);
+  try { window.parent?.postMessage({ type: 'chat-open', pid }, '*'); } catch {}
+}
+
+function updateChatHeader(pid) {
+  if (!pid) return;
+  const name   = getPeerName(pid);
+  const color  = getPeerColor(pid);
+  const photo  = getPeerPhoto(pid);
+  const online = isOnline(pid);
+
+  const chAv = document.getElementById('ch-av');
+  chAv.style.background = photo ? 'transparent' : color;
+  chAv.innerHTML = buildAvHTML(name, color, photo);
+
+  document.getElementById('ch-name').textContent = name;
+  const stEl = document.getElementById('ch-status');
+  stEl.textContent = online ? 'online' : 'offline';
+  stEl.className   = 'ch-status' + (online ? ' online' : '');
+}
+
+function closeChat() {
+  activeChat = null;
+  document.getElementById('no-chat').style.display      = '';
+  document.getElementById('chat-header').style.display  = 'none';
+  document.getElementById('messages-area').style.display = 'none';
+  document.getElementById('input-bar').style.display    = 'none';
+  document.getElementById('chat-panel').classList.remove('slide-in');
+  document.getElementById('sidebar').classList.remove('slide-out');
+  closeEmojiPicker();
+  renderChatList();
+}
+
+/* ── Render messages ────────────────────────────── */
+function renderMessages(pid) {
+  const area = document.getElementById('messages-area');
+  if (!area) return;
+
+  const conv    = getConv(pid);
+  const queued  = (pendingQueue.get(pid) || []).map(m => ({ ...m, status: 'queued' }));
+  const allMsgs = [...conv, ...queued].sort((a, b) => a.ts - b.ts);
+  const realMsgs = allMsgs.filter(m => !m.system);
+
+  // Save scroll position to decide if we should auto-scroll
+  const wasAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
+
+  area.innerHTML = '';
+
+  if (!realMsgs.length) {
+    const sys = document.createElement('div');
+    sys.className = 'sys-msg';
+    sys.textContent = isOnline(pid)
+      ? '🔗 Connected — say hello!'
+      : '📵 Peer offline — messages will send when they reconnect.';
+    area.appendChild(sys);
     return;
   }
-  toShow.forEach(p => feedEl.appendChild(renderPostEl(p)));
-  if(countEl){
-    const total = loadStoredPosts().length;
-    countEl.textContent = `${toShow.length} shown · ${total} cached · ${loadedPosts.length} in memory`;
-  }
-}
 
-function loadMorePosts(){
-  const stored    = loadStoredPosts();
-  const nextBatch = stored.slice(loadedPosts.length, loadedPosts.length + POSTS_PER_PAGE);
-  if(!nextBatch.length) return false;
-  if(loadedPosts.length + nextBatch.length > MAX_POSTS_LOADED){
-    const evict = (loadedPosts.length + nextBatch.length) - MAX_POSTS_LOADED;
-    loadedPosts.splice(loadedPosts.length - evict, evict);
-  }
-  loadedPosts.push(...nextBatch);
-  renderedCount = Math.min(renderedCount + POSTS_PER_PAGE, loadedPosts.length);
-  renderFeed();
-  return true;
-}
+  let lastDate = null, prevFrom = null;
 
-// ── Connections list ──────────────────────────────────────────────
-function renderConnList(){
-  const listEl  = document.getElementById('soc-conn-list');
-  const badge   = document.getElementById('soc-conn-badge');
-  if(badge) badge.textContent = connections.size;
-  if(!listEl) return;
-  if(!connections.size){ listEl.innerHTML = '<div class="soc-no-conn">No connections</div>'; return; }
-  const contacts = loadContacts();
-  listEl.innerHTML = '';
-  connections.forEach((conn, id) => {
-    const isContact = !!contacts[id];
-    const el = document.createElement('div');
-    el.className = 'soc-conn-item';
-    el.innerHTML = `
-      <span class="soc-conn-dot"></span>
-      <span class="soc-conn-id">${id.slice(0,8)}…</span>
-      ${!isContact
-        ? `<button class="soc-conn-add" data-id="${id}" title="Save as contact">＋</button>`
-        : `<span style="font-size:10px;color:rgba(91,138,245,0.7);padding:0 3px" title="Saved contact">★</span>`}
-      <button class="soc-conn-disc" data-id="${id}">&times;</button>`;
-    el.querySelector('.soc-conn-disc').onclick = () => disconnect(id);
-    el.querySelector('.soc-conn-add')?.addEventListener('click', () => {
-      const label = prompt('Contact name:', id.slice(0,8)) || id.slice(0,8);
-      addContact(id, label);
-    });
-    listEl.appendChild(el);
+  allMsgs.forEach(m => {
+    const label = dateLabel(m.ts);
+    if (label !== lastDate) {
+      const sep = document.createElement('div');
+      sep.className = 'date-sep';
+      sep.innerHTML = `<span class="date-sep-lbl">${esc(label)}</span>`;
+      area.appendChild(sep);
+      lastDate = label; prevFrom = null;
+    }
+
+    if (m.system) {
+      const s = document.createElement('div');
+      s.className = 'sys-msg'; s.textContent = m.text;
+      area.appendChild(s); prevFrom = null; return;
+    }
+
+    const isMine  = m.from === myPeerId;
+    const isFirst = m.from !== prevFrom;
+    prevFrom = m.from;
+
+    const row = document.createElement('div');
+    row.className = `msg-row ${isMine ? 'sent' : 'recv'}${isFirst ? ' first' : ''}`;
+    row.innerHTML = `<div class="bubble">${esc(m.text)}<span class="bubble-foot"><span class="bubble-time">${timeStr(m.ts)}</span>${isMine ? tickHTML(m.status || 'sent') : ''}</span></div>`;
+    area.appendChild(row);
   });
+
+  if (wasAtBottom) area.scrollTop = area.scrollHeight;
 }
 
-// ── Contacts ──────────────────────────────────────────────────────
-function renderContactsList(){
-  const listEl  = document.getElementById('soc-contacts-list');
-  const badge   = document.getElementById('soc-contacts-badge');
-  const contacts = loadContacts();
-  const entries  = Object.entries(contacts);
-  if(badge) badge.textContent = entries.length;
-  if(!listEl) return;
-  if(!entries.length){ listEl.innerHTML = '<div class="soc-no-conn">No contacts yet.</div>'; return; }
-  listEl.innerHTML = '';
-  entries.forEach(([pid, info]) => {
-    const online = connections.has(pid) && connections.get(pid).open;
-    const el = document.createElement('div');
-    el.className = 'soc-contact-item';
-    el.innerHTML = `
-      <span class="soc-conn-dot" style="background:${online?'#28c840':'rgba(255,255,255,0.18)'}"></span>
-      <div class="soc-contact-info">
-        <span class="soc-contact-label">${escHtml(info.label)}</span>
-        <span class="soc-contact-pid">${pid.slice(0,12)}…</span>
-      </div>
-      <div class="soc-contact-btns">
-        ${!online ? `<button class="soc-contact-btn reconnect" data-pid="${pid}" title="Reconnect">↺</button>` : ''}
-        <button class="soc-contact-btn remove" data-pid="${pid}" title="Remove">✕</button>
-      </div>`;
-    el.querySelector('.reconnect')?.addEventListener('click', () => {
-      connectToPeer(pid);
-      toast('Social', `Reconnecting to ${info.label}…`);
-    });
-    el.querySelector('.remove')?.addEventListener('click', () => {
-      removeContact(pid);
-      toast('Social', `"${info.label}" removed from contacts.`);
-    });
-    listEl.appendChild(el);
-  });
-}
+/* ── Send message ───────────────────────────────── */
+function sendMessage(text) {
+  text = text.trim();
+  if (!text || !activeChat) return;
 
-function addContact(peerId, label){
-  if(!peerId || peerId === myPeerId) return false;
-  const c = loadContacts();
-  if(c[peerId]) return false;
-  c[peerId] = { label: label || ('Peer '+peerId.slice(0,6)), addedAt: Date.now() };
-  saveContacts(c);
-  addKnownPeer(peerId);
-  renderContactsList();
-  renderConnList();
-  toast('Social', `"${label}" saved to contacts!`);
-  return true;
-}
+  const msg = {
+    id: crypto.randomUUID(),
+    from: myPeerId,
+    text,
+    ts: Date.now(),
+    status: 'queued',
+  };
 
-function removeContact(peerId){
-  const c = loadContacts();
-  delete c[peerId];
-  saveContacts(c);
-  renderContactsList();
-  renderConnList();
-}
+  const conn    = connections.get(activeChat);
+  const canSend = conn && conn.open;
 
-// ── PeerJS / WebRTC ───────────────────────────────────────────────
-function addKnownPeer(id){
-  if(!id || id === myPeerId || knownPeers.has(id)) return;
-  knownPeers.add(id);
-  saveKnownPeers();
-}
-
-function broadcast(data, excludeId = null){
-  connections.forEach((conn, id) => {
-    if(id !== excludeId && conn.open) try{ conn.send(data); }catch{}
-  });
-}
-
-function sendPeerList(conn){
-  if(!conn || !conn.open) return;
-  const peers = [...knownPeers].filter(id => id && id !== conn.peer);
-  if(peers.length) conn.send({type:'peer_list', peers});
-}
-
-function mergePeers(peers){
-  if(!Array.isArray(peers)) return;
-  let added = 0;
-  peers.forEach(pid => {
-    if(!pid || pid === myPeerId || knownPeers.has(pid)) return;
-    knownPeers.add(pid); added++;
-  });
-  if(added) saveKnownPeers();
-  if(connections.size < MAX_CONNECTIONS){
-    for(const pid of [...knownPeers]){
-      if(connections.size >= MAX_CONNECTIONS) break;
-      if(pid !== myPeerId && !connections.has(pid)) connectToPeer(pid, {silent:true});
+  if (canSend) {
+    try {
+      conn.send({ type: 'chat', msg });
+      msg.status = 'sent';
+    } catch {
+      msg.status = 'queued';
     }
   }
+
+  if (msg.status === 'queued') {
+    enqueueMsg(activeChat, msg);
+  } else {
+    const msgs = getConv(activeChat);
+    msgs.push(msg);
+    saveConv(activeChat, msgs);
+  }
+
+  renderMessages(activeChat);
+  renderChatList();
 }
 
-function handleData(conn, data){
-  if(!data || !data.type) return;
-  switch(data.type){
-    case 'post':{
-      const post = {...data.post, hops:(data.post.hops||0)+1};
-      if(mergePost(post)){
-        if(post.hops < 8) broadcast({type:'post', post}, conn.peer);
-        renderedCount = Math.min(renderedCount+1, loadedPosts.length);
-        renderFeed();
+/* ── PeerJS ─────────────────────────────────────── */
+function addKnownPeer(id) {
+  if (!id || id === myPeerId || knownPeers.has(id)) return;
+  knownPeers.add(id); saveKnownPeers();
+}
+
+function handleData(conn, data) {
+  if (!data?.type) return;
+  const pid = conn.peer;
+
+  switch (data.type) {
+    case 'chat': {
+      const msg = data.msg;
+      if (!msg?.text || !msg?.ts) return;
+      msg.from = pid;
+      const msgs = getConv(pid);
+      if (msgs.find(m => m.id === msg.id)) return; // dedup
+      msgs.push(msg);
+      saveConv(pid, msgs);
+
+      // Send delivery receipt
+      if (conn.open) {
+        try { conn.send({ type: 'receipt', msgId: msg.id }); } catch {}
+        if (activeChat === pid) {
+          try { conn.send({ type: 'read', upToTs: Date.now() }); } catch {}
+        }
       }
+
+      if (activeChat === pid) {
+        renderMessages(pid);
+      } else {
+        unread.set(pid, (unread.get(pid) || 0) + 1);
+        toast(getPeerName(pid), msg.text);
+      }
+      renderChatList();
       break;
     }
-    case 'sync_req':
-      conn.send({type:'sync_res', posts: loadStoredPosts().slice(0, 50)});
-      break;
-    case 'sync_res':{
-      let n = 0;
-      (data.posts||[]).forEach(p => { if(mergePost(p)) n++; });
-      if(n > 0){ renderedCount = Math.min(renderedCount+n, loadedPosts.length); renderFeed(); }
+    case 'receipt': {
+      if (data.msgId) updateMsgStatus(pid, data.msgId, 'delivered');
       break;
     }
-    case 'peer_list_request': sendPeerList(conn); break;
-    case 'peer_list': mergePeers(data.peers||[]); break;
+    case 'read': {
+      if (data.upToTs) markAllRead(pid, data.upToTs);
+      break;
+    }
+    case 'profile': {
+      peerProfiles.set(pid, { name: data.name, color: data.color });
+      if (data.photo !== undefined) {
+        peerPhotos.set(pid, data.photo || null);
+      }
+      // Update contact label if not manually set
+      const c = loadContacts();
+      if (c[pid] && !c[pid].hadCustomLabel) {
+        c[pid].label = data.name; saveContacts(c);
+      }
+      renderChatList();
+      if (activeChat === pid) updateChatHeader(pid);
+      break;
+    }
   }
 }
 
-function setupConn(conn){
+function sendMyProfile(conn) {
+  if (!conn || !conn.open) return;
+  try {
+    conn.send({ type: 'profile', name: profile.name, color: profile.color, photo: profile.photo || null });
+  } catch {}
+}
+
+function setupConn(conn) {
   conn.on('open', () => {
     connections.set(conn.peer, conn);
-    renderConnList(); updateRAMBar(); addKnownPeer(conn.peer);
-    sendPeerList(conn);
-    conn.send({type:'peer_list_request'});
-    conn.send({type:'sync_req'});
-    renderContactsList();
-    toast('Social', `Connected to ${conn.peer.slice(0,8)}…`);
+    addKnownPeer(conn.peer);
+    sendMyProfile(conn);
+
+    // Ensure in contacts
+    const c = loadContacts();
+    if (!c[conn.peer]) {
+      c[conn.peer] = { label: conn.peer.slice(0, 8) + '…', addedAt: Date.now() };
+      saveContacts(c);
+    }
+
+    // System message
+    const msgs = getConv(conn.peer);
+    msgs.push({ id: crypto.randomUUID(), from: '__sys', text: '🔗 Connected', ts: Date.now(), system: true });
+    saveConv(conn.peer, msgs);
+
+    // Flush pending queue after brief delay
+    setTimeout(() => {
+      flushQueue(conn.peer);
+      // segundo intento por si la conexión WebRTC tardó en estabilizarse
+      setTimeout(() => flushQueue(conn.peer), 1200);
+    }, 600);
+
+    renderChatList();
+    if (activeChat === conn.peer) { renderMessages(conn.peer); updateChatHeader(conn.peer); }
+    toast(getPeerName(conn.peer), 'Connected!');
+    try { window.parent?.postMessage({ type: 'chat-connected', peers: connections.size }, '*'); } catch {}
   });
-  conn.on('data',  data => handleData(conn, data));
+
+  conn.on('data', data => handleData(conn, data));
+
   conn.on('close', () => {
     connections.delete(conn.peer);
-    renderConnList(); renderContactsList(); updateRAMBar();
-    toast('Social', `Peer ${conn.peer.slice(0,8)} disconnected`);
+    const msgs = getConv(conn.peer);
+    msgs.push({ id: crypto.randomUUID(), from: '__sys', text: '📵 Disconnected', ts: Date.now(), system: true });
+    saveConv(conn.peer, msgs);
+    renderChatList();
+    if (activeChat === conn.peer) { renderMessages(conn.peer); updateChatHeader(conn.peer); }
   });
+
   conn.on('error', () => {
     connections.delete(conn.peer);
-    renderConnList(); updateRAMBar();
+    renderChatList();
+    if (activeChat === conn.peer) updateChatHeader(conn.peer);
   });
+
+  // Also watch the underlying WebRTC connection state for ungraceful disconnects
+  try {
+    const pc = conn.peerConnection;
+    if (pc) {
+      pc.addEventListener('connectionstatechange', () => {
+        const s = pc.connectionState;
+        if (s === 'disconnected' || s === 'failed' || s === 'closed') {
+          if (connections.has(conn.peer)) {
+            connections.delete(conn.peer);
+            renderChatList();
+            if (activeChat === conn.peer) updateChatHeader(conn.peer);
+          }
+        }
+      });
+    }
+  } catch {}
 }
 
-function connectToPeer(peerId, {silent=false} = {}){
-  if(!peer || !peerId || peerId === myPeerId) return;
-  if(connections.has(peerId)){ if(!silent) toast('Social','Already connected to this peer'); return; }
-  if(connections.size >= MAX_CONNECTIONS){ if(!silent) toast('Social','Max connections reached (RAM limit)'); return; }
-  addKnownPeer(peerId);
-  const conn = peer.connect(peerId, {reliable:true});
+function connectToPeer(pid, customLabel) {
+  if (!peer || !pid || pid === myPeerId) return;
+  if (isOnline(pid)) { toast('Chat', 'Already connected to this peer', 'warn'); return; }
+  addKnownPeer(pid);
+  if (customLabel) {
+    const c = loadContacts();
+    if (!c[pid]) c[pid] = { label: customLabel, addedAt: Date.now(), hadCustomLabel: true };
+    saveContacts(c);
+  }
+  const conn = peer.connect(pid, { reliable: true });
   setupConn(conn);
 }
 
-function disconnect(peerId){
-  const conn = connections.get(peerId);
-  if(conn) try{ conn.close(); }catch{}
-  connections.delete(peerId);
-  renderConnList(); updateRAMBar();
-}
-
-function initPeer(){
-  if(typeof Peer === 'undefined'){
-    const st = document.getElementById('soc-net-status');
-    if(st) st.textContent = 'PeerJS not loaded. Check network.';
+function initPeer() {
+  if (typeof Peer === 'undefined') {
+    document.getElementById('sb-peer-id').textContent = 'PeerJS unavailable';
     return;
   }
-  const storedId = loadStoredPeerId();
-  peer = storedId ? new Peer(storedId) : new Peer();
+  const stored = loadPeerId();
+  peer = stored ? new Peer(stored) : new Peer();
 
   peer.on('open', id => {
     myPeerId = id; savePeerId(id);
-    document.getElementById('soc-peer-id').textContent = id;
-    const st = document.getElementById('soc-net-status');
-    if(st){ st.textContent = 'Online'; st.style.color = '#28c840'; }
-    const savedContacts = loadContacts();
-    Object.keys(savedContacts).forEach(kid => { if(kid && kid !== myPeerId) connectToPeer(kid,{silent:true}); });
-    knownPeers.forEach(kid => { if(kid && kid !== myPeerId && !savedContacts[kid]) connectToPeer(kid,{silent:true}); });
+    document.getElementById('sb-peer-id').textContent = id.slice(0, 16) + '…';
+    document.getElementById('m-my-id').textContent    = id;
+    document.getElementById('p-my-id').textContent    = id;
+    // Reconnect saved contacts
+    const c = loadContacts();
+    Object.keys(c).forEach(pid => { if (pid && pid !== id) connectToPeer(pid); });
   });
-  peer.on('connection', conn => {
-    if(connections.size >= MAX_CONNECTIONS){ conn.close(); return; }
-    setupConn(conn);
-  });
+
+  peer.on('connection', conn => setupConn(conn));
+
   peer.on('error', err => {
-    const st = document.getElementById('soc-net-status');
-    if(st){ st.textContent = 'Error: '+err.type; st.style.color = '#ff5f57'; }
-    if(err.type === 'unavailable-id'){
+    if (err.type === 'unavailable-id') {
       peer = new Peer();
       peer.on('open', id => {
         myPeerId = id; savePeerId(id);
-        document.getElementById('soc-peer-id').textContent = id;
+        document.getElementById('sb-peer-id').textContent = id.slice(0, 16) + '…';
+        document.getElementById('m-my-id').textContent    = id;
+        document.getElementById('p-my-id').textContent    = id;
       });
+      peer.on('connection', conn => setupConn(conn));
     }
-  });
-  peer.on('disconnected', () => {
-    const st = document.getElementById('soc-net-status');
-    if(st){ st.textContent = 'Disconnected'; st.style.color = '#ffbd2e'; }
   });
 }
 
-// ── Identity UI ───────────────────────────────────────────────────
-function renderColors(){
-  const el = document.getElementById('soc-colors');
-  if(!el) return;
+/* ── Profile UI ─────────────────────────────────── */
+function renderMyAvatar(el, name, color, photo) {
+  if (!el) return;
+  if (photo) {
+    el.innerHTML = `<img src="${esc(photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    el.style.background = 'transparent';
+  } else {
+    el.style.background = color || '#c8845a';
+    el.innerHTML = esc(initials(name || 'Me'));
+  }
+}
+
+function updateSidebarProfile() {
+  renderMyAvatar(document.getElementById('sb-my-av'), profile.name, profile.color, profile.photo);
+  const nm = document.getElementById('sb-my-name');
+  if (nm) nm.textContent = profile.name || 'Me';
+}
+
+function updateProfileModalAvatar() {
+  const inner = document.getElementById('p-av-inner');
+  if (!inner) return;
+  if (profile.photo) {
+    inner.innerHTML = `<img src="${esc(profile.photo)}" style="width:100%;height:100%;object-fit:cover">`;
+    inner.style.background = 'transparent';
+  } else {
+    inner.style.background = profile.color || '#c8845a';
+    inner.innerHTML = esc(initials(profile.name || 'Me'));
+  }
+}
+
+function renderColorSwatches() {
+  const el = document.getElementById('p-colors');
+  if (!el) return;
   el.innerHTML = '';
   ACCENT_COLORS.forEach(c => {
     const sw = document.createElement('div');
-    sw.className = 'soc-clr-sw' + (profile.color === c ? ' active' : '');
+    sw.className = 'clr-sw' + (profile.color === c ? ' active' : '');
     sw.style.background = c;
-    sw.title = c;
-    sw.onclick = () => {
-      profile.color = c; saveProfile(profile);
-      el.querySelectorAll('.soc-clr-sw').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-      updateAvatarEls();
-    };
+    sw.onclick = () => { profile.color = c; renderColorSwatches(); updateSidebarProfile(); updateProfileModalAvatar(); };
     el.appendChild(sw);
   });
 }
 
-function renderEmojis(){
-  const el = document.getElementById('soc-emojis');
-  if(!el) return;
-  el.innerHTML = '';
-  EMOJI_KEYS.forEach(e => {
-    const sw = document.createElement('div');
-    sw.className = 'soc-emoji-sw' + (profile.emoji === e ? ' active' : '');
-    sw.dataset.e = e;
-    sw.innerHTML = AVATAR_SVG[e] || e;
-    sw.onclick = () => {
-      profile.emoji = e; saveProfile(profile);
-      el.querySelectorAll('.soc-emoji-sw').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-      updateAvatarEls();
+function compressImage(file, maxDim, quality, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale  = Math.min(maxDim / img.width, maxDim / img.height, 1);
+      canvas.width  = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      cb(canvas.toDataURL('image/jpeg', quality));
     };
-    el.appendChild(sw);
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ── Emoji picker ───────────────────────────────── */
+function buildEmojiPicker() {
+  const grid = document.getElementById('em-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  EMOJIS.forEach(em => {
+    const el = document.createElement('span');
+    el.className = 'em'; el.textContent = em;
+    el.addEventListener('click', e => { e.stopPropagation(); insertEmoji(em); closeEmojiPicker(); });
+    grid.appendChild(el);
   });
 }
 
-function updateAvatarEls(){
-  const myAv = document.getElementById('soc-my-av');
-  const idAv = document.getElementById('soc-id-av');
-  if(myAv){ myAv.style.background = profile.color; myAv.innerHTML = AVATAR_SVG[profile.emoji] || '★'; }
-  if(idAv){ idAv.style.background = profile.color; idAv.innerHTML = AVATAR_SVG[profile.emoji] || '★'; }
+function insertEmoji(em) {
+  const ta = document.getElementById('msg-ta');
+  const s  = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.slice(0, s) + em + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = s + em.length;
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
 }
 
-// ── Init on DOM ready ─────────────────────────────────────────────
+function toggleEmojiPicker(e) {
+  e.stopPropagation();
+  emojiOpen = !emojiOpen;
+  document.getElementById('emoji-picker').classList.toggle('open', emojiOpen);
+}
+
+function closeEmojiPicker() {
+  emojiOpen = false;
+  document.getElementById('emoji-picker')?.classList.remove('open');
+}
+
+/* ── Modals ─────────────────────────────────────── */
+function showConnectModal() {
+  document.getElementById('connect-modal').classList.remove('hidden');
+  document.getElementById('m-peer-inp').value = '';
+  document.getElementById('m-name-inp').value = '';
+  setTimeout(() => document.getElementById('m-peer-inp').focus(), 50);
+}
+function hideConnectModal() { document.getElementById('connect-modal').classList.add('hidden'); }
+
+function showProfileModal() {
+  document.getElementById('p-name-inp').value = profile.name || '';
+  renderColorSwatches();
+  updateProfileModalAvatar();
+  document.getElementById('profile-modal').classList.remove('hidden');
+}
+function hideProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+
+function showRenameModal(pid) {
+  renameTarget = pid;
+  const c = loadContacts();
+  document.getElementById('rn-inp').value = c[pid]?.label || getPeerName(pid);
+  document.getElementById('rename-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('rn-inp').focus(), 50);
+}
+function hideRenameModal() { document.getElementById('rename-modal').classList.add('hidden'); renameTarget = null; }
+
+/* ── DOM Ready ──────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Restore state
+  profile    = loadProfile() || { name: 'User', color: '#c8845a', photo: null };
   knownPeers = new Set(loadKnownPeers());
-  profile    = loadProfile() || { name: _osUsername, color: '#5b8af5', emoji: 'star' };
-
-  // Identity UI
-  document.getElementById('soc-name-inp').value = profile.name;
-  renderColors();
-  renderEmojis();
-  updateAvatarEls();
-
-  // Feed
-  const stored = loadStoredPosts();
-  loadedPosts  = stored.slice(0, MAX_POSTS_LOADED);
-  renderedCount = Math.min(POSTS_PER_PAGE, loadedPosts.length);
-  renderFeed();
-  renderConnList();
-  renderContactsList();
-  updateRAMBar();
-
-  // P2P
+  initQueue();
+  updateSidebarProfile();
+  renderChatList();
+  buildEmojiPicker();
   initPeer();
 
-  // ── Compose ────────────────────────────────────────────────────
-  const ta        = document.getElementById('soc-compose-ta');
-  const charCount = document.getElementById('soc-char-count');
-  ta.addEventListener('input', () => { charCount.textContent = ta.value.length + '/500'; });
-  document.getElementById('soc-post-btn').addEventListener('click', () => {
-    const img = document.getElementById('soc-img-url').value.trim() || null;
-    if(publishPost(ta.value, img)){
-      ta.value = ''; document.getElementById('soc-img-url').value = '';
-      charCount.textContent = '0/500';
-    } else {
-      toast('Social', 'Post cannot be empty');
+  // Close emoji on outside click
+  document.addEventListener('click', e => {
+    if (emojiOpen && !e.target.closest('#emoji-picker') && !e.target.closest('#emoji-btn')) {
+      closeEmojiPicker();
     }
   });
 
-  // ── Connect ────────────────────────────────────────────────────
-  const peerInp = document.getElementById('soc-peer-inp');
-  document.getElementById('soc-connect-btn').addEventListener('click', () => {
-    const id = peerInp.value.trim();
-    if(!id){ toast('Social','Enter a peer ID'); return; }
-    connectToPeer(id);
-    peerInp.value = '';
+  // ── Sidebar ──
+  document.getElementById('sb-my-av').addEventListener('click', showProfileModal);
+  document.getElementById('sb-profile-btn').addEventListener('click', showProfileModal);
+  document.getElementById('sb-new-btn').addEventListener('click', showConnectModal);
+  document.getElementById('nc-new-btn').addEventListener('click', showConnectModal);
+  document.getElementById('sb-peer-id').addEventListener('click', () => {
+    if (myPeerId) { navigator.clipboard.writeText(myPeerId).catch(() => {}); toast('Chat', 'Peer ID copied!'); }
   });
-  peerInp.addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('soc-connect-btn').click(); });
+  document.getElementById('search-inp').addEventListener('input', e => { searchQ = e.target.value; renderChatList(); });
 
-  // ── Copy peer ID ───────────────────────────────────────────────
-  document.getElementById('soc-copy-id').addEventListener('click', () => {
-    const id = document.getElementById('soc-peer-id').textContent;
-    if(id && id !== 'Connecting…'){
-      navigator.clipboard.writeText(id).catch(() => {});
-      toast('Social', 'Peer ID copied!');
-    }
+  // ── Connect modal ──
+  document.getElementById('m-cancel').addEventListener('click', hideConnectModal);
+  document.getElementById('connect-modal').addEventListener('click', e => { if (e.target === e.currentTarget) hideConnectModal(); });
+  document.getElementById('m-copy-id').addEventListener('click', () => {
+    if (myPeerId) { navigator.clipboard.writeText(myPeerId).catch(() => {}); toast('Chat', 'Peer ID copied!'); }
   });
-
-  // ── Load more ──────────────────────────────────────────────────
-  const loadBtn = document.getElementById('soc-load-btn');
-  loadBtn.addEventListener('click', () => {
-    if(!loadMorePosts()){ loadBtn.textContent = 'No more posts'; loadBtn.disabled = true; }
+  document.getElementById('m-connect').addEventListener('click', () => {
+    const pid  = document.getElementById('m-peer-inp').value.trim();
+    const name = document.getElementById('m-name-inp').value.trim();
+    if (!pid) { toast('Chat', 'Enter a peer ID', 'warn'); return; }
+    const c = loadContacts();
+    if (!c[pid]) c[pid] = { label: name || pid.slice(0, 8) + '…', addedAt: Date.now(), hadCustomLabel: !!name };
+    saveContacts(c);
+    connectToPeer(pid, name || null);
+    hideConnectModal();
+    renderChatList();
+    openChat(pid);
   });
+  document.getElementById('m-peer-inp').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('m-connect').click(); });
 
-  // Infinite scroll
-  document.getElementById('soc-posts').addEventListener('scroll', e => {
-    const el = e.target;
-    if(el.scrollTop + el.clientHeight >= el.scrollHeight - 60) loadMorePosts();
+  // ── Profile modal ──
+  document.getElementById('p-cancel').addEventListener('click', hideProfileModal);
+  document.getElementById('profile-modal').addEventListener('click', e => { if (e.target === e.currentTarget) hideProfileModal(); });
+  document.getElementById('p-copy-id').addEventListener('click', () => {
+    if (myPeerId) { navigator.clipboard.writeText(myPeerId).catch(() => {}); toast('Chat', 'Peer ID copied!'); }
   });
-
-  // ── Profile name ───────────────────────────────────────────────
-  document.getElementById('soc-name-inp').addEventListener('change', e => {
-    profile.name = e.target.value.trim() || 'Anonymous';
-    saveProfile(profile);
+  document.getElementById('p-av-wrap').addEventListener('click', () => {
+    document.getElementById('p-photo-inp').click();
   });
-
-  // ── Mobile tabs ────────────────────────────────────────────────
-  const feedCol = document.getElementById('soc-feed-col');
-  const sideCol = document.getElementById('soc-side-col');
-  if(window.innerWidth <= 640) sideCol.classList.add('soc-hidden');
-  document.querySelectorAll('.soc-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.soc-tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      if(btn.dataset.socTab === 'feed'){
-        feedCol.classList.remove('soc-hidden');
-        sideCol.classList.add('soc-hidden');
-      } else {
-        feedCol.classList.add('soc-hidden');
-        sideCol.classList.remove('soc-hidden');
-      }
+  document.getElementById('p-photo-inp').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    compressImage(file, 200, 0.78, dataUrl => {
+      profile.photo = dataUrl;
+      updateProfileModalAvatar();
+      updateSidebarProfile();
     });
+    e.target.value = '';
+  });
+  document.getElementById('p-save').addEventListener('click', () => {
+    const name = document.getElementById('p-name-inp').value.trim() || 'Anonymous';
+    profile.name = name;
+    saveProfile(profile);
+    updateSidebarProfile();
+    connections.forEach(conn => { if (conn.open) sendMyProfile(conn); });
+    hideProfileModal();
+    toast('Chat', 'Profile updated!');
+  });
+
+  // ── Rename modal ──
+  document.getElementById('rn-cancel').addEventListener('click', hideRenameModal);
+  document.getElementById('rename-modal').addEventListener('click', e => { if (e.target === e.currentTarget) hideRenameModal(); });
+  document.getElementById('rn-save').addEventListener('click', () => {
+    if (!renameTarget) return;
+    const label = document.getElementById('rn-inp').value.trim();
+    if (!label) return;
+    const c = loadContacts();
+    c[renameTarget] = { ...(c[renameTarget] || {}), label, hadCustomLabel: true };
+    saveContacts(c);
+    hideRenameModal(); renderChatList();
+    if (activeChat === renameTarget) updateChatHeader(renameTarget);
+    toast('Chat', 'Contact renamed!');
+  });
+  document.getElementById('rn-remove').addEventListener('click', () => {
+    if (!renameTarget) return;
+    const c = loadContacts(); delete c[renameTarget]; saveContacts(c);
+    const pid = renameTarget; hideRenameModal();
+    if (activeChat === pid) closeChat();
+    renderChatList(); toast('Chat', 'Contact removed');
+  });
+  document.getElementById('rn-inp').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('rn-save').click(); });
+
+  // ── Chat header ──
+  document.getElementById('back-btn').addEventListener('click', closeChat);
+  document.getElementById('ch-rename-btn').addEventListener('click', () => { if (activeChat) showRenameModal(activeChat); });
+
+  // ── Emoji ──
+  document.getElementById('emoji-btn').addEventListener('click', toggleEmojiPicker);
+
+  // ── Textarea ──
+  const ta      = document.getElementById('msg-ta');
+  const sendBtn = document.getElementById('send-btn');
+
+  ta.addEventListener('input', () => {
+    sendBtn.disabled = !ta.value.trim();
+    ta.style.height = '';
+    ta.style.height = Math.min(ta.scrollHeight, 110) + 'px';
+  });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) { sendMessage(ta.value); ta.value = ''; sendBtn.disabled = true; ta.style.height = ''; }
+    }
+  });
+  sendBtn.addEventListener('click', () => {
+    if (!sendBtn.disabled) { sendMessage(ta.value); ta.value = ''; sendBtn.disabled = true; ta.style.height = ''; }
   });
 });
 </script>
