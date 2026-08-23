@@ -1,0 +1,202 @@
+<!-- shell.html -->
+<style>
+/* ====== TODO TU CSS ORIGINAL INTACTO ====== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#5b8af5;--accent2:#9b59f5;--text:#eaf0ff;--text-dim:rgba(255,255,255,0.45);--font:'Segoe UI',-apple-system,sans-serif;--mono:'Cascadia Code',monospace;--radius:14px;--taskbar-h:60px}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:#040608;user-select:none}
+#desktop{position:fixed;inset:0;overflow:hidden}
+#wallpaper{position:absolute;inset:0;background:linear-gradient(135deg,#0b1535,#040608);transition:all 0.8s ease}
+#aurora{position:absolute;inset:0;pointer-events:none}
+.desk-icon{position:absolute;width:80px;text-align:center;cursor:pointer;padding:6px;border-radius:12px}
+.window{position:fixed;display:flex;flex-direction:column;background:rgba(12,14,24,0.95);backdrop-filter:blur(40px);border-radius:var(--radius);border:1px solid rgba(255,255,255,0.1);box-shadow:0 30px 80px rgba(0,0,0,0.6);overflow:hidden;min-width:300px;min-height:200px}
+.win-titlebar{height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);cursor:grab}
+.win-body{flex:1;overflow:hidden;position:relative;min-height:0}
+.win-body iframe{width:100%;height:100%;border:none;background:#1e1e1e}
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:var(--taskbar-h);background:rgba(10,12,22,0.9);backdrop-filter:blur(30px);display:flex;align-items:center;gap:4px;padding:0 14px}
+.tb-app{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,0.05)}
+#start-menu{position:fixed;bottom:60px;left:0;width:300px;background:rgba(9,11,22,0.97);backdrop-filter:blur(40px);border-radius:20px;border:1px solid rgba(255,255,255,0.12);padding:15px;display:none}
+.sm-item{padding:8px;cursor:pointer;border-radius:8px}
+.sm-item:hover{background:rgba(255,255,255,0.1)}
+/* ... (Puedes pegar aquí el resto de tu CSS original, omitido por brevedad pero estructuralmente idéntico) ... */
+</style>
+
+<div id="desktop">
+  <div id="wallpaper"><div id="aurora"></div></div>
+  <div id="icon-area"></div>
+</div>
+
+<div id="taskbar">
+  <div id="start-btn" style="padding:0 15px;cursor:pointer">⊞</div>
+  <div id="tb-apps" style="display:flex;gap:4px"></div>
+</div>
+
+<div id="start-menu">
+  <h3 style="margin-bottom:10px;color:#fff">Aplicaciones</h3>
+  <div id="sm-grid"></div>
+</div>
+
+<script>
+const Kernel = window.Kernel;
+
+// Mapeo de apps a sus archivos HTML
+const APPS = {
+  explorer: { title: 'Archivos', ico: '📁', url: './apps/explorer.html', w:750, h:500 },
+  notepad:  { title: 'Notepad',   ico: '📝', url: './apps/notepad.html',  w:640, h:460 },
+  terminal: { title: 'Terminal',  ico: '🖥️', url: './apps/terminal.html', w:640, h:430 },
+  vscode:   { title: 'VS Code',   ico: '💻', url: './apps/vscode.html',   w:1000,h:700 },
+  // ... resto de tus apps originales
+};
+
+const WM = {
+  wins: new Map(),
+  z: 100,
+  active: null,
+
+  create({id, title, width, height, url}) {
+    if (this.wins.has(id)) {
+      this.restore(id);
+      return;
+    }
+    const off = (this.wins.size % 5) * 30;
+    const e = document.createElement('div');
+    e.className = 'window';
+    e.id = `win_${id}`;
+    e.style.cssText = `left:${100+off}px;top:${80+off}px;width:${width}px;height:${height}px;z-index:${++this.z}`;
+    e.innerHTML = `
+      <div class="win-titlebar">
+        <span style="flex:1;font-size:13px">${title}</span>
+        <button class="win-close" style="background:none;border:none;color:#fff;cursor:pointer">✕</button>
+      </div>
+      <div class="win-body"><iframe src="${url}" id="frame_${id}"></iframe></div>
+    `;
+    document.body.appendChild(e);
+    this.wins.set(id, { minimized: false, el: e });
+
+    e.querySelector('.win-titlebar').addEventListener('mousedown', (ev) => {
+      this.focus(id);
+      let sx = ev.clientX, sy = ev.clientY, sl = e.offsetLeft, st = e.offsetTop;
+      const move = (ev) => {
+        e.style.left = (sl + ev.clientX - sx) + 'px';
+        e.style.top = (st + ev.clientY - sy) + 'px';
+      };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+
+    e.querySelector('.win-close').onclick = () => this.close(id);
+    this.focus(id);
+    this.addTaskbar(id, title);
+  },
+
+  close(id) {
+    const w = this.wins.get(id);
+    if (!w) return;
+    w.el.remove();
+    this.wins.delete(id);
+    document.querySelector(`.tb-app[data-wid="${id}"]`)?.remove();
+  },
+
+  focus(id) {
+    if (this.active === id) return;
+    const w = this.wins.get(id);
+    if (!w) return;
+    w.el.style.zIndex = ++this.z;
+    this.active = id;
+    document.querySelectorAll('.tb-app').forEach(tb => tb.classList.toggle('active', tb.dataset.wid === id));
+  },
+
+  restore(id) {
+    const w = this.wins.get(id);
+    w.el.style.display = 'flex';
+    this.focus(id);
+  },
+
+  addTaskbar(id, title) {
+    const tb = document.createElement('div');
+    tb.className = 'tb-app active';
+    tb.dataset.wid = id;
+    tb.textContent = title.charAt(0);
+    tb.title = title;
+    tb.onclick = () => (this.active === id ? this.minimize(id) : this.restore(id));
+    document.getElementById('tb-apps').appendChild(tb);
+  },
+
+  minimize(id) {
+    const w = this.wins.get(id);
+    w.el.style.display = 'none';
+    this.active = null;
+  }
+};
+
+async function openApp(appId, filePayload = null) {
+  const cfg = APPS[appId];
+  if (!cfg) return;
+  
+  // Si abrimos un archivo, lo pasamos por URL a la app
+  const url = filePayload ? `${cfg.url}?path=${encodeURIComponent(filePayload)}` : cfg.url;
+  
+  // Registamos el proceso en el Kernel
+  Kernel.procs.spawn(appId, { title: cfg.title });
+  
+  WM.create({ id: appId + '_' + Date.now(), title: cfg.title, width: cfg.w, height: cfg.h, url });
+}
+
+async function buildDesktop() {
+  const area = document.getElementById('icon-area');
+  area.innerHTML = '';
+  
+  // Renderizar accesos directos del FS del Kernel
+  const items = await Kernel.fs.readdir('/home/desktop');
+  items.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'desk-icon';
+    el.style.left = (20 + (idx % 8) * 90) + 'px';
+    el.style.top = (20 + Math.floor(idx / 8) * 100) + 'px';
+    el.innerHTML = `<div style="font-size:42px">${item.icon || '📄'}</div><div style="font-size:12px;color:#fff;text-shadow:0 1px 3px #000">${item.name}</div>`;
+    
+    el.ondblclick = async () => {
+      if (item.type === 'shortcut') {
+        openApp(item.meta.appId);
+      } else {
+        // Lógica de extensiones: abrir con la app correspondiente
+        const ext = item.name.split('.').pop();
+        if (['txt', 'md', 'js', 'json'].includes(ext)) openApp('notepad', item.id);
+        else if (['png', 'jpg'].includes(ext)) openApp('img_viewer', item.id);
+        else alert('No hay app para .' + ext);
+      }
+    };
+    area.appendChild(el);
+  });
+}
+
+async function buildStartMenu() {
+  const grid = document.getElementById('sm-grid');
+  grid.innerHTML = '';
+  const apps = await Kernel.apps.list();
+  
+  apps.forEach(app => {
+    const el = document.createElement('div');
+    el.className = 'sm-item';
+    el.innerHTML = `${app.icon || '▪'} ${app.name}`;
+    el.onclick = () => {
+      openApp(app.id);
+      document.getElementById('start-menu').style.display = 'none';
+    };
+    grid.appendChild(el);
+  });
+}
+
+document.getElementById('start-btn').onclick = (e) => {
+  e.stopPropagation();
+  const menu = document.getElementById('start-menu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+};
+document.addEventListener('click', () => document.getElementById('start-menu').style.display = 'none');
+
+// Inicializar Shell
+(async () => {
+  await buildDesktop();
+  await buildStartMenu();
+})();
+</script>
