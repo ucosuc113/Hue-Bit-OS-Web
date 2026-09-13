@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"resmon","name":"Resource Monitor","version":"1.0","icon":"📊","category":"system","singleton":true,"description":"RAM, storage and process usage.","winWidth":540,"winHeight":480}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--rm-accent:#5b8af5}
+html,body{width:100%;height:100%;font-family:'Segoe UI',-apple-system,sans-serif;background:#0c0e18;color:#eaf0ff}
+*::-webkit-scrollbar{width:5px}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+.rm-wrap{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.rm-tabs{display:flex;gap:2px;padding:8px 10px 0;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0}
+.rm-tab{padding:6px 14px;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);cursor:pointer}
+.rm-tab:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.05)}
+.rm-tab.active{color:#fff;background:rgba(91,138,245,0.2);border:1px solid rgba(91,138,245,0.3);border-bottom:none}
+.rm-panel{flex:1;overflow-y:auto;padding:12px}
+.rm-gauge-section{margin-bottom:14px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px}
+.rm-gauge-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.7)}
+.rm-gauge-track{height:10px;background:rgba(255,255,255,0.08);border-radius:5px;overflow:hidden;margin-bottom:5px}
+.rm-gauge-fill{height:100%;border-radius:5px;transition:width .6s ease,background .3s;background:var(--rm-accent)}
+.rm-gauge-sub{font-size:11px;color:rgba(255,255,255,0.35)}
+.rm-proc-list{display:flex;flex-direction:column;gap:6px}
+.rm-proc-row-item{display:grid;grid-template-columns:1fr 60px;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,0.03)}
+.rm-proc-name{font-size:11px;color:rgba(255,255,255,0.65);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rm-proc-table{width:100%}
+.rm-proc-row{display:grid;grid-template-columns:1fr 90px 90px;gap:6px;padding:6px 8px;border-radius:7px;font-size:12px;align-items:center}
+.rm-proc-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);margin-bottom:4px}
+.rm-proc-row:not(.rm-proc-head){background:rgba(255,255,255,0.03);margin-bottom:3px}
+.rm-proc-running{font-size:10px;color:#28c840}
+.rm-empty{padding:16px 0;text-align:center;font-size:12px;color:rgba(255,255,255,0.25)}
+</style>
+</head>
+<body>
+<div class="rm-wrap">
+  <div class="rm-tabs">
+    <div class="rm-tab active" data-panel="rm-ram">Memory</div>
+    <div class="rm-tab" data-panel="rm-storage">Storage</div>
+    <div class="rm-tab" data-panel="rm-processes">Processes</div>
+  </div>
+  <div class="rm-panel" id="rm-ram">
+    <div class="rm-gauge-section">
+      <div class="rm-gauge-label"><span>JS Heap</span><span id="rm-ram-used-txt">…</span></div>
+      <div class="rm-gauge-track"><div class="rm-gauge-fill" id="rm-ram-fill"></div></div>
+      <div class="rm-gauge-sub" id="rm-ram-sub">Calculating…</div>
+    </div>
+    <div class="rm-proc-list" id="rm-proc-list"></div>
+  </div>
+  <div class="rm-panel" id="rm-storage" style="display:none">
+    <div class="rm-gauge-section">
+      <div class="rm-gauge-label"><span>Browser Storage (IndexedDB + all origin data)</span><span id="rm-stor-used-txt">…</span></div>
+      <div class="rm-gauge-track"><div class="rm-gauge-fill" id="rm-stor-fill" style="background:#28c840"></div></div>
+      <div class="rm-gauge-sub" id="rm-stor-sub">Measuring…</div>
+    </div>
+  </div>
+  <div class="rm-panel" id="rm-processes" style="display:none">
+    <div class="rm-proc-table">
+      <div class="rm-proc-row rm-proc-head"><span>Process</span><span>PID</span><span>Status</span></div>
+      <div id="rm-proc-rows"></div>
+    </div>
+  </div>
+</div>
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+
+waitForKernel(K => {
+  let activePanel = 'rm-ram';
+  document.querySelectorAll('.rm-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.rm-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      activePanel = tab.dataset.panel;
+      document.querySelectorAll('.rm-panel').forEach(p => p.style.display = p.id===activePanel ? 'block' : 'none');
+      update();
+    });
+  });
+
+  function fmtMB(mb){ return mb.toFixed(1)+' MB'; }
+  function fmtBytes(b){ if (b<1024) return b+' B'; if (b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(2)+' MB'; }
+
+  function updateRAM(){
+    const mem = performance && performance.memory;
+    const fill = document.getElementById('rm-ram-fill'), txt = document.getElementById('rm-ram-used-txt'), sub = document.getElementById('rm-ram-sub');
+    const procList = document.getElementById('rm-proc-list');
+    if (mem && mem.jsHeapSizeLimit > 0){
+      const used = mem.usedJSHeapSize/(1024*1024), limit = mem.jsHeapSizeLimit/(1024*1024), alloc = mem.totalJSHeapSize/(1024*1024);
+      const pct = Math.min(100, (used/limit)*100);
+      fill.style.width = pct+'%'; fill.style.background = pct>80?'#ff5f57':pct>60?'#ffbd2e':'var(--rm-accent)';
+      txt.textContent = fmtMB(used)+' / '+fmtMB(limit);
+      sub.textContent = `${pct.toFixed(1)}% used — 🟢 real data (performance.memory)`;
+      procList.innerHTML = `
+        <div class="rm-proc-row-item"><div class="rm-proc-name">JS Heap Used</div><div style="text-align:right;font-size:11px">${fmtMB(used)}</div></div>
+        <div class="rm-proc-row-item"><div class="rm-proc-name">JS Heap Allocated</div><div style="text-align:right;font-size:11px">${fmtMB(alloc)}</div></div>`;
+    } else {
+      fill.style.width = '0%'; txt.textContent = 'n/a'; sub.textContent = 'performance.memory is not available in this browser.';
+      procList.innerHTML = '<div class="rm-empty">No memory data available</div>';
+    }
+  }
+
+  async function updateStorage(){
+    const fill = document.getElementById('rm-stor-fill'), txt = document.getElementById('rm-stor-used-txt'), sub = document.getElementById('rm-stor-sub');
+    if (navigator.storage && navigator.storage.estimate){
+      const est = await navigator.storage.estimate();
+      const used = est.usage || 0, quota = est.quota || 1;
+      const pct = Math.min(100, (used/quota)*100);
+      fill.style.width = pct+'%'; fill.style.background = pct>80?'#ff5f57':pct>60?'#ffbd2e':'#28c840';
+      txt.textContent = fmtBytes(used)+' / '+fmtBytes(quota);
+      sub.textContent = `${pct.toFixed(2)}% of this browser's storage quota used`;
+    } else {
+      sub.textContent = 'Storage estimate API not available in this browser.';
+    }
+  }
+
+  function updateProcesses(){
+    const procs = K.procs.list();
+    const rowsEl = document.getElementById('rm-proc-rows');
+    rowsEl.innerHTML = '';
+    procs.forEach(p => {
+      const row = document.createElement('div'); row.className='rm-proc-row';
+      row.innerHTML = `<span>${(p.title||p.appId).slice(0,22)}</span><span>#${p.pid}</span><span class="rm-proc-running">${p.state}</span>`;
+      rowsEl.appendChild(row);
+    });
+    if (!procs.length) rowsEl.innerHTML = '<div class="rm-empty">No processes</div>';
+  }
+
+  function update(){
+    if (activePanel==='rm-ram') updateRAM();
+    else if (activePanel==='rm-storage') updateStorage();
+    else if (activePanel==='rm-processes') updateProcesses();
+  }
+
+  const interval = setInterval(update, 1500);
+  update();
+  window.addEventListener('beforeunload', () => clearInterval(interval));
+});
+</script>
+</body>
+</html>

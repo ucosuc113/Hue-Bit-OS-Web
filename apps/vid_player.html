@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"vid_player","name":"Video Player","version":"1.0","icon":"🎬","category":"media","singleton":false,"description":"Play videos from the virtual filesystem.","winWidth":700,"winHeight":480}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;font-family:'Segoe UI',-apple-system,sans-serif;background:#000;color:#eaf0ff}
+.vid-wrap{width:100%;height:100%;display:flex;flex-direction:column;background:#000}
+.vid-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.vid-stage video{max-width:100%;max-height:100%}
+.vid-err{padding:40px;text-align:center;opacity:.4;font-size:14px;line-height:2.2}
+.vid-controls{flex-shrink:0;padding:10px 14px;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;gap:8px}
+.vid-progress{width:100%;height:5px;background:rgba(255,255,255,0.15);border-radius:3px;cursor:pointer;position:relative}
+.vid-progress-fill{height:100%;background:#5b8af5;border-radius:3px;pointer-events:none}
+.vid-btns{display:flex;align-items:center;gap:8px}
+.vid-btn{background:none;border:none;color:rgba(255,255,255,0.8);font-size:17px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .13s}
+.vid-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+.vid-time{font-size:12px;color:rgba(255,255,255,0.5);font-family:monospace;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="vid-wrap">
+  <div class="vid-stage" id="vp-stage"><video id="vp-vid"></video></div>
+  <div class="vid-controls">
+    <div class="vid-progress" id="vp-prog"><div class="vid-progress-fill" id="vp-fill" style="width:0%"></div></div>
+    <div class="vid-btns">
+      <button class="vid-btn" id="vp-rew" title="Restart">⏮</button>
+      <button class="vid-btn" id="vp-play" title="Play/Pause">▶</button>
+      <button class="vid-btn" id="vp-fwd" title="+10s">⏭</button>
+      <button class="vid-btn" id="vp-mute" title="Mute">🔊</button>
+      <span class="vid-time" id="vp-time">0:00 / 0:00</span>
+    </div>
+  </div>
+</div>
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+
+waitForKernel(async K => {
+  const params = new URLSearchParams(location.search);
+  const path = params.get('path');
+  const vid = document.getElementById('vp-vid'), pb = document.getElementById('vp-play'), mb = document.getElementById('vp-mute');
+  const fill = document.getElementById('vp-fill'), timeEl = document.getElementById('vp-time'), prog = document.getElementById('vp-prog');
+  const fmt = s => { const m=Math.floor(s/60), sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; };
+
+  if (path){
+    try { vid.src = await K.fs.readDataURL(path); }
+    catch(e){ document.getElementById('vp-stage').innerHTML = '<div class="vid-err">Could not load video</div>'; }
+  } else { document.getElementById('vp-stage').innerHTML = '<div class="vid-err">No file specified</div>'; }
+
+  vid.addEventListener('error', () => { document.getElementById('vp-stage').innerHTML = '<div class="vid-err">Could not load video</div>'; });
+  vid.addEventListener('timeupdate', () => { if(!vid.duration) return; fill.style.width=(vid.currentTime/vid.duration*100)+'%'; timeEl.textContent=fmt(vid.currentTime)+' / '+fmt(vid.duration); });
+  vid.addEventListener('play', () => pb.textContent='⏸');
+  vid.addEventListener('pause', () => pb.textContent='▶');
+  vid.addEventListener('ended', () => pb.textContent='▶');
+  pb.onclick = () => vid.paused ? vid.play() : vid.pause();
+  mb.onclick = () => { vid.muted = !vid.muted; mb.textContent = vid.muted ? '🔇' : '🔊'; };
+  document.getElementById('vp-rew').onclick = () => vid.currentTime = 0;
+  document.getElementById('vp-fwd').onclick = () => vid.currentTime = Math.min(vid.duration||0, vid.currentTime+10);
+  prog.onclick = e => { if(!vid.duration) return; const r=prog.getBoundingClientRect(); vid.currentTime=((e.clientX-r.left)/r.width)*vid.duration; };
+  document.addEventListener('keydown', e => { if(e.key===' '){ e.preventDefault(); pb.click(); } else if(e.key==='ArrowRight') vid.currentTime+=5; else if(e.key==='ArrowLeft') vid.currentTime-=5; });
+});
+</script>
+</body>
+</html>

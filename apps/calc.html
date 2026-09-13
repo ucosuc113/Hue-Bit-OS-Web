@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"calculator","name":"Calculator","version":"1.0","icon":"🧮","category":"utilities","singleton":true,"description":"Basic arithmetic calculator.","winWidth":310,"winHeight":520}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#5b8af5}
+html,body{width:100%;height:100%;font-family:'Segoe UI',-apple-system,sans-serif;background:#0c0e18;color:#eaf0ff}
+.calc-wrap{display:flex;flex-direction:column;height:100%;padding:14px;gap:10px}
+.calc-disp{background:rgba(0,0,0,0.38);border-radius:12px;padding:10px 14px;border:1px solid rgba(255,255,255,0.07);text-align:right}
+.calc-expr{font-size:12px;color:rgba(255,255,255,0.38);font-family:monospace;min-height:18px}
+.calc-val{font-size:38px;font-weight:300;color:#fff;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1}
+.c-btn{border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.09);color:rgba(255,255,255,0.88);font-size:18px;cursor:pointer;transition:all .12s;font-weight:500;display:flex;align-items:center;justify-content:center}
+.c-btn:hover{background:rgba(255,255,255,0.14)}
+.c-btn:active{transform:scale(.91)}
+.c-btn.op{background:rgba(91,138,245,0.15);color:#8ab4ff;border-color:rgba(91,138,245,0.2)}
+.c-btn.eq{background:var(--accent);color:#fff;border-color:transparent}
+.c-btn.cl{background:rgba(255,90,90,0.13);color:#ff9090;border-color:rgba(255,90,90,0.2)}
+.c-btn.s2{grid-column:span 2}
+</style>
+</head>
+<body>
+<div class="calc-wrap">
+  <div class="calc-disp"><div class="calc-expr" id="cexpr"></div><div class="calc-val" id="cval">0</div></div>
+  <div class="calc-grid">
+    <button class="c-btn cl" data-v="C">C</button><button class="c-btn" data-v="±">±</button><button class="c-btn" data-v="%">%</button><button class="c-btn op" data-v="÷">÷</button>
+    <button class="c-btn" data-v="7">7</button><button class="c-btn" data-v="8">8</button><button class="c-btn" data-v="9">9</button><button class="c-btn op" data-v="×">×</button>
+    <button class="c-btn" data-v="4">4</button><button class="c-btn" data-v="5">5</button><button class="c-btn" data-v="6">6</button><button class="c-btn op" data-v="−">−</button>
+    <button class="c-btn" data-v="1">1</button><button class="c-btn" data-v="2">2</button><button class="c-btn" data-v="3">3</button><button class="c-btn op" data-v="+">+</button>
+    <button class="c-btn s2" data-v="0">0</button><button class="c-btn" data-v=".">.</button><button class="c-btn eq" data-v="=">=</button>
+  </div>
+</div>
+<script>
+const dsp = document.getElementById('cval'), exp = document.getElementById('cexpr');
+let cur = '0', pOp = null, pVal = null, ev = false;
+const upd = () => { dsp.textContent = cur.length>14 ? parseFloat(cur).toExponential(5) : cur; };
+document.querySelectorAll('.c-btn').forEach(b => b.addEventListener('click', () => {
+  const v = b.dataset.v;
+  if (v==='C'){ cur='0'; pOp=null; pVal=null; exp.textContent=''; ev=false; }
+  else if (v==='±'){ cur = cur.startsWith('-') ? cur.slice(1) : (cur==='0'?'0':'-'+cur); }
+  else if (v==='%'){ cur = String(parseFloat(cur)/100); }
+  else if ('÷×−+'.includes(v)){ pVal=parseFloat(cur); pOp=v; exp.textContent=cur+' '+v; cur='0'; ev=false; }
+  else if (v==='='){
+    if (pOp && pVal!=null){
+      const a=pVal, b2=parseFloat(cur);
+      const r = pOp==='÷' ? (b2===0?Infinity:a/b2) : pOp==='+' ? a+b2 : pOp==='−' ? a-b2 : a*b2;
+      exp.textContent = `${a} ${pOp} ${b2} =`;
+      cur = isNaN(r) ? 'Error' : String(parseFloat(r.toFixed(10)));
+      pOp=null; pVal=null; ev=true;
+    }
+  }
+  else if (v==='.'){ if (ev){ cur='0.'; ev=false; } else if (!cur.includes('.')) cur+='.'; }
+  else { cur = (cur==='0'||ev) ? v : cur+v; ev=false; }
+  upd();
+}));
+document.addEventListener('keydown', e => {
+  const m = {'0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9','+':'+','-':'−','*':'×','/':'÷','=':'=','Enter':'=','.':'.','Escape':'C'};
+  const v = m[e.key]; if (!v) return;
+  if (e.key==='Backspace'){ cur = cur.length>1 ? cur.slice(0,-1) : '0'; upd(); return; }
+  document.querySelector(`.c-btn[data-v="${v}"]`)?.click();
+});
+</script>
+</body>
+</html>

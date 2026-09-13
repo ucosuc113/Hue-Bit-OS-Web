@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"files","name":"File Explorer","version":"1.0","icon":"📁","category":"system","singleton":false,"description":"Browse the HuebOS virtual filesystem.","winWidth":750,"winHeight":500}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#5b8af5;--font:'Segoe UI',-apple-system,sans-serif;--mono:'Cascadia Code',monospace}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:#eaf0ff;background:#0c0e18}
+*::-webkit-scrollbar{width:5px;height:5px}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+.exp-wrap{display:flex;height:100%}
+.exp-sidebar{width:170px;flex-shrink:0;background:rgba(0,0,0,0.22);border-right:1px solid rgba(255,255,255,0.07);padding:10px 7px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.exp-nav{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);transition:all .13s;font-weight:500}
+.exp-nav:hover{background:rgba(255,255,255,0.07);color:#fff}
+.exp-nav.active{background:rgba(91,138,245,0.18);color:var(--accent)}
+.exp-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.exp-toolbar{height:38px;flex-shrink:0;display:flex;align-items:center;gap:5px;padding:0 10px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.exp-tbtn{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .13s}
+.exp-tbtn:hover{background:rgba(255,255,255,0.14)}
+.exp-tbtn:disabled{opacity:.3;cursor:not-allowed}
+.exp-path{flex:1;display:flex;align-items:center;gap:3px;font-size:12px;overflow:hidden}
+.exp-seg{color:rgba(255,255,255,0.6);cursor:pointer;white-space:nowrap;padding:2px 4px;border-radius:5px;transition:color .1s}
+.exp-seg:hover{color:var(--accent);background:rgba(91,138,245,0.1)}
+.exp-sep2{color:rgba(255,255,255,0.25)}
+.exp-files{flex:1;padding:12px;display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;overflow-y:auto}
+.exp-item{width:86px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 5px 8px;border-radius:10px;cursor:pointer;text-align:center;border:1px solid transparent;transition:all .13s}
+.exp-item:hover{background:rgba(255,255,255,0.08)}
+.exp-item.sel{background:rgba(91,138,245,0.18);border-color:rgba(91,138,245,0.42)}
+.exp-item .ei-img{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto}
+.exp-item .ei-img img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+.exp-item-name{font-size:11.5px;color:rgba(255,255,255,0.82);word-break:break-word;line-height:1.3}
+.exp-empty{width:100%;text-align:center;padding:50px 20px;opacity:.4;font-size:14px;line-height:2}
+.exp-statusbar{height:26px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 12px;font-size:11px;color:rgba(255,255,255,0.35)}
+#ctx{position:fixed;z-index:9999;background:rgba(10,12,24,0.99);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.13);border-radius:12px;padding:6px;min-width:170px;box-shadow:0 22px 65px rgba(0,0,0,0.7);opacity:0;transform:scale(0.9)translateY(-8px);transition:opacity .15s ease,transform .17s cubic-bezier(.2,1.2,.3,1);display:none}
+#ctx.show{opacity:1;transform:scale(1)translateY(0)}
+.ctx-item{padding:9px 13px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,0.82);transition:all .1s}
+.ctx-item:hover{background:rgba(91,138,245,0.18);color:#fff;padding-left:16px}
+.ctx-item.danger:hover{background:rgba(255,80,80,0.18);color:#ff9090}
+.ctx-sep{height:1px;background:rgba(255,255,255,0.08);margin:4px 0}
+</style>
+</head>
+<body>
+<div class="exp-wrap">
+  <div class="exp-sidebar" id="xnav"></div>
+  <div class="exp-main">
+    <div class="exp-toolbar">
+      <button class="exp-tbtn" id="xback" title="Back">&#8592;</button>
+      <button class="exp-tbtn" id="xfwd" title="Forward">&#8594;</button>
+      <button class="exp-tbtn" id="xup" title="Up">&#8593;</button>
+      <div class="exp-path" id="xpath"></div>
+    </div>
+    <div class="exp-files" id="xfiles"></div>
+    <div class="exp-statusbar" id="xstat"></div>
+  </div>
+</div>
+<div id="ctx"></div>
+
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+function iconHtml(K, icon, size){ return (K && K.icons) ? K.icons.render(icon, { size }) : String(icon||'▪'); }
+function launchApp(appId, opts){ getKernel().emit('shell:launch', Object.assign({ appId }, opts||{})); }
+
+const NAV_LINKS = [
+  { label:'Home', path:'/device', icon:'🏠' },
+  { label:'Desktop', path:'/device/desktop', icon:'🖥️' },
+  { label:'Documents', path:'/device/documents', icon:'📄' },
+  { label:'Downloads', path:'/device/downloads', icon:'📥' },
+  { label:'Pictures', path:'/device/pictures', icon:'🖼️' },
+  { label:'Music', path:'/device/music', icon:'🎵' },
+  { label:'Videos', path:'/device/videos', icon:'🎬' },
+];
+
+const ctxEl = document.getElementById('ctx');
+function ctxMenu(x,y,items){
+  ctxEl.innerHTML='';
+  items.forEach(item=>{
+    if(item.sep){const s=document.createElement('div');s.className='ctx-sep';ctxEl.appendChild(s);return;}
+    const el=document.createElement('div');el.className='ctx-item'+(item.danger?' danger':'');el.textContent=item.label;
+    el.addEventListener('click',()=>{item.fn();hideCtx();});
+    ctxEl.appendChild(el);
+  });
+  ctxEl.style.display='block';ctxEl.style.left=x+'px';ctxEl.style.top=y+'px';
+  setTimeout(()=>{
+    const r=ctxEl.getBoundingClientRect();
+    if(r.right>window.innerWidth)ctxEl.style.left=(window.innerWidth-r.width-8)+'px';
+    if(r.bottom>window.innerHeight)ctxEl.style.top=(window.innerHeight-r.height-8)+'px';
+    ctxEl.classList.add('show');
+  },8);
+}
+function hideCtx(){ctxEl.classList.remove('show');setTimeout(()=>ctxEl.style.display='none',150);}
+document.addEventListener('click',hideCtx);
+
+waitForKernel(K => {
+  const params = new URLSearchParams(location.search);
+  const startPath = params.get('start') || '/device';
+
+  const navEl = document.getElementById('xnav');
+  NAV_LINKS.forEach(n => {
+    const el = document.createElement('div'); el.className='exp-nav'; el.dataset.p = n.path;
+    el.innerHTML = `${iconHtml(K,n.icon,15)} <span style="margin-left:5px">${n.label}</span>`;
+    el.addEventListener('click', () => nav(n.path));
+    navEl.appendChild(el);
+  });
+
+  const pEl = document.getElementById('xpath'), fEl = document.getElementById('xfiles'), sEl = document.getElementById('xstat');
+  const bkBtn = document.getElementById('xback'), fdBtn = document.getElementById('xfwd'), upBtn = document.getElementById('xup');
+
+  let cwd = startPath, hist = [cwd], hi = 0;
+
+  function nav(p){
+    cwd = p;
+    if (hi < hist.length-1) hist.splice(hi+1);
+    if (hist[hist.length-1] !== p){ hist.push(p); hi = hist.length-1; }
+    render();
+  }
+
+  async function render(){
+    const segs = cwd==='/' ? ['/'] : cwd.split('/').filter(Boolean);
+    pEl.innerHTML = segs.map((s,i)=>{
+      const p = i===0 && segs.length===1 ? '/' : '/'+segs.slice(0,i+1).join('/');
+      return (i>0?'<span class="exp-sep2"> › </span>':'') + `<span class="exp-seg" data-p="${p}">${s}</span>`;
+    }).join('');
+    pEl.querySelectorAll('.exp-seg').forEach(e => e.onclick = () => nav(e.dataset.p));
+    navEl.querySelectorAll('.exp-nav').forEach(n => n.classList.toggle('active', n.dataset.p===cwd));
+    bkBtn.disabled = hi===0; fdBtn.disabled = hi===hist.length-1; upBtn.disabled = cwd==='/device';
+
+    fEl.innerHTML = '';
+    let items;
+    try { items = await K.fs.readdir(cwd); }
+    catch(e){ fEl.innerHTML = `<div class="exp-empty">Cannot open "${cwd}"</div>`; sEl.textContent=''; return; }
+
+    sEl.textContent = items.length ? `${items.length} item${items.length!==1?'s':''}` : 'Empty folder';
+    if (!items.length){ fEl.innerHTML = '<div class="exp-empty">This folder is empty</div>'; return; }
+
+    items.sort((a,b) => a.type!==b.type ? (a.type==='dir'?-1:1) : a.name.localeCompare(b.name)).forEach(item => {
+      const el = document.createElement('div'); el.className = 'exp-item';
+      const isImg = item.mime && item.mime.startsWith('image/');
+      let imgHtml;
+      if (isImg) imgHtml = `<div class="ei-img" id="thumb-${btoa(item.id).replace(/[^a-zA-Z0-9]/g,'')}"></div>`;
+      else imgHtml = `<div class="ei-img">${iconHtml(K, item.icon || (item.type==='dir'?'📁':(item.type==='shortcut'?'🔗':'📄')), 34)}</div>`;
+      el.innerHTML = `${imgHtml}<div class="exp-item-name">${item.name}</div>`;
+      if (isImg){
+        K.fs.readDataURL(item.id).then(url => {
+          const t = el.querySelector('.ei-img'); if (t) t.innerHTML = `<img src="${url}">`;
+        }).catch(()=>{});
+      }
+      el.onclick = () => { fEl.querySelectorAll('.exp-item').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); sEl.textContent = `${items.length} items · "${item.name}" selected`; };
+      el.ondblclick = () => activate(item);
+      el.addEventListener('contextmenu', e => {
+        e.preventDefault(); e.stopPropagation();
+        ctxMenu(e.clientX, e.clientY, [
+          { label:'Open', fn: () => activate(item) },
+          { sep:true },
+          { label:'Delete', fn: async () => { await K.fs.remove(item.id, { recursive:true }); render(); }, danger:true },
+        ]);
+      });
+      fEl.appendChild(el);
+    });
+  }
+
+  function activate(item){
+    if (item.type === 'dir'){ nav(item.id); return; }
+    if (item.type === 'shortcut' && item.meta && item.meta.appId){ launchApp(item.meta.appId); return; }
+    K.openFile(item.id).then(res => { if (!res.ok && res.reason==='NO_HANDLER') launchApp('notepad', { filePath:item.id }); });
+  }
+
+  bkBtn.onclick = () => { if (hi>0){ hi--; cwd=hist[hi]; render(); } };
+  fdBtn.onclick = () => { if (hi<hist.length-1){ hi++; cwd=hist[hi]; render(); } };
+  upBtn.onclick = () => { if (cwd!=='/device') nav(K.fs.dirname(cwd) || '/device'); };
+
+  document.addEventListener('contextmenu', e => {
+    if (e.target.closest('.exp-item')) return;
+    e.preventDefault();
+    ctxMenu(e.clientX, e.clientY, [{ label:'New Folder', fn: async () => { await K.fs.mkdir(cwd+'/New folder'); render(); } }]);
+  });
+
+  render();
+});
+</script>
+</body>
+</html>

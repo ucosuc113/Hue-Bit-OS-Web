@@ -746,19 +746,38 @@ html, body {
 <script>
 'use strict';
 
+/* ── Kernel bridge (HuebOS) ────────────────────── */
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(){
+  return new Promise(resolve => {
+    const K = getKernel();
+    if (K && K.isReady) { resolve(K); return; }
+    const tryAgain = () => { const k2 = getKernel(); if (k2) resolve(k2); else setTimeout(tryAgain, 60); };
+    setTimeout(tryAgain, 60);
+  });
+}
+let _kernel = null;
+
 /* ── OS bridge ─────────────────────────────────── */
 let _osUser = 'User', _osAccent = '#c8845a';
+let _osInitPending = null;
+function applyOsInit(){
+  if (!_osInitPending || !_hydrated) return;
+  const { username, accent } = _osInitPending; _osInitPending = null;
+  const saved = loadProfile();
+  if (!saved || saved.name === 'User' || saved.name === 'Anonymous') {
+    profile.name  = username || _osUser;
+    profile.color = accent   || _osAccent;
+    saveProfile(profile);
+    updateSidebarProfile();
+  }
+}
 window.addEventListener('message', e => {
   if (!e.data || e.data.type !== 'os-init') return;
   if (e.data.username) _osUser = e.data.username;
   if (e.data.accent)   _osAccent = e.data.accent;
-  const saved = loadProfile();
-  if (!saved || saved.name === 'User' || saved.name === 'Anonymous') {
-    profile.name  = _osUser;
-    profile.color = _osAccent;
-    saveProfile(profile);
-    updateSidebarProfile();
-  }
+  _osInitPending = { username: e.data.username, accent: e.data.accent };
+  applyOsInit();
 });
 
 /* ── Constants ─────────────────────────────────── */
@@ -781,33 +800,49 @@ const EMOJIS = [
   '🎵','🎮','📱','💻','🌙','🏆','🚀','💡',
 ];
 
-/* ── Storage ────────────────────────────────────── */
-const ls = {
-  get: k  => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
-  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-  str: k  => localStorage.getItem(k) || null,
-  setStr: (k,v) => { try { localStorage.setItem(k, v); } catch {} },
-};
-const loadProfile   = () => ls.get(LS_PROFILE);
-const saveProfile   = p  => ls.set(LS_PROFILE, p);
-const loadPeerId    = () => ls.str(LS_PEERID);
-const savePeerId    = id => ls.setStr(LS_PEERID, id);
-const loadContacts  = () => ls.get(LS_CONTACTS) || {};
-const saveContacts  = c  => ls.set(LS_CONTACTS, c);
-const loadAllConvs  = () => ls.get(LS_CONVS) || {};
+/* ── Storage ────────────────────────────────────────
+   Todo el estado persistente vive en Kernel.prefs (IndexedDB), no en
+   localStorage: HuebOS no puede depender de storage fuera del Kernel.
+   Se mantiene un cache en memoria hidratado una vez al boot para que
+   el resto de la app siga leyendo de forma síncrona, igual que antes. */
+let _hydrated = false;
+let _cache = { profile:null, peerId:null, contacts:null, convs:null, peers:null, queue:null };
+
+async function hydrateFromKernel(K){
+  const [profile, peerId, contacts, convs, peers, queue] = await Promise.all([
+    K.prefs.get(LS_PROFILE, null),
+    K.prefs.get(LS_PEERID, null),
+    K.prefs.get(LS_CONTACTS, {}),
+    K.prefs.get(LS_CONVS, {}),
+    K.prefs.get(LS_PEERS, []),
+    K.prefs.get(LS_QUEUE, {}),
+  ]);
+  _cache = { profile, peerId, contacts, convs, peers, queue };
+  _hydrated = true;
+}
+
+const loadProfile   = () => _cache.profile;
+const saveProfile   = p  => { _cache.profile = p; _kernel && _kernel.prefs.set(LS_PROFILE, p); };
+const loadPeerId    = () => _cache.peerId;
+const savePeerId    = id => { _cache.peerId = id; _kernel && _kernel.prefs.set(LS_PEERID, id); };
+const loadContacts  = () => _cache.contacts || {};
+const saveContacts  = c  => { _cache.contacts = c; _kernel && _kernel.prefs.set(LS_CONTACTS, c); };
+const loadAllConvs  = () => _cache.convs || {};
 const saveConv      = (pid, msgs) => {
   const all = loadAllConvs();
   all[pid]  = msgs.slice(-MAX_MSG);
-  ls.set(LS_CONVS, all);
+  _cache.convs = all;
+  _kernel && _kernel.prefs.set(LS_CONVS, all);
 };
 const getConv       = pid => loadAllConvs()[pid] || [];
-const loadKnownPeers= () => ls.get(LS_PEERS) || [];
-const saveKnownPeers= () => ls.set(LS_PEERS, [...knownPeers]);
-const loadSavedQueue= () => ls.get(LS_QUEUE) || {};
+const loadKnownPeers= () => _cache.peers || [];
+const saveKnownPeers= () => { _cache.peers = [...knownPeers]; _kernel && _kernel.prefs.set(LS_PEERS, _cache.peers); };
+const loadSavedQueue= () => _cache.queue || {};
 const savePendingQueue = () => {
   const obj = {};
   pendingQueue.forEach((msgs, pid) => { if (msgs.length) obj[pid] = msgs; });
-  ls.set(LS_QUEUE, obj);
+  _cache.queue = obj;
+  _kernel && _kernel.prefs.set(LS_QUEUE, obj);
 };
 
 /* ── State ──────────────────────────────────────── */
@@ -1528,7 +1563,11 @@ function showRenameModal(pid) {
 function hideRenameModal() { document.getElementById('rename-modal').classList.add('hidden'); renameTarget = null; }
 
 /* ── DOM Ready ──────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  _kernel = await waitForKernel();
+  await hydrateFromKernel(_kernel);
+  applyOsInit();
+
   profile    = loadProfile() || { name: 'User', color: '#c8845a', photo: null };
   knownPeers = new Set(loadKnownPeers());
   initQueue();

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"settings","name":"Settings","version":"1.0","icon":"⚙️","category":"system","singleton":true,"description":"HuebOS appearance, sound, account and reset options.","winWidth":680,"winHeight":500}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#5b8af5}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',-apple-system,sans-serif;background:#0c0e18;color:#eaf0ff}
+*::-webkit-scrollbar{width:5px}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+.sett-wrap{display:flex;height:100%}
+.sett-side{width:160px;flex-shrink:0;background:rgba(0,0,0,0.2);border-right:1px solid rgba(255,255,255,0.07);padding:10px 7px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sett-nav{padding:9px 11px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,0.6);transition:all .13s}
+.sett-nav:hover{background:rgba(255,255,255,0.07);color:#fff}
+.sett-nav.active{background:rgba(91,138,245,0.2);color:var(--accent)}
+.sett-body{flex:1;padding:18px;overflow-y:auto}
+.sett-sec{margin-bottom:22px}
+.sett-sec h3{font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px}
+.sett-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.06);margin-bottom:5px;gap:10px}
+.sett-row.col{flex-direction:column;align-items:flex-start}
+.sett-row label{font-size:13.5px;color:rgba(255,255,255,0.8);flex-shrink:0}
+.sett-row .val{font-size:13px;color:rgba(255,255,255,0.4)}
+.sett-row .val.on{color:#78e0a0}
+.sett-toggle{position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer}
+.sett-toggle input{opacity:0;width:0;height:0;position:absolute}
+.sett-toggle-track{position:absolute;inset:0;background:rgba(255,255,255,0.15);border-radius:12px;transition:background .2s}
+.sett-toggle input:checked+.sett-toggle-track{background:var(--accent)}
+.sett-toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s}
+.sett-toggle input:checked~.sett-toggle-thumb{transform:translateX(18px)}
+.color-swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.active{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3)}
+.wp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.wp-opt{height:58px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative;overflow:hidden;background-size:cover;background-position:center}
+.wp-opt:hover{transform:scale(1.05)}
+.wp-opt.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,138,245,0.28)}
+.wp-opt span{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,0.9)}
+.sett-range-wrap{width:100%;display:flex;align-items:center;gap:10px;margin-top:4px}
+.sett-range-wrap input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);outline:none;cursor:pointer}
+.sett-range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
+.sett-range-val{font-size:12px;color:rgba(255,255,255,0.5);min-width:36px;text-align:right;font-family:monospace}
+.ed-btn{padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.8);font-size:12px;cursor:pointer;font-family:inherit}
+.ed-btn:hover{background:rgba(255,255,255,0.13);color:#fff}
+input[type=text],input[type=password]{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:7px 12px;border-radius:8px;font-family:inherit;font-size:13px;outline:none;width:160px}
+select{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:5px 10px;border-radius:8px;font-family:inherit;font-size:13px;outline:none;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="sett-wrap">
+  <div class="sett-side" id="sett-nav"></div>
+  <div class="sett-body" id="sbody"></div>
+</div>
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+function toast(icon,title,msg){ getKernel().emit('shell:toast', {icon,title,msg}); }
+function updateRangeGradient(input,min,max){ const pct=((input.value-min)/(max-min))*100; input.style.background = `linear-gradient(to right,var(--accent) ${pct}%,rgba(255,255,255,0.15) ${pct}%)`; }
+
+const WP_THEMES = [
+  { key:'original', label:'Original', img:'../public/wallpaper.png' },
+  { key:'aurora', label:'Aurora', bg:'radial-gradient(ellipse 130% 90% at 50% 110%,#0b1535,#040608)' },
+  { key:'sunset', label:'Sunset', bg:'linear-gradient(160deg,#1a0533,#3d1a00 50%,#1a0000)' },
+  { key:'ocean', label:'Ocean', bg:'linear-gradient(160deg,#020c18,#0a2040 50%,#020c18)' },
+  { key:'forest', label:'Forest', bg:'linear-gradient(160deg,#020f08,#072010 50%,#020f08)' },
+  { key:'void', label:'Void', bg:'#000' },
+];
+const ACCENTS = [
+  {c1:'#5b8af5',c2:'#9b59f5',label:'Blue'}, {c1:'#e91e8c',c2:'#ff6b9d',label:'Pink'},
+  {c1:'#00c896',c2:'#00e5b4',label:'Teal'}, {c1:'#ff6b2b',c2:'#ff9f5b',label:'Orange'},
+  {c1:'#f7c535',c2:'#ffe066',label:'Yellow'}, {c1:'#a855f7',c2:'#7c3aed',label:'Violet'},
+];
+
+function mkToggle(checked, onChange){
+  const lbl = document.createElement('label'); lbl.className='sett-toggle';
+  const inp = document.createElement('input'); inp.type='checkbox'; inp.checked=checked;
+  const track = document.createElement('div'); track.className='sett-toggle-track';
+  const thumb = document.createElement('div'); thumb.className='sett-toggle-thumb';
+  lbl.append(inp,track,thumb);
+  inp.addEventListener('change', () => onChange(inp.checked));
+  return lbl;
+}
+
+waitForKernel(K => {
+  const body = document.getElementById('sbody');
+  const nav = document.getElementById('sett-nav');
+  const navItems = [
+    {sec:'appearance',label:'Appearance'},{sec:'sound',label:'Sound'},
+    {sec:'privacy',label:'Account & Lock'},{sec:'about',label:'About'},{sec:'reset',label:'Reset'},
+  ];
+  navItems.forEach(n => {
+    const d = document.createElement('div'); d.className='sett-nav'; d.dataset.sec=n.sec; d.textContent=n.label;
+    d.onclick = () => show(n.sec);
+    nav.appendChild(d);
+  });
+
+  async function show(sec){
+    nav.querySelectorAll('.sett-nav').forEach(n => n.classList.toggle('active', n.dataset.sec===sec));
+    body.innerHTML = '';
+
+    if (sec === 'appearance'){
+      const curWp = await K.prefs.get('os.wallpaper', 'original');
+      const wpSec = document.createElement('div'); wpSec.className='sett-sec'; wpSec.innerHTML = '<h3>Wallpaper Theme</h3>';
+      const g = document.createElement('div'); g.className='wp-grid';
+      WP_THEMES.forEach(wp => {
+        const el = document.createElement('div'); el.className='wp-opt'+(wp.key===curWp?' active':'');
+        el.style.cssText = wp.img ? `background-image:url('${wp.img}')` : `background:${wp.bg}`;
+        el.innerHTML = `<span>${wp.label}</span>`;
+        el.onclick = () => { K.prefs.set('os.wallpaper', wp.key); g.querySelectorAll('.wp-opt').forEach(e=>e.classList.remove('active')); el.classList.add('active'); toast('🖼️','Wallpaper',`Theme "${wp.label}" applied.`); };
+        g.appendChild(el);
+      });
+      wpSec.appendChild(g);
+
+      const cwBtn = document.createElement('button'); cwBtn.className='ed-btn'; cwBtn.style.marginTop='8px'; cwBtn.textContent='Upload Custom Wallpaper';
+      cwBtn.onclick = () => {
+        const fi = document.createElement('input'); fi.type='file'; fi.accept='image/*';
+        fi.onchange = e => {
+          const file = e.target.files[0]; if (!file) return;
+          const r = new FileReader();
+          r.onload = ev => { K.prefs.set('os.customWallpaper', ev.target.result); K.prefs.set('os.wallpaper', 'custom'); toast('🖼️','Wallpaper',`Custom wallpaper set: ${file.name}`); show('appearance'); };
+          r.readAsDataURL(file);
+        };
+        fi.click();
+      };
+      wpSec.appendChild(cwBtn);
+      body.appendChild(wpSec);
+
+      const accSec = document.createElement('div'); accSec.className='sett-sec'; accSec.innerHTML = '<h3>Accent Color</h3>';
+      const row1 = document.createElement('div'); row1.className='sett-row col'; row1.innerHTML = '<label>Select accent color</label>';
+      const swatches = document.createElement('div'); swatches.className='color-swatches';
+      const curAccent = await K.prefs.get('os.accent', '#5b8af5');
+      ACCENTS.forEach(a => {
+        const sw = document.createElement('div'); sw.className='color-swatch'+(curAccent===a.c1?' active':'');
+        sw.style.background = `linear-gradient(135deg,${a.c1},${a.c2})`; sw.title = a.label;
+        sw.onclick = () => { K.prefs.set('os.accent', a.c1); K.prefs.set('os.accent2', a.c2); swatches.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('active')); sw.classList.add('active'); toast('🎨','Accent',`Color set to ${a.label}.`); };
+        swatches.appendChild(sw);
+      });
+      row1.appendChild(swatches); accSec.appendChild(row1); body.appendChild(accSec);
+
+      const ifSec = document.createElement('div'); ifSec.className='sett-sec'; ifSec.innerHTML = '<h3>Interface</h3>';
+      const nightLight = await K.prefs.get('os.nightLight', false);
+      const nlRow = document.createElement('div'); nlRow.className='sett-row'; nlRow.innerHTML = '<label>Night Light</label>';
+      nlRow.appendChild(mkToggle(nightLight, v => K.prefs.set('os.nightLight', v)));
+      ifSec.appendChild(nlRow);
+      body.appendChild(ifSec);
+    }
+
+    else if (sec === 'sound'){
+      const vol = await K.prefs.get('os.volume', 80);
+      const sSec = document.createElement('div'); sSec.className='sett-sec'; sSec.innerHTML = '<h3>Master Volume</h3>';
+      const sRow = document.createElement('div'); sRow.className='sett-row col'; sRow.innerHTML = '<label>System Volume</label>';
+      const sWrap = document.createElement('div'); sWrap.className='sett-range-wrap';
+      const sSlider = document.createElement('input'); sSlider.type='range'; sSlider.min=0; sSlider.max=100; sSlider.value=vol;
+      const sVal = document.createElement('span'); sVal.className='sett-range-val'; sVal.textContent=vol+'%';
+      updateRangeGradient(sSlider,0,100);
+      sSlider.oninput = () => { const v=parseInt(sSlider.value); sVal.textContent=v+'%'; updateRangeGradient(sSlider,0,100); K.prefs.set('os.volume', v); };
+      sWrap.append(sSlider, sVal); sRow.appendChild(sWrap); sSec.appendChild(sRow); body.appendChild(sSec);
+    }
+
+    else if (sec === 'privacy'){
+      const username = await K.prefs.get('os.username', 'User');
+      const avatar = await K.prefs.get('os.avatar', null);
+      const usePassword = await K.prefs.get('os.usePassword', false);
+      const lockAfter = await K.prefs.get('os.lockAfter', 0);
+
+      const uSec = document.createElement('div'); uSec.className='sett-sec'; uSec.innerHTML = '<h3>Account</h3>';
+      const uRow = document.createElement('div'); uRow.className='sett-row'; uRow.innerHTML = '<label>Display Name</label>';
+      const uInp = document.createElement('input'); uInp.type='text'; uInp.value=username; uInp.placeholder='Your name';
+      uInp.oninput = () => K.prefs.set('os.username', uInp.value.trim() || 'User');
+      uRow.appendChild(uInp); uSec.appendChild(uRow);
+
+      const avRow = document.createElement('div'); avRow.className='sett-row'; avRow.innerHTML = '<label>Profile Picture</label>';
+      const avRight = document.createElement('div'); avRight.style.cssText='display:flex;align-items:center;gap:10px';
+      const avPreview = document.createElement('div');
+      avPreview.style.cssText = 'width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9b59f5);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px';
+      avPreview.innerHTML = avatar ? `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover">` : '👤';
+      const avBtn = document.createElement('button'); avBtn.className='ed-btn'; avBtn.textContent='Upload Photo';
+      avBtn.onclick = () => {
+        const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*';
+        inp.onchange = e => {
+          const f = e.target.files[0]; if (!f) return;
+          const r = new FileReader();
+          r.onload = ev => { K.prefs.set('os.avatar', ev.target.result); toast('👤','Profile','Avatar updated.'); show('privacy'); };
+          r.readAsDataURL(f);
+        };
+        inp.click();
+      };
+      const avClr = document.createElement('button'); avClr.className='ed-btn'; avClr.textContent='Remove';
+      avClr.onclick = () => { K.prefs.set('os.avatar', null); toast('👤','Profile','Avatar removed.'); show('privacy'); };
+      avRight.append(avPreview, avBtn, avClr); avRow.appendChild(avRight); uSec.appendChild(avRow);
+      body.appendChild(uSec);
+
+      const pSec = document.createElement('div'); pSec.className='sett-sec'; pSec.innerHTML = '<h3>Lock Screen</h3>';
+      const lockOptions = [['Never',0],['1 min',1],['5 min',5],['10 min',10],['30 min',30]];
+      const lRow = document.createElement('div'); lRow.className='sett-row'; lRow.innerHTML = '<label>Auto-lock after</label>';
+      const sel = document.createElement('select');
+      lockOptions.forEach(([l,v]) => { const o=document.createElement('option'); o.value=v; o.textContent=l; if(v===lockAfter) o.selected=true; sel.appendChild(o); });
+      sel.onchange = () => { K.prefs.set('os.lockAfter', parseInt(sel.value)); toast('🔒','Lock', sel.value==='0' ? 'Auto-lock disabled.' : `Auto-lock in ${sel.options[sel.selectedIndex].text}.`); };
+      lRow.appendChild(sel); pSec.appendChild(lRow);
+
+      const pwRow = document.createElement('div'); pwRow.className='sett-row'; pwRow.innerHTML = '<label>Use password</label>';
+      const pwInpWrap = document.createElement('div'); pwInpWrap.className='sett-row col'; pwInpWrap.style.display = usePassword ? 'block' : 'none'; pwInpWrap.innerHTML = '<label>Set password</label>';
+      const pwToggle = mkToggle(usePassword, v => { K.prefs.set('os.usePassword', v); if (!v) K.prefs.set('os.password',''); pwInpWrap.style.display = v ? 'block' : 'none'; });
+      pwRow.appendChild(pwToggle); pSec.appendChild(pwRow);
+
+      const pwInput = document.createElement('input'); pwInput.type='password'; pwInput.placeholder='Enter new password'; pwInput.style.width='100%';
+      pwInput.oninput = () => K.prefs.set('os.password', pwInput.value);
+      pwInpWrap.appendChild(pwInput); pSec.appendChild(pwInpWrap);
+      body.appendChild(pSec);
+    }
+
+    else if (sec === 'about'){
+      body.innerHTML = `<div class="sett-sec"><h3>System Information</h3>
+        <div class="sett-row"><label>OS Name</label><span class="val">HueBit OS</span></div>
+        <div class="sett-row"><label>Kernel</label><span class="val">${K.version || '—'}</span></div>
+        <div class="sett-row"><label>Hosting</label><span class="val on">GitHub Pages</span></div>
+        <div class="sett-row"><label>Resolution</label><span class="val">${window.innerWidth}×${window.innerHeight}</span></div>
+        </div>
+        <div style="text-align:center;padding:24px 0 6px;opacity:.35;font-size:12px;line-height:1.9">HTML5 · CSS3 · Vanilla JS<br>No frameworks · No dependencies<br>GitHub Pages compatible</div>`;
+    }
+
+    else if (sec === 'reset'){
+      const rSec = document.createElement('div'); rSec.className='sett-sec'; rSec.innerHTML = '<h3>Factory Reset</h3>';
+      const desc = document.createElement('div');
+      desc.style.cssText = 'font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:18px;padding:12px 14px;background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.15);border-radius:10px';
+      desc.innerHTML = '<strong style="color:rgba(255,120,120,0.9)">Warning — this cannot be undone.</strong><br>Deletes every file, shortcut and preference from this HuebOS profile.';
+      rSec.appendChild(desc);
+      const chkWrap = document.createElement('label'); chkWrap.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.65)';
+      const chk = document.createElement('input'); chk.type='checkbox';
+      chkWrap.append(chk, document.createTextNode('I understand — delete everything and reset'));
+      const rBtn = document.createElement('button');
+      rBtn.style.cssText = 'background:rgba(255,80,80,0.18);border:1px solid rgba(255,80,80,0.4);color:#ff9090;padding:9px 22px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;opacity:0.4;pointer-events:none;margin-top:12px';
+      rBtn.textContent = 'Reset to Factory Defaults';
+      chk.onchange = () => { rBtn.style.opacity = chk.checked?'1':'0.4'; rBtn.style.pointerEvents = chk.checked?'auto':'none'; };
+      rBtn.onclick = async () => {
+        if (!chk.checked) return;
+        try {
+          const items = await K.fs.readdir('/device');
+          for (const it of items) await K.fs.remove(it.id, { recursive:true });
+        } catch(e){}
+        toast('♻️','Reset','Files cleared. Reloading…');
+        setTimeout(() => location.reload(), 900);
+      };
+      rSec.append(chkWrap, rBtn); body.appendChild(rSec);
+    }
+  }
+
+  show('appearance');
+});
+</script>
+</body>
+</html>

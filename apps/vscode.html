@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"vscode","name":"VS Code","version":"1.0","icon":"💻","category":"development","singleton":false,"description":"Lightweight code editor with run support for HTML, JS and Python.","winWidth":1000,"winHeight":700}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Cascadia Code','Consolas',monospace;font-size:14px;background:#1e1e1e;color:#d4d4d4}
+*::-webkit-scrollbar{width:6px}
+*::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+.vscode-wrap{display:flex;flex-direction:column;height:100%;position:relative}
+.vscode-menu{display:flex;gap:2px;padding:4px 8px;background:#323233;border-bottom:1px solid #3e3e42;flex-shrink:0}
+.menu-item{padding:5px 10px;cursor:pointer;border-radius:3px;color:#ccc;font-size:13px;user-select:none;font-family:'Segoe UI',sans-serif}
+.menu-item:hover{background:#37373d}
+.vscode-toolbar{display:flex;padding:4px 8px;background:#2d2d30;border-bottom:1px solid #3e3e42;flex-shrink:0;gap:4px;align-items:center;font-family:'Segoe UI',sans-serif}
+.tool-btn{background:#0e639c;color:white;border:none;padding:4px 10px;cursor:pointer;border-radius:3px;font-size:12px}
+.tool-btn:hover{background:#1177bb}
+.vscode-main{display:flex;flex:1;overflow:hidden;min-height:0}
+.vscode-sidebar{width:220px;background:#252526;border-right:1px solid #3e3e42;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-content{flex:1;overflow-y:auto;padding:6px 0}
+.vscode-editor{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.editor-tabs{display:flex;background:#2d2d30;border-bottom:1px solid #3e3e42;flex-shrink:0}
+.editor-tab{padding:8px 12px;background:#1e1e1e;color:#fff;border-right:1px solid #3e3e42;font-size:12px;font-family:'Segoe UI',sans-serif}
+.ed-ta{flex:1;padding:12px;background:#1e1e1e;border:none;outline:none;color:#d4d4d4;font-family:inherit;font-size:13px;resize:none;overflow:auto;line-height:1.6;tab-size:2}
+.vscode-status{display:flex;justify-content:space-between;padding:3px 10px;background:#007acc;color:#ffffff;font-size:11px;flex-shrink:0;font-family:'Segoe UI',sans-serif}
+.vsc-dd{position:absolute;z-index:999;min-width:170px;background:#2d2d30;border:1px solid #555;border-radius:4px;padding:4px 0;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;font-family:'Segoe UI',sans-serif}
+.vsc-dd [data-a]{padding:7px 16px;color:#ccc;cursor:pointer;font-size:13px}
+.vsc-dd [data-a]:hover{background:#094771;color:#fff}
+#vsc-term{display:none;flex-direction:column;height:200px;min-height:200px;border-top:1px solid #3e3e42;background:#1e1e1e;flex-shrink:0}
+.tree-row{padding:3px 8px;cursor:pointer;color:#bbb;font-size:12px;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tree-row:hover{background:#2d2d30}
+</style>
+</head>
+<body>
+<div class="vscode-wrap">
+  <div class="vscode-menu" id="vsc-menubar">
+    <div class="menu-item" data-menu="file">File</div>
+    <div class="menu-item" data-menu="edit">Edit</div>
+    <div class="menu-item" data-menu="run">Run</div>
+    <div class="menu-item" data-menu="terminal">Terminal</div>
+  </div>
+  <div id="vsc-file-dd" class="vsc-dd"><div data-a="new">New File</div><div data-a="open">Open File…</div><div data-a="save">Save &nbsp;<span style="opacity:.4">Ctrl+S</span></div><div data-a="saveas">Save As…</div></div>
+  <div id="vsc-edit-dd" class="vsc-dd"><div data-a="copy">Copy</div><div data-a="paste">Paste</div><div data-a="selectall">Select All</div></div>
+  <div id="vsc-run-dd" class="vsc-dd"><div data-a="runcode">▶ Run Code &nbsp;<span style="opacity:.4">F5</span></div></div>
+  <div id="vsc-terminal-dd" class="vsc-dd"><div data-a="newterm">New Terminal</div><div data-a="clearterm">Clear Terminal</div></div>
+  <div class="vscode-toolbar">
+    <button class="tool-btn" id="vsc-runbtn">▶ Run</button>
+    <button class="tool-btn" id="vsc-termbtn" style="background:#1a3a1a">⌨ Terminal</button>
+    <span id="vsc-dirty" style="margin-left:8px;font-size:11px;color:#e2a045;display:none">● unsaved</span>
+  </div>
+  <div class="vscode-main" id="vsc-main">
+    <div class="vscode-sidebar" id="vsc-sidebar">
+      <div class="sidebar-content" id="vsc-exp-panel"></div>
+    </div>
+    <div class="vscode-editor">
+      <div class="editor-tabs"><div class="editor-tab" id="vsc-tabname">untitled.txt</div></div>
+      <textarea class="ed-ta" id="vsc-ta" spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div id="vsc-term">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:#252526;border-bottom:1px solid #3e3e42;font-family:'Segoe UI',sans-serif">
+      <span style="font-size:12px;color:#ccc">TERMINAL</span>
+      <span id="vsc-termclose" style="cursor:pointer;opacity:.6;padding:0 4px">✕</span>
+    </div>
+    <div id="vsc-termout" style="flex:1;padding:8px 12px;overflow-y:auto;font-size:12px;white-space:pre-wrap;word-break:break-all"></div>
+    <div style="display:flex;align-items:center;padding:4px 10px;background:#252526;border-top:1px solid #3e3e42">
+      <span style="color:#569cd6;font-size:12px;margin-right:6px">$</span>
+      <input id="vsc-terminp" autocomplete="off" spellcheck="false" placeholder="run, clear, python <code>…" style="flex:1;background:none;border:none;outline:none;color:#d4d4d4;font-family:inherit;font-size:12px">
+    </div>
+  </div>
+  <div class="vscode-status"><span id="vsc-statusl">Ln 1, Col 1</span><span id="vsc-statusr">UTF-8</span></div>
+</div>
+
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+function toast(icon,title,msg){ getKernel().emit('shell:toast', {icon,title,msg}); }
+
+waitForKernel(async K => {
+  const params = new URLSearchParams(location.search);
+  let savedFsPath = params.get('path') || null;
+  let currentFileName = savedFsPath ? K.fs.basename(savedFsPath) : 'untitled.txt';
+
+  const ta = document.getElementById('vsc-ta');
+  const tabname = document.getElementById('vsc-tabname');
+  const dirty = document.getElementById('vsc-dirty');
+  const expPanel = document.getElementById('vsc-exp-panel');
+  const term = document.getElementById('vsc-term');
+  const termOut = document.getElementById('vsc-termout');
+  const termInp = document.getElementById('vsc-terminp');
+  const statusL = document.getElementById('vsc-statusl');
+  const statusR = document.getElementById('vsc-statusr');
+
+  let origContent = '';
+  if (savedFsPath){
+    try { origContent = await K.fs.read(savedFsPath); } catch(e){ savedFsPath = null; }
+  }
+  ta.value = origContent;
+  tabname.textContent = currentFileName;
+
+  const updateStatus = () => {
+    const before = ta.value.substr(0, ta.selectionStart);
+    const lines = before.split('\n');
+    statusL.textContent = `Ln ${lines.length}, Col ${lines[lines.length-1].length+1}`;
+    const ext = currentFileName.split('.').pop().toLowerCase();
+    const langMap = {js:'JavaScript',py:'Python',html:'HTML',css:'CSS',json:'JSON',md:'Markdown',txt:'Plain Text',csv:'CSV'};
+    statusR.textContent = (langMap[ext]||ext.toUpperCase())+' | UTF-8';
+    dirty.style.display = ta.value !== origContent ? 'inline' : 'none';
+  };
+  ta.addEventListener('input', updateStatus); ta.addEventListener('click', updateStatus); ta.addEventListener('keyup', updateStatus);
+  updateStatus();
+
+  const tPrint = (text, color) => { const d=document.createElement('div'); d.style.color=color||'#d4d4d4'; d.textContent=text; termOut.appendChild(d); termOut.scrollTop=termOut.scrollHeight; };
+  const showTerm = () => { term.style.display='flex'; termInp.focus(); };
+  const hideTerm = () => { term.style.display='none'; };
+  const toggleTerm = () => term.style.display==='flex' ? hideTerm() : showTerm();
+
+  let pyodide = null, pyodideReady = null;
+  function initPyodide(){
+    if (pyodideReady) return pyodideReady;
+    pyodideReady = (async () => {
+      if (typeof loadPyodide !== 'function'){
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js';
+          s.onload = resolve; s.onerror = () => reject(new Error('Could not load Pyodide (offline?)'));
+          document.head.appendChild(s);
+        });
+      }
+      pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/' });
+      return pyodide;
+    })();
+    return pyodideReady;
+  }
+
+  async function runCode(){
+    showTerm(); termOut.innerHTML = '';
+    const code = ta.value, ext = currentFileName.split('.').pop().toLowerCase();
+    tPrint(`> Running: ${currentFileName}`, '#569cd6'); tPrint('');
+    if (ext === 'py'){
+      try {
+        await initPyodide();
+        const out = [];
+        pyodide.setStdout({ batched:true, stdout:s=>{ if(s) out.push(s); } });
+        pyodide.setStderr({ batched:true, stderr:s=>{ if(s) out.push(s); } });
+        await pyodide.runPythonAsync(code);
+        (out.length ? out : ['(no output)']).forEach(l => tPrint(l));
+      } catch(e){ String(e.message||e).split('\n').forEach(l => tPrint(l, '#f48771')); }
+    } else if (ext === 'js'){
+      const logs = [];
+      const _log = console.log.bind(console), _err = console.error.bind(console);
+      console.log = (...a) => logs.push({t:'log', v:a.map(String).join(' ')});
+      console.error = (...a) => logs.push({t:'err', v:a.map(String).join(' ')});
+      try { const ret = (new Function(code))(); if (ret !== undefined) logs.push({t:'log', v:'→ '+String(ret)}); }
+      catch(e){ logs.push({t:'err', v:'Error: '+e.message}); }
+      finally { console.log=_log; console.error=_err; }
+      (logs.length ? logs : [{t:'log',v:'(no output)'}]).forEach(l => tPrint(l.v, l.t==='err'?'#f48771':'#d4d4d4'));
+    } else if (ext === 'html'){
+      const blob = new Blob([code], {type:'text/html'});
+      window.open(URL.createObjectURL(blob), '_blank');
+      tPrint('HTML preview opened in a new tab.', '#4ec9b0');
+    } else if (ext === 'css'){
+      tPrint('CSS file — no runnable output. Use inside an HTML file.', '#4ec9b0');
+    } else {
+      tPrint(`Run not supported for .${ext} files.`, '#f48771');
+    }
+    tPrint(''); tPrint('─'.repeat(40), '#3e3e42');
+  }
+
+  function setFile(name, content, fsPath){
+    currentFileName = name; ta.value = content; savedFsPath = fsPath || null; origContent = content;
+    tabname.textContent = name; updateStatus(); buildTree();
+  }
+
+  const doNew = () => setFile('untitled.txt', '', null);
+
+  function showOpenDialog(onSelected){
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",sans-serif';
+    ov.innerHTML = `<div style="width:420px;background:#252526;border:1px solid #3e3e42;border-radius:8px;overflow:hidden"><div style="padding:12px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #3e3e42;color:#fff">Open File</div><div style="padding:10px 16px;font-size:12px;color:#aaa" id="op-path"></div><div id="op-files" style="max-height:280px;overflow:auto;padding:0 8px 8px"></div><div style="padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #3e3e42"><button id="op-cancel" style="background:#3a3a3a;color:#ddd;border:none;padding:6px 16px;border-radius:5px;cursor:pointer">Cancel</button></div></div>`;
+    document.body.appendChild(ov);
+    let cwd = '/device';
+    const pathEl = ov.querySelector('#op-path'), listEl = ov.querySelector('#op-files');
+    async function render(){
+      pathEl.textContent = cwd;
+      const items = await K.fs.readdir(cwd);
+      listEl.innerHTML = '';
+      items.sort((a,b)=>a.type!==b.type?(a.type==='dir'?-1:1):a.name.localeCompare(b.name)).forEach(item => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;cursor:pointer;color:#ddd;font-size:13px';
+        row.onmouseenter = () => row.style.background = '#2d2d30';
+        row.onmouseleave = () => row.style.background = '';
+        row.textContent = (item.type==='dir'?'📁 ':'📄 ') + item.name;
+        row.ondblclick = async () => {
+          if (item.type === 'dir'){ cwd = item.id; render(); return; }
+          try { const content = await K.fs.read(item.id); onSelected(item.id, item.name, content); ov.remove(); }
+          catch(e){ toast('⚠️','Open','Cannot open this file (binary?).'); }
+        };
+        listEl.appendChild(row);
+      });
+      if (!items.length) listEl.innerHTML = '<div style="padding:14px;color:#777">(empty folder)</div>';
+    }
+    ov.querySelector('#op-cancel').onclick = () => ov.remove();
+    ov.addEventListener('click', e => { if (e.target===ov) ov.remove(); });
+    render();
+  }
+
+  function showSaveDialog(defaultName, getContent, onSaved){
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",sans-serif';
+    const dirs = ['Desktop','Documents','Downloads'];
+    ov.innerHTML = `<div style="width:400px;background:#252526;border:1px solid #3e3e42;border-radius:8px;overflow:hidden"><div style="padding:12px 16px;font-size:14px;font-weight:700;border-bottom:1px solid #3e3e42;color:#fff">Save As</div><div style="padding:14px 16px"><div style="font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase">Folder</div><div id="sav-dirs" style="display:flex;gap:6px;margin-bottom:12px"></div><input id="sav-fname" value="${defaultName}" style="width:100%;background:#3c3c3c;border:1px solid #555;color:#fff;padding:8px 10px;border-radius:5px;font-family:inherit"></div><div style="padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #3e3e42"><button id="sav-cancel" style="background:#3a3a3a;color:#ddd;border:none;padding:6px 16px;border-radius:5px;cursor:pointer">Cancel</button><button id="sav-ok" style="background:#0e639c;color:#fff;border:none;padding:6px 16px;border-radius:5px;cursor:pointer">Save</button></div></div>`;
+    document.body.appendChild(ov);
+    let selDir = 'Documents';
+    const dirsEl = ov.querySelector('#sav-dirs');
+    dirs.forEach(d => {
+      const b = document.createElement('button'); b.textContent = d;
+      b.style.cssText = 'padding:5px 12px;border-radius:5px;border:1px solid #555;background:' + (d===selDir?'#0e639c':'#3c3c3c') + ';color:#fff;cursor:pointer;font-size:12px';
+      b.onclick = () => { selDir = d; dirsEl.querySelectorAll('button').forEach(x=>x.style.background='#3c3c3c'); b.style.background='#0e639c'; };
+      dirsEl.appendChild(b);
+    });
+    ov.querySelector('#sav-cancel').onclick = () => ov.remove();
+    ov.querySelector('#sav-ok').onclick = async () => {
+      const fname = ov.querySelector('#sav-fname').value.trim(); if (!fname) return;
+      const path = `/device/${selDir.toLowerCase()}/${fname}`;
+      await K.fs.write(path, getContent());
+      onSaved && onSaved(path, fname);
+      toast('💾','Saved',`"${fname}" saved to ${selDir}`);
+      ov.remove();
+    };
+    ov.addEventListener('click', e => { if (e.target===ov) ov.remove(); });
+  }
+
+  const doOpen = () => showOpenDialog((path, name, content) => setFile(name, content, path));
+  const doSave = async () => {
+    if (savedFsPath){ await K.fs.write(savedFsPath, ta.value); origContent = ta.value; dirty.style.display='none'; toast('💾','Saved',`"${currentFileName}" updated.`); return; }
+    doSaveAs();
+  };
+  const doSaveAs = () => showSaveDialog(currentFileName, () => ta.value, (path, name) => { savedFsPath = path; currentFileName = name; origContent = ta.value; tabname.textContent = name; dirty.style.display='none'; buildTree(); });
+
+  async function buildTree(){
+    expPanel.innerHTML = '';
+    async function walk(path, container, depth){
+      let items; try { items = await K.fs.readdir(path); } catch(e){ return; }
+      items.sort((a,b)=>a.type!==b.type?(a.type==='dir'?-1:1):a.name.localeCompare(b.name)).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'tree-row'; row.style.paddingLeft = (8+depth*14)+'px';
+        row.textContent = (item.type==='dir'?'📁 ':'📄 ') + item.name;
+        if (item.id === savedFsPath) row.style.color = '#fff';
+        container.appendChild(row);
+        if (item.type === 'dir'){
+          const childWrap = document.createElement('div'); childWrap.style.display = depth<1 ? 'block' : 'none';
+          row.onclick = () => { childWrap.style.display = childWrap.style.display==='none' ? 'block' : 'none'; };
+          container.appendChild(childWrap);
+          walk(item.id, childWrap, depth+1);
+        } else {
+          row.onclick = async () => { try { const c = await K.fs.read(item.id); setFile(item.name, c, item.id); } catch(e){ toast('⚠️','Open','Cannot open this file (binary?).'); } };
+        }
+      });
+    }
+    await walk('/device', expPanel, 0);
+  }
+  buildTree();
+
+  document.getElementById('vsc-runbtn').onclick = runCode;
+  document.getElementById('vsc-termbtn').onclick = toggleTerm;
+  document.getElementById('vsc-termclose').onclick = hideTerm;
+
+  const ddMap = { file:'vsc-file-dd', edit:'vsc-edit-dd', run:'vsc-run-dd', terminal:'vsc-terminal-dd' };
+  const hideAllDDs = () => Object.values(ddMap).forEach(id => document.getElementById(id).style.display='none');
+  document.querySelectorAll('#vsc-menubar .menu-item').forEach(mi => {
+    mi.addEventListener('click', e => {
+      e.stopPropagation();
+      const dd = document.getElementById(ddMap[mi.dataset.menu]);
+      const wasOpen = dd.style.display === 'block';
+      hideAllDDs();
+      if (!wasOpen){
+        const mrect = mi.getBoundingClientRect();
+        dd.style.left = mrect.left+'px'; dd.style.top = mrect.bottom+'px'; dd.style.display = 'block';
+      }
+    });
+  });
+  document.querySelectorAll('[data-a]').forEach(item => {
+    item.addEventListener('click', e => {
+      e.stopPropagation(); hideAllDDs();
+      switch(item.dataset.a){
+        case 'new': doNew(); break;
+        case 'open': doOpen(); break;
+        case 'save': doSave(); break;
+        case 'saveas': doSaveAs(); break;
+        case 'copy': navigator.clipboard.writeText(ta.value.substring(ta.selectionStart, ta.selectionEnd)); break;
+        case 'paste': navigator.clipboard.readText().then(t => { const s=ta.selectionStart, e2=ta.selectionEnd; ta.value=ta.value.substring(0,s)+t+ta.value.substring(e2); ta.selectionStart=ta.selectionEnd=s+t.length; updateStatus(); }); break;
+        case 'selectall': ta.select(); break;
+        case 'runcode': runCode(); break;
+        case 'newterm': termOut.innerHTML=''; showTerm(); break;
+        case 'clearterm': termOut.innerHTML=''; break;
+      }
+    });
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.menu-item') && !e.target.closest('.vsc-dd')) hideAllDDs(); });
+
+  termInp.addEventListener('keydown', async e => {
+    if (e.key !== 'Enter') return;
+    const raw = termInp.value.trim(); termInp.value=''; if (!raw) return;
+    tPrint('$ '+raw, '#569cd6');
+    const [cmd, ...rest] = raw.split(/\s+/);
+    if (cmd === 'run') runCode();
+    else if (cmd === 'clear') termOut.innerHTML = '';
+    else if (cmd === 'python'){
+      try { await initPyodide(); const out=[]; pyodide.setStdout({batched:true,stdout:s=>{if(s)out.push(s);}}); await pyodide.runPythonAsync(rest.join(' ')); (out.length?out:['(no output)']).forEach(l=>tPrint(l)); }
+      catch(e){ tPrint('Python error: '+e.message, '#f48771'); }
+    }
+    else tPrint(`${cmd}: command not found (try "run", "clear", "python <code>")`, '#f48771');
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey||e.metaKey) && e.key==='s'){ e.preventDefault(); doSave(); }
+    else if ((e.ctrlKey||e.metaKey) && e.key==='r'){ e.preventDefault(); runCode(); }
+    else if (e.key==='F5'){ e.preventDefault(); runCode(); }
+    else if ((e.ctrlKey||e.metaKey) && e.key==='n'){ e.preventDefault(); doNew(); }
+    else if ((e.ctrlKey||e.metaKey) && e.key==='o'){ e.preventDefault(); doOpen(); }
+  });
+
+  const tutSeen = await K.prefs.get('vscode.tutSeen', false);
+  if (!tutSeen){
+    K.prefs.set('vscode.tutSeen', true);
+    setTimeout(() => toast('💡','VS Code tip','Save with the right extension (.html/.js/.py) then press F5 or ▶ Run to execute your code.'), 500);
+  }
+
+  ta.focus();
+});
+</script>
+</body>
+</html>

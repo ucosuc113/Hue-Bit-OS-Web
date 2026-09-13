@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"aud_player","name":"Audio Player","version":"1.0","icon":"🎵","category":"media","singleton":false,"description":"Play audio from the virtual filesystem.","winWidth":380,"winHeight":490}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#5b8af5;--accent2:#9b59f5}
+html,body{width:100%;height:100%;font-family:'Segoe UI',-apple-system,sans-serif;background:#0c0e18;color:#eaf0ff}
+.aud-wrap{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:28px;background:radial-gradient(ellipse at 50% 0%,rgba(91,138,245,0.12),transparent 70%)}
+.aud-art{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,rgba(91,138,245,0.3),rgba(155,89,245,0.3));border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:42px;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+.aud-art.playing{animation:audSpin 8s linear infinite}
+@keyframes audSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.aud-title{font-size:16px;font-weight:700;color:#fff;text-align:center;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aud-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:-14px}
+.aud-prog-wrap{width:100%;display:flex;flex-direction:column;gap:5px}
+.aud-prog{width:100%;height:5px;background:rgba(255,255,255,0.12);border-radius:3px;cursor:pointer}
+.aud-prog-fill{height:100%;background:linear-gradient(to right,var(--accent),var(--accent2));border-radius:3px;pointer-events:none}
+.aud-times{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.35);font-family:monospace}
+.aud-btns{display:flex;align-items:center;gap:14px}
+.aud-btn{background:none;border:none;color:rgba(255,255,255,0.7);font-size:20px;cursor:pointer;padding:6px;border-radius:50%;transition:all .15s}
+.aud-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+.aud-btn.main{width:50px;height:50px;background:var(--accent);color:#fff;font-size:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(91,138,245,0.4)}
+.aud-btn.main:hover{background:#7aadff;transform:scale(1.07)}
+.aud-vol-row{display:flex;align-items:center;gap:10px;width:100%}
+input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);outline:none;cursor:pointer;flex:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="aud-wrap">
+  <div class="aud-art" id="ap-art">🎵</div>
+  <div class="aud-title" id="ap-title">No file loaded</div>
+  <div class="aud-sub" id="ap-sub">Audio Player</div>
+  <div class="aud-prog-wrap">
+    <div class="aud-prog" id="ap-prog"><div class="aud-prog-fill" id="ap-fill" style="width:0%"></div></div>
+    <div class="aud-times"><span id="ap-cur">0:00</span><span id="ap-dur">0:00</span></div>
+  </div>
+  <div class="aud-btns">
+    <button class="aud-btn" id="ap-rew" title="Restart">⏮</button>
+    <button class="aud-btn main" id="ap-play" title="Play/Pause">▶</button>
+    <button class="aud-btn" id="ap-fwd" title="+10s">⏭</button>
+  </div>
+  <div class="aud-vol-row">
+    <span>🔈</span><input type="range" id="ap-vol" min="0" max="1" step="0.02" value="1"><span>🔊</span>
+  </div>
+  <audio id="ap-aud"></audio>
+</div>
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+function toast(icon,title,msg){ getKernel().emit('shell:toast', {icon,title,msg}); }
+
+waitForKernel(async K => {
+  const params = new URLSearchParams(location.search);
+  const path = params.get('path');
+  const aud = document.getElementById('ap-aud'), art = document.getElementById('ap-art'), pb = document.getElementById('ap-play');
+  const fill = document.getElementById('ap-fill'), prog = document.getElementById('ap-prog');
+  const curEl = document.getElementById('ap-cur'), durEl = document.getElementById('ap-dur');
+  const titleEl = document.getElementById('ap-title'), subEl = document.getElementById('ap-sub');
+  const fmt = s => { const m=Math.floor(s/60), sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; };
+
+  if (path){
+    try {
+      aud.src = await K.fs.readDataURL(path);
+      titleEl.textContent = K.fs.basename(path).replace(/\.[^.]+$/, '');
+      subEl.textContent = 'Audio Player';
+    } catch(e){ toast('⚠️','Audio','Could not load file.'); }
+  }
+
+  aud.addEventListener('error', () => { pb.textContent='▶'; art.classList.remove('playing'); toast('⚠️','Audio','Playback failed.'); });
+  aud.addEventListener('loadedmetadata', () => durEl.textContent = fmt(aud.duration));
+  aud.addEventListener('timeupdate', () => { if(!aud.duration) return; fill.style.width=(aud.currentTime/aud.duration*100)+'%'; curEl.textContent=fmt(aud.currentTime); });
+  aud.addEventListener('play', () => { pb.textContent='⏸'; art.classList.add('playing'); });
+  aud.addEventListener('pause', () => { pb.textContent='▶'; art.classList.remove('playing'); });
+  aud.addEventListener('ended', () => { pb.textContent='▶'; art.classList.remove('playing'); fill.style.width='0%'; });
+
+  pb.onclick = () => {
+    if (!aud.src) return;
+    if (aud.paused){ const p = aud.play(); if (p) p.catch(() => toast('⚠️','Audio','Playback blocked.')); }
+    else aud.pause();
+  };
+  document.getElementById('ap-rew').onclick = () => aud.currentTime = 0;
+  document.getElementById('ap-fwd').onclick = () => aud.currentTime = Math.min(aud.duration||0, aud.currentTime+10);
+  prog.onclick = e => { if(!aud.duration) return; const r=prog.getBoundingClientRect(); aud.currentTime=((e.clientX-r.left)/r.width)*aud.duration; };
+  document.getElementById('ap-vol').oninput = e => { aud.volume = parseFloat(e.target.value); };
+  document.addEventListener('keydown', e => { if(e.key===' '){ e.preventDefault(); pb.click(); } });
+});
+</script>
+</body>
+</html>

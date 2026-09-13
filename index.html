@@ -22,7 +22,14 @@
   </div>
   <div id="shell-root"></div>
 
-  <!-- El hermoso Kernel -->
+  <!--
+    Este repo se instala tal cual (sin bundlear) bajo /system/OS/Hue-Bit-OS/
+    dentro del IndexedDB de HuebOS. Sus rutas relativas (./shell.html,
+    ./public/...) ya son portables porque nunca asumen la raíz del dominio;
+    quedarán correctas el día que un Service Worker resuelva esas rutas
+    virtuales. La carga de kernel.js sigue rota/pendiente a propósito: aún
+    no se conecta este OS al nuevo bootloader ni a Hueb-OS-Kernel.
+  -->
   <script src="kernel.js"></script>
   <script>
     const bootLog = document.getElementById('boot-log');

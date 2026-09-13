@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"img_viewer","name":"Image Viewer","version":"1.0","icon":"🖼️","category":"media","singleton":false,"description":"View images from the virtual filesystem.","winWidth":680,"winHeight":500}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;font-family:'Segoe UI',-apple-system,sans-serif;background:#0c0e18;color:#eaf0ff}
+.imgv-wrap{width:100%;height:100%;display:flex;flex-direction:column;background:rgba(0,0,0,0.55)}
+.imgv-toolbar{height:36px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 12px;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.07)}
+.imgv-btn{width:28px;height:28px;border-radius:7px;border:none;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .13s}
+.imgv-btn:hover{background:rgba(255,255,255,0.14)}
+.imgv-name{font-size:12px;color:rgba(255,255,255,0.5);margin-left:4px}
+.imgv-zoom{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.35);font-family:monospace}
+.imgv-stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:grab}
+.imgv-stage:active{cursor:grabbing}
+.imgv-stage img{max-width:100%;max-height:100%;border-radius:4px;box-shadow:0 12px 40px rgba(0,0,0,0.6);transform-origin:center;user-select:none;pointer-events:none}
+.imgv-err{text-align:center;opacity:.4;font-size:14px;line-height:2.2}
+</style>
+</head>
+<body>
+<div class="imgv-wrap">
+  <div class="imgv-toolbar">
+    <button class="imgv-btn" id="iv-zin" title="Zoom In">+</button>
+    <button class="imgv-btn" id="iv-zout" title="Zoom Out">−</button>
+    <button class="imgv-btn" id="iv-fit" title="Fit">⊡</button>
+    <span class="imgv-name" id="iv-name"></span>
+    <span class="imgv-zoom" id="iv-zpct">100%</span>
+  </div>
+  <div class="imgv-stage" id="iv-stage">
+    <img id="iv-img" style="display:none" draggable="false">
+    <div class="imgv-err" id="iv-err" style="display:none">Could not load image</div>
+  </div>
+</div>
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+
+waitForKernel(async K => {
+  const params = new URLSearchParams(location.search);
+  const path = params.get('path');
+  const img = document.getElementById('iv-img'), stage = document.getElementById('iv-stage'), zpct = document.getElementById('iv-zpct'), err = document.getElementById('iv-err');
+  document.getElementById('iv-name').textContent = path ? K.fs.basename(path) : '';
+
+  let scale=1, ox=0, oy=0, dragging=false, sx=0, sy=0;
+  const apply = () => { img.style.transform = `translate(${ox}px,${oy}px)scale(${scale})`; zpct.textContent = Math.round(scale*100)+'%'; };
+
+  if (path){
+    try {
+      const url = await K.fs.readDataURL(path);
+      img.src = url; img.style.display = 'block';
+    } catch(e){ err.style.display = 'block'; }
+  } else { err.style.display = 'block'; }
+
+  document.getElementById('iv-zin').onclick = () => { scale=Math.min(scale*1.25,10); apply(); };
+  document.getElementById('iv-zout').onclick = () => { scale=Math.max(scale*.8,.05); apply(); };
+  document.getElementById('iv-fit').onclick = () => { scale=1; ox=0; oy=0; apply(); };
+  stage.addEventListener('wheel', e => { e.preventDefault(); scale=Math.max(.05,Math.min(10,scale*(e.deltaY<0?1.12:.9))); apply(); }, {passive:false});
+  stage.addEventListener('mousedown', e => { dragging=true; sx=e.clientX-ox; sy=e.clientY-oy; });
+  document.addEventListener('mousemove', e => { if(!dragging) return; ox=e.clientX-sx; oy=e.clientY-sy; apply(); });
+  document.addEventListener('mouseup', () => dragging=false);
+});
+</script>
+</body>
+</html>

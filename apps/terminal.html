@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script type="application/json" id="wos-manifest">{"id":"terminal","name":"Terminal","version":"1.0","icon":"🖥️","category":"system","singleton":false,"description":"Native shell for the HuebOS virtual filesystem.","winWidth":640,"winHeight":430}</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Cascadia Code','Consolas',monospace;background:#04060c}
+.term-wrap{display:flex;flex-direction:column;height:100%;background:rgba(4,6,12,0.9);padding:14px}
+.term-out{flex:1;overflow-y:auto;font-size:13px;line-height:1.65;margin-bottom:8px;color:#d8e4ff}
+.term-out::-webkit-scrollbar{width:5px}
+.term-out::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+.term-line{word-break:break-all}
+.term-line.err{color:#ff8080}.term-line.info{color:rgba(255,255,255,0.4)}
+.term-line.ok{color:#78e0a0}.term-line.acc{color:#a0c8ff;font-weight:700}
+.term-row{display:flex;align-items:center;gap:7px}
+.term-prompt{color:#5b8af5;font-size:13px;white-space:nowrap;flex-shrink:0}
+.term-in{flex:1;background:none;border:none;outline:none;color:#a8ff78;font-size:13px;font-family:inherit;caret-color:#a8ff78}
+</style>
+</head>
+<body>
+<div class="term-wrap">
+  <div class="term-out" id="tout"></div>
+  <div class="term-row"><span class="term-prompt" id="tprompt">huebos:~$&nbsp;</span><input class="term-in" id="tin" autocomplete="off" spellcheck="false"></div>
+</div>
+
+<script>
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) cb(k2); else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
+}
+function launchApp(appId){ getKernel().emit('shell:launch', { appId }); }
+
+waitForKernel(K => {
+  const out = document.getElementById('tout'), inp = document.getElementById('tin'), pEl = document.getElementById('tprompt');
+  let cwd = '/device', hist = [], hi = -1;
+
+  const ln = (text, cls) => { const d=document.createElement('div'); if(cls) d.className='term-line '+cls; d.textContent=text; out.appendChild(d); out.scrollTop=out.scrollHeight; };
+  const lnh = html => { const d=document.createElement('div'); d.className='term-line'; d.innerHTML=html; out.appendChild(d); out.scrollTop=out.scrollHeight; };
+  const updatePrompt = () => { const s = cwd==='/device' ? '~' : cwd.replace(/^\/device/, '~'); pEl.textContent = `huebos:${s}$ `; };
+
+  function resolvePath(p){
+    if (!p || p==='~') return '/device';
+    if (p.startsWith('~/')) return '/device/' + p.slice(2);
+    if (p.startsWith('/')) return K.fs.normalize(p);
+    return K.fs.normalize(cwd + '/' + p);
+  }
+
+  const CMD = {
+    async help(){
+      lnh('<span style="color:#5b8af5;font-weight:700">Commands</span>');
+      [['help','Show help'],['ls','List directory'],['cd [dir]','Change directory'],['pwd','Working dir'],['clear','Clear output'],['echo [text]','Print text'],['cat [file]','Read file'],['mkdir [name]','Create directory'],['touch [name]','Create file'],['rm [name]','Remove file/dir'],['mv [src] [dst]','Move/rename'],['whoami','User info'],['date','Date & time'],['neofetch','System info'],['calc [expr]','Evaluate math'],['open [app]','Open app'],['history','Command history']].forEach(([c,d])=>lnh(`  <span style="color:#78e0a0;display:inline-block;min-width:110px">${c}</span><span style="color:rgba(255,255,255,0.4)">${d}</span>`));
+    },
+    async ls(){ await CMD.dir(); },
+    async dir(){
+      let items; try { items = await K.fs.readdir(cwd); } catch(e){ ln('Not a directory','err'); return; }
+      if (!items.length){ ln('(empty)','info'); return; }
+      items.sort((a,b)=>a.type!==b.type?(a.type==='dir'?-1:1):a.name.localeCompare(b.name)).forEach(it => lnh(it.type==='dir' ? `<span style="color:#5b8af5">📁 ${it.name}/</span>` : `<span style="color:rgba(255,255,255,0.75)">📄 ${it.name}</span>`));
+      ln(`  ${items.length} item${items.length!==1?'s':''}`, 'info');
+    },
+    async cd(a){
+      const t = a[0];
+      if (!t || t==='~'){ cwd='/device'; updatePrompt(); return; }
+      if (t==='..'){ cwd = K.fs.dirname(cwd) || '/device'; updatePrompt(); return; }
+      const np = resolvePath(t);
+      const node = await K.fs.stat(np);
+      if (!node) ln(`cd: ${t}: No such file or directory`,'err');
+      else if (node.type!=='dir') ln(`cd: ${t}: Not a directory`,'err');
+      else { cwd = np; updatePrompt(); }
+    },
+    async pwd(){ ln(cwd); },
+    async clear(){ init(); },
+    async echo(a){ ln(a.join(' ')); },
+    async whoami(){ ln('user  [huebos]'); },
+    async date(){ ln(new Date().toString()); },
+    async history(){ hist.forEach((c,i)=>ln(`  ${String(hist.length-i).padStart(4,' ')}  ${c}`,'info')); },
+    async cat(a){
+      if (!a[0]){ ln('Usage: cat <file>','err'); return; }
+      const p = resolvePath(a[0]);
+      try { const content = await K.fs.read(p); content.split('\n').forEach(l=>ln(l)); }
+      catch(e){ ln(`cat: ${a[0]}: ${e.message}`,'err'); }
+    },
+    async mkdir(a){ if(!a[0]){ln('Usage: mkdir <name>','err');return;} await K.fs.mkdir(resolvePath(a[0])); ln(`Created '${a[0]}'`,'ok'); },
+    async touch(a){ if(!a[0]){ln('Usage: touch <name>','err');return;} await K.fs.touch(resolvePath(a[0])); ln(`Created '${a[0]}'`,'ok'); },
+    async rm(a){ if(!a[0]){ln('Usage: rm <name>','err');return;} try{ await K.fs.remove(resolvePath(a[0]),{recursive:true}); ln(`Removed '${a[0]}'`,'ok'); }catch(e){ ln(`rm: ${e.message}`,'err'); } },
+    async mv(a){ if(!a[0]||!a[1]){ln('Usage: mv <src> <dst>','err');return;} try{ await K.fs.move(resolvePath(a[0]),resolvePath(a[1])); ln('Moved','ok'); }catch(e){ ln(`mv: ${e.message}`,'err'); } },
+    async open(a){ if(!a[0]){ln('Usage: open <app>','err');return;} launchApp(a[0]); ln(`Opening ${a[0]}...`,'ok'); },
+    async calc(a){
+      if(!a[0]){ln('Usage: calc <expr>','err');return;}
+      try{ const expr=a.join(' ').replace(/[^0-9+\-*/.() ^%]/g,'').replace(/\^/g,'**'); const r=(new Function(`"use strict";return(${expr})`))(); lnh(`<span style="color:rgba(255,255,255,0.5)">${a.join(' ')} = </span><span style="color:#78e0a0">${r}</span>`); }
+      catch(e){ ln('Invalid expression','err'); }
+    },
+    async neofetch(){
+      ['<span style="color:#5b8af5">HueBit OS</span> — running on HuebOS','──────────────────────','<span style="color:#9b59f5">Shell</span>: hsh 2.0 (Kernel-backed)','<span style="color:#9b59f5">Resolution</span>: '+window.innerWidth+'×'+window.innerHeight].forEach(lnh);
+    },
+  };
+
+  const init = () => { out.innerHTML=''; updatePrompt(); ln('HueBit Shell v2.0','acc'); ln('Type "help" for commands.','info'); ln(''); };
+
+  async function run(raw){
+    if (!raw) return;
+    hist.unshift(raw); hi=-1;
+    lnh(`<span style="color:#5b8af5">${pEl.textContent}</span><span style="color:#a0c8ff">${raw}</span>`);
+    const [c,...a] = raw.trim().split(/\s+/);
+    if (CMD[c]) { try { await CMD[c](a); } catch(e){ ln('Error: '+e.message, 'err'); } }
+    else ln(`${c}: command not found (try "help")`,'err');
+  }
+
+  inp.addEventListener('keydown', e => {
+    if (e.key==='Enter'){ const r=inp.value.trim(); if(!r) return; run(r); inp.value=''; }
+    else if (e.key==='ArrowUp'){ hi=Math.min(hi+1,hist.length-1); inp.value=hist[hi]||''; e.preventDefault(); }
+    else if (e.key==='ArrowDown'){ hi=Math.max(hi-1,-1); inp.value = hi===-1 ? '' : hist[hi]; e.preventDefault(); }
+  });
+  out.addEventListener('click', () => inp.focus());
+  init();
+  inp.focus();
+});
+</script>
+</body>
+</html>

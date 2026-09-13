@@ -1,202 +1,916 @@
-<!-- shell.html -->
+<!-- shell.html
+     Escritorio completo de HueBit OS: fondo, iconos, gestor de ventanas,
+     taskbar, menú inicio, pantalla de bloqueo, menú contextual, toasts,
+     volumen y drag&drop de archivos. Cada app vive en su propio archivo
+     bajo ./apps/ y se monta en un <iframe> dentro de una ventana del WM.
+     Instalado (en el futuro) bajo /system/OS/Hue-Bit-OS-Web/ del FS
+     virtual de HuebOS — ver nota en index.html.
+-->
 <style>
-/* ====== TODO TU CSS ORIGINAL INTACTO ====== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--accent:#5b8af5;--accent2:#9b59f5;--text:#eaf0ff;--text-dim:rgba(255,255,255,0.45);--font:'Segoe UI',-apple-system,sans-serif;--mono:'Cascadia Code',monospace;--radius:14px;--taskbar-h:60px}
+:root{
+  --accent:#5b8af5;--accent2:#9b59f5;
+  --text:#eaf0ff;--text-dim:rgba(255,255,255,0.45);
+  --font:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Cascadia Code','Consolas','Courier New',monospace;
+  --radius:14px;--taskbar-h:60px;
+}
 html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:#040608;user-select:none}
+::selection{background:rgba(91,138,245,0.4)}
+*::-webkit-scrollbar{width:5px;height:5px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:3px}
+*::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.3)}
+
 #desktop{position:fixed;inset:0;overflow:hidden}
-#wallpaper{position:absolute;inset:0;background:linear-gradient(135deg,#0b1535,#040608);transition:all 0.8s ease}
+#wallpaper{position:absolute;inset:0;background-size:cover;background-position:center;transition:all 0.8s ease}
+#wallpaper-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.15);pointer-events:none}
 #aurora{position:absolute;inset:0;pointer-events:none}
-.desk-icon{position:absolute;width:80px;text-align:center;cursor:pointer;padding:6px;border-radius:12px}
-.window{position:fixed;display:flex;flex-direction:column;background:rgba(12,14,24,0.95);backdrop-filter:blur(40px);border-radius:var(--radius);border:1px solid rgba(255,255,255,0.1);box-shadow:0 30px 80px rgba(0,0,0,0.6);overflow:hidden;min-width:300px;min-height:200px}
-.win-titlebar{height:42px;display:flex;align-items:center;gap:8px;padding:0 10px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);cursor:grab}
+#aurora::before,#aurora::after{content:'';position:absolute;border-radius:50%;filter:blur(100px);mix-blend-mode:screen}
+#aurora::before{width:60vw;height:50vh;background:radial-gradient(circle,rgba(91,138,245,0.14) 0%,transparent 70%);top:-10%;left:-5%;animation:aA 14s ease-in-out infinite alternate}
+#aurora::after{width:50vw;height:60vh;background:radial-gradient(circle,rgba(155,89,245,0.11) 0%,transparent 70%);bottom:8%;right:-5%;animation:aB 16s ease-in-out infinite alternate}
+@keyframes aA{0%{transform:translate(0,0)scale(1)}100%{transform:translate(4%,7%)scale(1.06)}}
+@keyframes aB{0%{transform:translate(0,0)scale(1)}100%{transform:translate(-3%,4%)scale(0.96)}}
+#stars-canvas{position:absolute;inset:0;pointer-events:none;opacity:0.6}
+
+.desk-icon{position:absolute;width:80px;text-align:center;cursor:pointer;padding:6px 4px 8px;border-radius:12px;border:1px solid transparent;transition:background .15s,border-color .15s,transform .2s cubic-bezier(.2,1.2,.3,1);box-sizing:border-box}
+.desk-icon:hover{background:rgba(255,255,255,0.09);transform:translateY(-3px)scale(1.05)}
+.desk-icon.selected{background:rgba(91,138,245,0.2);border-color:rgba(91,138,245,0.5)}
+.desk-icon .di-img{width:52px;height:52px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:34px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.55));transition:filter .2s,width .2s,height .2s}
+.desk-icon:hover .di-img{filter:drop-shadow(0 6px 18px rgba(0,0,0,0.7))}
+.desk-icon .di-img img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.desk-icon span{display:block;margin-top:5px;font-size:12px;font-weight:500;color:#fff;text-shadow:0 1px 7px rgba(0,0,0,0.95);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#drop-zone{position:fixed;inset:0;z-index:7000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .2s ease}
+#drop-zone.show{opacity:1;pointer-events:auto}
+.dz-box{border:2px dashed rgba(91,138,245,0.7);border-radius:22px;padding:50px 70px;text-align:center;background:rgba(91,138,245,0.08);animation:dzPulse 2s ease-in-out infinite}
+@keyframes dzPulse{0%,100%{border-color:rgba(91,138,245,0.5)}50%{border-color:rgba(91,138,245,0.9)}}
+.dz-ico{font-size:52px;margin-bottom:14px}
+.dz-title{font-size:20px;font-weight:700;color:#fff;margin-bottom:6px}
+.dz-sub{font-size:13px;color:rgba(255,255,255,0.5)}
+
+.window{position:fixed;display:flex;flex-direction:column;background:rgba(12,14,24,0.9);backdrop-filter:blur(40px) saturate(1.6);-webkit-backdrop-filter:blur(40px) saturate(1.6);border-radius:var(--radius);border:1px solid rgba(255,255,255,0.1);box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 0.5px rgba(255,255,255,0.04) inset;overflow:hidden;will-change:transform;min-width:300px;min-height:200px}
+.window.focused{border-color:rgba(91,138,245,0.3);box-shadow:0 36px 90px rgba(0,0,0,0.7),0 0 0 1px rgba(91,138,245,0.2),0 0 0 0.5px rgba(255,255,255,0.06) inset}
+.window.maximized{border-radius:0!important;border:none!important}
+.win-titlebar{height:42px;min-height:42px;display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);cursor:grab;flex-shrink:0}
+.win-titlebar:active{cursor:grabbing}
+.window:not(.focused) .win-titlebar{opacity:0.75}
+.traffic{display:flex;gap:7px;flex-shrink:0}
+.tb{width:13px;height:13px;border-radius:50%;cursor:pointer;border:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0;transition:all .15s;outline:none}
+.tb:hover{filter:brightness(1.15);font-size:7px;color:rgba(0,0,0,0.55)}
+.tb.cl{background:#ff5f57}.tb.cl::after{content:'\00D7'}
+.tb.mn{background:#ffbd2e}.tb.mn::after{content:'\2013'}
+.tb.mx{background:#28c840}.tb.mx::after{content:'\2922'}
+.win-title{flex:1;text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,0.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.win-icon-sm{width:17px;height:17px;flex-shrink:0;opacity:0.85;pointer-events:none;display:flex;align-items:center;justify-content:center;font-size:14px}
 .win-body{flex:1;overflow:hidden;position:relative;min-height:0}
-.win-body iframe{width:100%;height:100%;border:none;background:#1e1e1e}
-#taskbar{position:fixed;bottom:0;left:0;right:0;height:var(--taskbar-h);background:rgba(10,12,22,0.9);backdrop-filter:blur(30px);display:flex;align-items:center;gap:4px;padding:0 14px}
-.tb-app{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,0.05)}
-#start-menu{position:fixed;bottom:60px;left:0;width:300px;background:rgba(9,11,22,0.97);backdrop-filter:blur(40px);border-radius:20px;border:1px solid rgba(255,255,255,0.12);padding:15px;display:none}
-.sm-item{padding:8px;cursor:pointer;border-radius:8px}
-.sm-item:hover{background:rgba(255,255,255,0.1)}
-/* ... (Puedes pegar aquí el resto de tu CSS original, omitido por brevedad pero estructuralmente idéntico) ... */
+.win-body iframe{width:100%;height:100%;border:none;background:#1e1e1e;display:block}
+.rh{position:absolute;z-index:10}
+.rh.n{top:0;left:8px;right:8px;height:5px;cursor:n-resize}
+.rh.s{bottom:0;left:8px;right:8px;height:5px;cursor:s-resize}
+.rh.e{right:0;top:8px;bottom:8px;width:5px;cursor:e-resize}
+.rh.w{left:0;top:8px;bottom:8px;width:5px;cursor:w-resize}
+.rh.se{bottom:0;right:0;width:15px;height:15px;cursor:se-resize}
+.rh.sw{bottom:0;left:0;width:15px;height:15px;cursor:sw-resize}
+.rh.ne{top:0;right:0;width:15px;height:15px;cursor:ne-resize}
+.rh.nw{top:0;left:0;width:15px;height:15px;cursor:nw-resize}
+
+#tb-wrap{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:800}
+#taskbar{height:var(--taskbar-h);display:flex;align-items:center;gap:4px;padding:0 14px;background:rgba(10,12,22,0.9);backdrop-filter:blur(30px) saturate(2);-webkit-backdrop-filter:blur(30px) saturate(2);border-radius:22px;border:1px solid rgba(255,255,255,0.14);box-shadow:0 14px 44px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.07) inset}
+.tb-div{width:1px;height:28px;background:rgba(255,255,255,0.1);margin:0 4px;flex-shrink:0}
+#start-btn{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);transition:all .22s cubic-bezier(.2,1.2,.3,1);font-size:20px}
+#start-btn:hover{background:rgba(91,138,245,0.22);transform:translateY(-4px)scale(1.08);border-color:rgba(91,138,245,0.4)}
+#tb-apps{display:flex;gap:4px;align-items:center}
+.tb-app{width:44px;height:44px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .2s cubic-bezier(.2,1.4,.3,1);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);font-size:20px}
+.tb-app:hover{transform:translateY(-5px)scale(1.11);background:rgba(255,255,255,0.11)}
+.tb-app:active{transform:translateY(-2px)scale(0.97)}
+.tb-dot{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--accent);display:none}
+.tb-app.open .tb-dot{display:block}
+.tb-app.active .tb-dot{background:#fff;width:6px;height:6px}
+.tb-tip{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);background:rgba(12,15,28,0.98);border:1px solid rgba(255,255,255,0.1);padding:5px 10px;border-radius:8px;font-size:12px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 5px 15px rgba(0,0,0,0.45)}
+.tb-app:hover .tb-tip{opacity:1}
+#sys-tray{display:flex;align-items:center;gap:6px;padding:0 2px}
+#clock-tray{font-size:12px;font-weight:600;color:rgba(255,255,255,0.88);cursor:default;text-align:center;line-height:1.45}
+.tray-ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center;opacity:0.65;font-size:14px;cursor:pointer;transition:opacity .15s;border-radius:7px}
+.tray-ico:hover{opacity:1;background:rgba(255,255,255,0.1)}
+
+#start-menu{position:fixed;bottom:82px;left:50%;transform:translateX(-50%)scale(0.93)translateY(18px);width:520px;max-width:calc(100vw - 24px);background:rgba(9,11,22,0.97);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border-radius:20px;border:1px solid rgba(255,255,255,0.12);box-shadow:0 40px 100px rgba(0,0,0,0.8);z-index:750;opacity:0;pointer-events:none;transition:all .3s cubic-bezier(.2,1.2,.3,1);overflow:hidden}
+#start-menu.open{opacity:1;pointer-events:auto;transform:translateX(-50%)scale(1)translateY(0)}
+.sm-search{margin:16px 16px 12px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:11px;padding:10px 14px}
+.sm-search input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:var(--font)}
+.sm-search input::placeholder{color:rgba(255,255,255,0.35)}
+.sm-label{padding:0 16px 8px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.1em}
+.sm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:0 10px 10px;max-height:320px;overflow-y:auto}
+.sm-item{display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 6px;border-radius:12px;cursor:pointer;transition:background .13s;text-align:center}
+.sm-item:hover{background:rgba(255,255,255,0.08)}
+.sm-item:active{transform:scale(0.96)}
+.sm-item .si-img{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.sm-item span{font-size:12px;font-weight:500;color:rgba(255,255,255,0.8)}
+.sm-footer{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.07)}
+.sm-user{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.sm-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:15px;overflow:hidden}
+.sm-avatar img{width:100%;height:100%;object-fit:cover}
+.sm-btns{display:flex;gap:6px}
+.sm-btn{width:30px;height:30px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;color:rgba(255,255,255,0.65)}
+.sm-btn:hover{background:rgba(255,90,90,0.22);color:#ff9090;border-color:rgba(255,90,90,0.3)}
+
+#ctx{position:fixed;z-index:9999;background:rgba(10,12,24,0.99);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.13);border-radius:12px;padding:6px;min-width:190px;box-shadow:0 22px 65px rgba(0,0,0,0.7);opacity:0;transform:scale(0.9)translateY(-8px);transition:opacity .15s ease,transform .17s cubic-bezier(.2,1.2,.3,1);display:none}
+#ctx.show{opacity:1;transform:scale(1)translateY(0)}
+.ctx-item{padding:9px 13px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,0.82);transition:all .1s}
+.ctx-item:hover{background:rgba(91,138,245,0.18);color:#fff;padding-left:16px}
+.ctx-item.danger:hover{background:rgba(255,80,80,0.18);color:#ff9090}
+.ctx-sep{height:1px;background:rgba(255,255,255,0.08);margin:4px 0}
+
+#toasts{position:fixed;top:14px;right:14px;z-index:9990;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:rgba(10,12,22,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-left:3px solid var(--accent);border-radius:12px;padding:11px 14px;min-width:250px;max-width:310px;box-shadow:0 10px 32px rgba(0,0,0,0.45);display:flex;gap:11px;align-items:flex-start;pointer-events:auto;animation:toastIn .38s cubic-bezier(.2,1.2,.3,1) forwards;cursor:pointer}
+.toast.out{animation:toastOut .22s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)scale(0.94)}to{opacity:1;transform:translateX(0)scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)scale(1)}to{opacity:0;transform:translateX(40px)scale(0.95)}}
+.toast-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.toast-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.toast-msg{font-size:12px;color:rgba(255,255,255,0.5)}
+
+.vol-popup{position:fixed;bottom:82px;z-index:850;background:rgba(10,12,22,0.98);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.13);border-radius:14px;padding:14px 16px;box-shadow:0 14px 44px rgba(0,0,0,0.55);opacity:0;transform:translateY(8px)scale(0.95);transition:opacity .18s ease,transform .2s cubic-bezier(.2,1.2,.3,1);pointer-events:none;display:flex;flex-direction:column;gap:8px;min-width:190px}
+.vol-popup.show{opacity:1;transform:translateY(0)scale(1);pointer-events:auto}
+.vol-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.08em}
+.vol-row{display:flex;align-items:center;gap:10px}
+input[type=range].hb-range{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);outline:none;cursor:pointer;position:relative;flex:1}
+input[type=range].hb-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer}
+input[type=range].hb-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:none;cursor:pointer}
+.vol-val{font-size:12px;font-weight:700;color:rgba(255,255,255,0.65);min-width:30px;text-align:right}
+
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@200;300&family=Outfit:wght@300;400;500&display=swap');
+.lock-overlay{position:fixed;inset:0;z-index:9500;background:#0b0e13;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease;overflow:hidden;cursor:default}
+.lock-aurora{position:absolute;inset:-60%;width:220%;height:220%;background:radial-gradient(ellipse 52% 44% at 22% 30%,rgba(72,108,155,.20) 0%,transparent 55%),radial-gradient(ellipse 44% 56% at 80% 68%,rgba(155,108,80,.13) 0%,transparent 52%),radial-gradient(ellipse 36% 52% at 60% 15%,rgba(80,130,148,.11) 0%,transparent 48%),radial-gradient(ellipse 60% 35% at 50% 90%,rgba(50,70,100,.15) 0%,transparent 60%);animation:auroraShift 24s ease-in-out infinite alternate;pointer-events:none}
+@keyframes auroraShift{0%{transform:translate(0,0)rotate(0deg)scale(1)}25%{transform:translate(-2%,3%)rotate(.6deg)scale(1.015)}50%{transform:translate(3%,-2%)rotate(-.4deg)scale(.99)}75%{transform:translate(-1.5%,1%)rotate(.5deg)scale(1.01)}100%{transform:translate(2%,-1.5%)rotate(-.3deg)scale(1.005)}}
+.lock-grain{position:absolute;inset:0;opacity:.04;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px 160px}
+.lock-cta{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:36px;white-space:nowrap;pointer-events:auto;opacity:0;animation:lockCtaFade .9s ease .4s forwards;transition:opacity .25s ease}
+.lock-cta.hidden{opacity:0!important;pointer-events:none}
+@keyframes lockCtaFade{from{opacity:0}to{opacity:1}}
+.lock-cta-arrow{width:28px;height:28px;border:1.5px solid rgba(255,255,255,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:ctaBounce 2.4s ease-in-out infinite}
+.lock-cta-arrow svg{opacity:.45}
+@keyframes ctaBounce{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(-6px);opacity:1}}
+.lock-cta-label{font-family:'Outfit',sans-serif;font-size:11px;font-weight:300;color:rgba(255,255,255,.25);letter-spacing:.16em;text-transform:uppercase}
+.lock-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center}
+.lock-clock-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:0;transition:margin-bottom .6s cubic-bezier(.16,1,.3,1)}
+.lock-clock-wrap.login-mode{margin-bottom:28px}
+.lock-big-time{font-family:'Crimson Pro',Georgia,serif;font-size:clamp(88px,17vw,162px);font-weight:200;letter-spacing:-4px;line-height:.95;color:rgba(255,255,255,.92);text-align:center;text-shadow:0 4px 60px rgba(0,0,0,.3);transition:font-size .58s cubic-bezier(.16,1,.3,1),letter-spacing .58s cubic-bezier(.16,1,.3,1),color .4s ease;animation:lockFadeUp .9s cubic-bezier(.16,1,.3,1) both}
+.lock-clock-wrap.login-mode .lock-big-time{font-size:50px;letter-spacing:-1.5px;color:rgba(255,255,255,.72)}
+.lock-big-date{font-family:'Outfit',sans-serif;font-weight:300;color:rgba(255,255,255,.38);letter-spacing:.18em;text-transform:uppercase;text-align:center;font-size:13px;margin-top:14px;transition:font-size .58s cubic-bezier(.16,1,.3,1),margin-top .58s cubic-bezier(.16,1,.3,1),letter-spacing .5s ease,color .4s ease;animation:lockFadeUp .9s cubic-bezier(.16,1,.3,1) .08s both}
+.lock-clock-wrap.login-mode .lock-big-date{font-size:10px;margin-top:5px;letter-spacing:.14em;color:rgba(255,255,255,.22)}
+.lock-card{opacity:0;transform:translateY(32px)scale(.97);pointer-events:none;transition:opacity .52s cubic-bezier(.16,1,.3,1),transform .52s cubic-bezier(.16,1,.3,1);background:rgba(255,255,255,.042);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:26px 28px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;width:292px;backdrop-filter:blur(32px) saturate(1.1);box-shadow:0 40px 80px rgba(0,0,0,.48),0 1px 0 rgba(255,255,255,.055) inset,0 -1px 0 rgba(0,0,0,.25) inset}
+.lock-card.visible{opacity:1;transform:translateY(0)scale(1);pointer-events:all}
+.lock-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#8aa4c4,#6080a0);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.32),0 0 0 1.5px rgba(255,255,255,.08);flex-shrink:0;overflow:hidden;font-size:22px}
+.lock-avatar img{width:100%;height:100%;object-fit:cover}
+.lock-username{font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;color:rgba(255,255,255,.68);letter-spacing:.01em}
+.lock-divider{width:100%;height:1px;background:rgba(255,255,255,.06)}
+.lock-pass-wrap{width:100%;position:relative;display:flex;align-items:center}
+.lock-pass-wrap input{width:100%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:11px 42px 11px 14px;color:rgba(255,255,255,.88);font-size:14px;font-family:'Outfit',sans-serif;font-weight:300;outline:none;text-align:center;letter-spacing:.12em;transition:border-color .25s,background .25s,box-shadow .25s}
+.lock-pass-wrap input:focus{border-color:rgba(138,168,204,.5);background:rgba(138,168,204,.06);box-shadow:0 0 0 3px rgba(138,168,204,.08)}
+.lock-pass-wrap input::placeholder{color:rgba(255,255,255,.2);letter-spacing:.04em;font-size:13px}
+.lock-submit{position:absolute;right:9px;width:27px;height:27px;border-radius:8px;background:rgba(138,168,204,.15);border:1px solid rgba(138,168,204,.2);cursor:pointer;color:rgba(255,255,255,.6);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.lock-submit:hover{background:rgba(138,168,204,.3);color:#fff;transform:scale(1.07)}
+.lock-hint-btn{font-family:'Outfit',sans-serif;font-size:13px;font-weight:300;color:rgba(255,255,255,.3);cursor:pointer;letter-spacing:.05em;padding:4px 0;transition:color .2s}
+.lock-hint-btn:hover{color:rgba(255,255,255,.58)}
+.lock-back{font-family:'Outfit',sans-serif;font-size:11px;font-weight:300;color:rgba(255,255,255,.2);cursor:pointer;letter-spacing:.12em;text-transform:uppercase;margin-top:10px;padding:4px 0;background:none;border:none;opacity:0;transition:opacity .45s ease .15s,color .2s}
+.lock-back.visible{opacity:1}
+.lock-back:hover{color:rgba(255,255,255,.45)}
+.lock-error{font-family:'Outfit',sans-serif;font-size:12px;font-weight:300;color:rgba(220,130,110,.9);min-height:14px;text-align:center;animation:lockShake .38s ease}
+@keyframes lockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes lockFadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 </style>
 
 <div id="desktop">
-  <div id="wallpaper"><div id="aurora"></div></div>
+  <div id="wallpaper"><div id="wallpaper-overlay"></div><div id="aurora"></div></div>
+  <canvas id="stars-canvas"></canvas>
   <div id="icon-area"></div>
 </div>
 
-<div id="taskbar">
-  <div id="start-btn" style="padding:0 15px;cursor:pointer">⊞</div>
-  <div id="tb-apps" style="display:flex;gap:4px"></div>
+<div id="drop-zone">
+  <div class="dz-box">
+    <div class="dz-ico">&#128229;</div>
+    <div class="dz-title">Drop files to import</div>
+    <div class="dz-sub">Images, videos, audio, text — any file works</div>
+  </div>
+</div>
+
+<div id="tb-wrap">
+  <div id="taskbar">
+    <div id="start-btn" title="Start Menu">&#8862;</div>
+    <div class="tb-div"></div>
+    <div id="tb-apps"></div>
+    <div class="tb-div"></div>
+    <div id="sys-tray">
+      <div class="tray-ico" id="tray-vol" title="Volume">&#128266;</div>
+      <div id="clock-tray"></div>
+    </div>
+  </div>
+</div>
+
+<div class="vol-popup" id="vol-popup">
+  <div class="vol-title">Volume</div>
+  <div class="vol-row">
+    <span>&#128264;</span>
+    <input type="range" class="hb-range" id="vol-range" min="0" max="100" value="80">
+    <span class="vol-val" id="vol-val">80%</span>
+  </div>
 </div>
 
 <div id="start-menu">
-  <h3 style="margin-bottom:10px;color:#fff">Aplicaciones</h3>
-  <div id="sm-grid"></div>
+  <div class="sm-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Search apps…" id="sm-input" autocomplete="off">
+  </div>
+  <div class="sm-label">Apps</div>
+  <div class="sm-grid" id="sm-grid"></div>
+  <div class="sm-footer">
+    <div class="sm-user"><div class="sm-avatar" id="sm-av">&#128100;</div><span id="sm-uname">User</span></div>
+    <div class="sm-btns">
+      <div class="sm-btn" id="sm-lock" title="Lock">&#128274;</div>
+      <div class="sm-btn" id="sm-restart" title="Restart">&#8635;</div>
+      <div class="sm-btn" id="sm-power" title="Power">&#9211;</div>
+    </div>
+  </div>
 </div>
 
+<div id="ctx"></div>
+<div id="toasts"></div>
+
 <script>
-const Kernel = window.Kernel;
+(function(){
+'use strict';
 
-// Mapeo de apps a sus archivos HTML
-const APPS = {
-  explorer: { title: 'Archivos', ico: '📁', url: './apps/explorer.html', w:750, h:500 },
-  notepad:  { title: 'Notepad',   ico: '📝', url: './apps/notepad.html',  w:640, h:460 },
-  terminal: { title: 'Terminal',  ico: '🖥️', url: './apps/terminal.html', w:640, h:430 },
-  vscode:   { title: 'VS Code',   ico: '💻', url: './apps/vscode.html',   w:1000,h:700 },
-  // ... resto de tus apps originales
-};
-
-const WM = {
-  wins: new Map(),
-  z: 100,
-  active: null,
-
-  create({id, title, width, height, url}) {
-    if (this.wins.has(id)) {
-      this.restore(id);
-      return;
-    }
-    const off = (this.wins.size % 5) * 30;
-    const e = document.createElement('div');
-    e.className = 'window';
-    e.id = `win_${id}`;
-    e.style.cssText = `left:${100+off}px;top:${80+off}px;width:${width}px;height:${height}px;z-index:${++this.z}`;
-    e.innerHTML = `
-      <div class="win-titlebar">
-        <span style="flex:1;font-size:13px">${title}</span>
-        <button class="win-close" style="background:none;border:none;color:#fff;cursor:pointer">✕</button>
-      </div>
-      <div class="win-body"><iframe src="${url}" id="frame_${id}"></iframe></div>
-    `;
-    document.body.appendChild(e);
-    this.wins.set(id, { minimized: false, el: e });
-
-    e.querySelector('.win-titlebar').addEventListener('mousedown', (ev) => {
-      this.focus(id);
-      let sx = ev.clientX, sy = ev.clientY, sl = e.offsetLeft, st = e.offsetTop;
-      const move = (ev) => {
-        e.style.left = (sl + ev.clientX - sx) + 'px';
-        e.style.top = (st + ev.clientY - sy) + 'px';
-      };
-      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', move);
-      document.addEventListener('mouseup', up);
-    });
-
-    e.querySelector('.win-close').onclick = () => this.close(id);
-    this.focus(id);
-    this.addTaskbar(id, title);
-  },
-
-  close(id) {
-    const w = this.wins.get(id);
-    if (!w) return;
-    w.el.remove();
-    this.wins.delete(id);
-    document.querySelector(`.tb-app[data-wid="${id}"]`)?.remove();
-  },
-
-  focus(id) {
-    if (this.active === id) return;
-    const w = this.wins.get(id);
-    if (!w) return;
-    w.el.style.zIndex = ++this.z;
-    this.active = id;
-    document.querySelectorAll('.tb-app').forEach(tb => tb.classList.toggle('active', tb.dataset.wid === id));
-  },
-
-  restore(id) {
-    const w = this.wins.get(id);
-    w.el.style.display = 'flex';
-    this.focus(id);
-  },
-
-  addTaskbar(id, title) {
-    const tb = document.createElement('div');
-    tb.className = 'tb-app active';
-    tb.dataset.wid = id;
-    tb.textContent = title.charAt(0);
-    tb.title = title;
-    tb.onclick = () => (this.active === id ? this.minimize(id) : this.restore(id));
-    document.getElementById('tb-apps').appendChild(tb);
-  },
-
-  minimize(id) {
-    const w = this.wins.get(id);
-    w.el.style.display = 'none';
-    this.active = null;
-  }
-};
-
-async function openApp(appId, filePayload = null) {
-  const cfg = APPS[appId];
-  if (!cfg) return;
-  
-  // Si abrimos un archivo, lo pasamos por URL a la app
-  const url = filePayload ? `${cfg.url}?path=${encodeURIComponent(filePayload)}` : cfg.url;
-  
-  // Registamos el proceso en el Kernel
-  Kernel.procs.spawn(appId, { title: cfg.title });
-  
-  WM.create({ id: appId + '_' + Date.now(), title: cfg.title, width: cfg.w, height: cfg.h, url });
+function getKernel(){ return window.parent && window.parent !== window ? window.parent.Kernel : window.Kernel; }
+function waitForKernel(cb){
+  const K = getKernel();
+  if (K && K.isReady) { cb(K); return; }
+  const tryAgain = () => { const k2 = getKernel(); if (k2) { cb(k2); } else setTimeout(tryAgain, 60); };
+  setTimeout(tryAgain, 60);
 }
 
-async function buildDesktop() {
-  const area = document.getElementById('icon-area');
-  area.innerHTML = '';
-  
-  // Renderizar accesos directos del FS del Kernel
-  const items = await Kernel.fs.readdir('/home/desktop');
-  items.forEach((item, idx) => {
+const DESKTOP_DIR = '/device/desktop';
+
+/* Catálogo de apps de HueBit OS. Se registran en Kernel.apps al arrancar
+   (idempotente) para que el menú inicio y los accesos de escritorio
+   siempre tengan una fuente de verdad consistente. */
+const APP_CATALOG = [
+  { id:'files',      name:'File Explorer', icon:'📁',  url:'./apps/files.html',      winWidth:750,  winHeight:500 },
+  { id:'notepad',    name:'Text Editor',   icon:'📝',  url:'./apps/notepad.html',    winWidth:640,  winHeight:460 },
+  { id:'terminal',   name:'Terminal',      icon:'🖥️', url:'./apps/terminal.html',   winWidth:640,  winHeight:430 },
+  { id:'vscode',     name:'VS Code',       icon:'💻',  url:'./apps/vscode.html',     winWidth:1000, winHeight:700 },
+  { id:'calculator', name:'Calculator',    icon:'🧮',  url:'./apps/calc.html',       winWidth:310,  winHeight:520 },
+  { id:'clock',      name:'Clock',         icon:'🕐',  url:'./apps/clock.html',      winWidth:300,  winHeight:380 },
+  { id:'settings',   name:'Settings',      icon:'⚙️',  url:'./apps/settings.html',   winWidth:680,  winHeight:500 },
+  { id:'img_viewer', name:'Image Viewer',  icon:'🖼️', url:'./apps/img_viewer.html', winWidth:680,  winHeight:500 },
+  { id:'vid_player', name:'Video Player',  icon:'🎬',  url:'./apps/vid_player.html', winWidth:700,  winHeight:480 },
+  { id:'aud_player', name:'Audio Player',  icon:'🎵',  url:'./apps/aud_player.html', winWidth:380,  winHeight:490 },
+  { id:'social',     name:'Social Network',icon:'👥',  url:'./social.html',          winWidth:940,  winHeight:620 },
+  { id:'resmon',     name:'Resource Monitor', icon:'📊', url:'./apps/resmon.html',   winWidth:540,  winHeight:480 },
+];
+
+function iconHtml(K, icon, size){
+  if (K && K.icons && typeof K.icons.render === 'function') return K.icons.render(icon, { size });
+  return String(icon || '▪');
+}
+
+/* ── Fondo: estrellas + wallpaper/acento reactivo a Kernel.prefs ── */
+function drawStars(){
+  const cv = document.getElementById('stars-canvas');
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const ctx = cv.getContext('2d');
+  for (let i = 0; i < 150; i++){
+    const x = Math.random()*cv.width, y = Math.random()*cv.height, r = Math.random()*1.1+.2, a = Math.random()*.5+.1;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fill();
+  }
+}
+drawStars();
+window.addEventListener('resize', drawStars);
+
+const WP_THEMES = {
+  original: null,
+  aurora:  'radial-gradient(ellipse 130% 90% at 50% 110%,#0b1535,#040608)',
+  sunset:  'linear-gradient(160deg,#1a0533,#3d1a00 50%,#1a0000)',
+  ocean:   'linear-gradient(160deg,#020c18,#0a2040 50%,#020c18)',
+  forest:  'linear-gradient(160deg,#020f08,#072010 50%,#020f08)',
+  void:    '#000',
+};
+
+function applyWallpaper(key, customData){
+  const wall = document.getElementById('wallpaper');
+  if (key === 'custom' && customData){
+    wall.style.backgroundImage = `url('${customData}')`; wall.style.background = '';
+  } else if (key === 'original' || !WP_THEMES[key]){
+    wall.style.backgroundImage = "url('./public/wallpaper.png')"; wall.style.background = '';
+  } else {
+    wall.style.backgroundImage = 'none'; wall.style.background = WP_THEMES[key];
+  }
+}
+
+function applyAccent(c1, c2){
+  document.documentElement.style.setProperty('--accent', c1 || '#5b8af5');
+  document.documentElement.style.setProperty('--accent2', c2 || '#9b59f5');
+}
+
+function applyNightLight(on){
+  let el = document.getElementById('nightlight-ol');
+  if (on && !el){
+    el = document.createElement('div');
+    el.id = 'nightlight-ol';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(255,110,0,0.11);pointer-events:none;z-index:799;mix-blend-mode:multiply';
+    document.body.appendChild(el);
+  } else if (!on && el){ el.remove(); }
+}
+
+/* ── Toasts ── */
+function toast(icon, title, msg, ms){
+  ms = ms || 3500;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div class="toast-ico">${icon||'ℹ️'}</div><div><div class="toast-title">${title||''}</div><div class="toast-msg">${msg||''}</div></div>`;
+  document.getElementById('toasts').appendChild(el);
+  const kill = () => { el.classList.add('out'); setTimeout(()=>el.remove(), 220); };
+  el.addEventListener('click', kill);
+  setTimeout(() => { if (document.contains(el)) kill(); }, ms);
+}
+
+/* ── Menú contextual ── */
+const ctxEl = document.getElementById('ctx');
+function ctxMenu(x, y, items){
+  ctxEl.innerHTML = '';
+  items.forEach(item => {
+    if (item.sep){ const s = document.createElement('div'); s.className='ctx-sep'; ctxEl.appendChild(s); return; }
     const el = document.createElement('div');
-    el.className = 'desk-icon';
-    el.style.left = (20 + (idx % 8) * 90) + 'px';
-    el.style.top = (20 + Math.floor(idx / 8) * 100) + 'px';
-    el.innerHTML = `<div style="font-size:42px">${item.icon || '📄'}</div><div style="font-size:12px;color:#fff;text-shadow:0 1px 3px #000">${item.name}</div>`;
-    
-    el.ondblclick = async () => {
-      if (item.type === 'shortcut') {
-        openApp(item.meta.appId);
-      } else {
-        // Lógica de extensiones: abrir con la app correspondiente
-        const ext = item.name.split('.').pop();
-        if (['txt', 'md', 'js', 'json'].includes(ext)) openApp('notepad', item.id);
-        else if (['png', 'jpg'].includes(ext)) openApp('img_viewer', item.id);
-        else alert('No hay app para .' + ext);
+    el.className = 'ctx-item' + (item.danger ? ' danger' : '');
+    el.textContent = item.label;
+    el.addEventListener('click', () => { item.fn(); hideCtx(); });
+    ctxEl.appendChild(el);
+  });
+  ctxEl.style.display = 'block';
+  ctxEl.style.left = x + 'px'; ctxEl.style.top = y + 'px';
+  setTimeout(() => {
+    const r = ctxEl.getBoundingClientRect();
+    if (r.right > window.innerWidth) ctxEl.style.left = (window.innerWidth - r.width - 8) + 'px';
+    if (r.bottom > window.innerHeight) ctxEl.style.top = (window.innerHeight - r.height - 8) + 'px';
+    ctxEl.classList.add('show');
+  }, 8);
+}
+function hideCtx(){ ctxEl.classList.remove('show'); setTimeout(()=>ctxEl.style.display='none', 150); }
+document.addEventListener('click', hideCtx);
+document.addEventListener('keydown', e => { if (e.key==='Escape'){ hideCtx(); closeStartMenu(); } });
+
+/* ── Window Manager ── */
+const WM = (() => {
+  const wins = new Map(); let z = 200, active = null;
+  const el = id => document.getElementById('win_' + id);
+
+  function focus(id){
+    if (active === id) return;
+    if (active){ el(active)?.classList.remove('focused'); document.querySelector(`.tb-app[data-wid="${active}"]`)?.classList.remove('active'); }
+    active = id;
+    const e = el(id); if (!e) return;
+    e.style.zIndex = ++z; e.classList.add('focused');
+    document.querySelector(`.tb-app[data-wid="${id}"]`)?.classList.add('active');
+  }
+
+  function getResponsiveSize(w, h){
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const maxW = vw - 40, maxH = vh - 120;
+    if (vw < 768){ const scale = Math.min(vw/1024, vh/768) * 0.85; return { w: Math.floor(Math.min(w*scale,maxW)), h: Math.floor(Math.min(h*scale,maxH)) }; }
+    return { w: Math.min(w, maxW), h: Math.min(h, maxH) };
+  }
+
+  function create({ id, title, width, height, url, icon, pid }){
+    if (wins.has(id)){ const s = wins.get(id); s.minimized ? restore(id) : focus(id); return; }
+    const sz = getResponsiveSize(width, height); width = sz.w; height = sz.h;
+    const off = (wins.size % 8) * 28;
+    const L = Math.max(10, Math.min((window.innerWidth-width)/2+off, window.innerWidth-width-10));
+    const T = Math.max(10, Math.min((window.innerHeight-height)/2+off, window.innerHeight-height-60));
+    const e = document.createElement('div');
+    e.className = 'window'; e.id = 'win_' + id;
+    e.style.cssText = `left:${L}px;top:${T}px;width:${width}px;height:${height}px;z-index:${++z}`;
+    const K = getKernel();
+    e.innerHTML = `<div class="win-titlebar"><div class="traffic"><button class="tb cl"></button><button class="tb mn"></button><button class="tb mx"></button></div><div class="win-icon-sm">${iconHtml(K, icon, 15)}</div><div class="win-title">${title}</div></div><div class="win-body"><iframe src="${url}"></iframe></div><div class="rh n"></div><div class="rh s"></div><div class="rh e"></div><div class="rh w"></div><div class="rh se"></div><div class="rh sw"></div><div class="rh ne"></div><div class="rh nw"></div>`;
+    e.style.opacity = '0'; e.style.transform = 'scale(0.9)translateY(18px)';
+    document.body.appendChild(e);
+    wins.set(id, { minimized:false, maximized:false, saved:null, pid, title, icon });
+    requestAnimationFrame(() => {
+      e.style.transition = 'opacity .25s ease,transform .32s cubic-bezier(.2,1.2,.3,1)';
+      e.style.opacity = '1'; e.style.transform = 'scale(1)translateY(0)';
+      setTimeout(() => e.style.transition = '', 380);
+    });
+    const [cl, mn, mx] = e.querySelectorAll('.tb');
+    cl.onclick = ev => { ev.stopPropagation(); close(id); };
+    mn.onclick = ev => { ev.stopPropagation(); minimize(id); };
+    mx.onclick = ev => { ev.stopPropagation(); toggleMax(id); };
+    e.querySelector('.win-titlebar').addEventListener('dblclick', ev => { if (!ev.target.classList.contains('tb')) toggleMax(id); });
+    e.addEventListener('mousedown', ev => { if (!ev.target.classList.contains('tb')) focus(id); });
+    _drag(e, e.querySelector('.win-titlebar'), id);
+    e.querySelectorAll('.rh').forEach(h => _resize(e, h, id));
+    _addTb(id, title, icon);
+    focus(id);
+  }
+
+  function close(id){
+    const e = el(id), s = wins.get(id); if (!e) return;
+    if (s && s.pid != null){ const K = getKernel(); K && K.procs && K.procs.kill(s.pid); }
+    e.style.transition = 'opacity .2s ease,transform .22s ease'; e.style.opacity = '0'; e.style.transform = 'scale(0.88)translateY(18px)';
+    setTimeout(() => { e.remove(); wins.delete(id); _removeTb(id); if (active === id) active = null; }, 220);
+  }
+  function minimize(id){
+    const e = el(id), s = wins.get(id); if (!e || !s) return;
+    s.minimized = true;
+    e.style.transition = 'opacity .22s ease,transform .25s cubic-bezier(.4,0,.6,1)'; e.style.opacity = '0'; e.style.transform = 'scale(0.5)translateY(220px)';
+    setTimeout(() => e.style.visibility = 'hidden', 260);
+    document.querySelector(`.tb-app[data-wid="${id}"]`)?.classList.remove('active');
+    if (active === id) active = null;
+  }
+  function restore(id){
+    const e = el(id), s = wins.get(id); if (!e || !s) return;
+    s.minimized = false; e.style.visibility = 'visible'; e.style.opacity = '0'; e.style.transform = 'scale(0.82)translateY(40px)';
+    requestAnimationFrame(() => {
+      e.style.transition = 'opacity .25s ease,transform .32s cubic-bezier(.2,1.2,.3,1)'; e.style.opacity = '1'; e.style.transform = 'scale(1)translateY(0)';
+      setTimeout(() => e.style.transition = '', 360);
+    });
+    focus(id);
+  }
+  function toggleMax(id){
+    const e = el(id), s = wins.get(id); if (!e || !s) return;
+    e.style.transition = 'all .3s cubic-bezier(.2,1,.3,1)';
+    if (!s.maximized){
+      s.saved = { l:e.style.left, t:e.style.top, w:e.style.width, h:e.style.height };
+      const tbWrap = document.getElementById('tb-wrap'); const tbH = tbWrap ? (tbWrap.offsetHeight+24) : 84;
+      e.style.left = '0'; e.style.top = '0'; e.style.width = '100vw'; e.style.height = `calc(100dvh - ${tbH}px)`;
+      e.classList.add('maximized'); s.maximized = true;
+    } else {
+      const r = s.saved; e.style.left = r.l; e.style.top = r.t; e.style.width = r.w; e.style.height = r.h;
+      e.classList.remove('maximized'); s.maximized = false;
+    }
+    setTimeout(() => e.style.transition = '', 320);
+  }
+  function _drag(win, bar, id){
+    let sx, sy, sl, st, on = false;
+    const start = (cx, cy) => { if (wins.get(id)?.maximized) return; on = true; sx = cx; sy = cy; sl = win.offsetLeft; st = win.offsetTop; focus(id); };
+    const move = (cx, cy) => {
+      if (!on) return;
+      const maxX = window.innerWidth - win.offsetWidth;
+      const tbWrap = document.getElementById('tb-wrap'); const tbH = tbWrap ? (tbWrap.offsetHeight+16) : 84;
+      win.style.left = Math.max(0, Math.min(sl + cx - sx, maxX)) + 'px';
+      win.style.top = Math.max(0, Math.min(st + cy - sy, window.innerHeight - tbH - 40)) + 'px';
+    };
+    const end = () => on = false;
+    bar.addEventListener('mousedown', e => { if (e.target.classList.contains('tb')) return; start(e.clientX, e.clientY); e.preventDefault(); });
+    bar.addEventListener('touchstart', e => { if (e.target.classList.contains('tb')) return; const t = e.touches[0]; start(t.clientX, t.clientY); e.preventDefault(); });
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => { const t = e.touches[0]; move(t.clientX, t.clientY); });
+    document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+  }
+  function _resize(win, handle, id){
+    const dir = [...handle.classList].find(c => /^(n|s|e|w|se|sw|ne|nw)$/.test(c)); if (!dir) return;
+    let sx, sy, sw, sh, sl, st, on = false;
+    const start = (cx, cy) => { if (wins.get(id)?.maximized) return; on = true; sx = cx; sy = cy; sw = win.offsetWidth; sh = win.offsetHeight; sl = win.offsetLeft; st = win.offsetTop; };
+    const move = (cx, cy) => {
+      if (!on) return;
+      const dx = cx - sx, dy = cy - sy, mW = 240, mH = 160;
+      const tbWrap = document.getElementById('tb-wrap'); const tbH = tbWrap ? (tbWrap.offsetHeight+16) : 84;
+      const maxW = window.innerWidth - 10, maxH = window.innerHeight - tbH;
+      if (dir.includes('e')) win.style.width = Math.max(mW, Math.min(sw+dx, maxW-sl)) + 'px';
+      if (dir.includes('s')) win.style.height = Math.max(mH, Math.min(sh+dy, maxH-st)) + 'px';
+      if (dir.includes('n')){ const nH = Math.max(mH, sh-dy); win.style.height = nH+'px'; win.style.top = Math.max(0, st+sh-nH)+'px'; }
+      if (dir.includes('w')){ const nW = Math.max(mW, sw-dx); win.style.width = nW+'px'; win.style.left = Math.max(0, sl+sw-nW)+'px'; }
+    };
+    const end = () => on = false;
+    handle.addEventListener('mousedown', e => { start(e.clientX, e.clientY); e.preventDefault(); e.stopPropagation(); });
+    handle.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); e.preventDefault(); e.stopPropagation(); });
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => { const t = e.touches[0]; move(t.clientX, t.clientY); });
+    document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
+  }
+  function _addTb(id, title, icon){
+    const e = document.createElement('div'); e.className = 'tb-app open'; e.dataset.wid = id;
+    const K = getKernel();
+    e.innerHTML = `${iconHtml(K, icon, 22)}<div class="tb-tip">${title}</div><div class="tb-dot"></div>`;
+    e.addEventListener('click', () => { const s = wins.get(id); if (!s) return; s.minimized ? restore(id) : (active===id ? minimize(id) : focus(id)); });
+    e.addEventListener('contextmenu', ev => { ev.preventDefault(); ctxMenu(ev.clientX, ev.clientY, [{label:'Restore',fn:()=>restore(id)},{label:'Maximize',fn:()=>toggleMax(id)},{sep:true},{label:'Close',fn:()=>close(id),danger:true}]); });
+    document.getElementById('tb-apps').appendChild(e);
+  }
+  function _removeTb(id){
+    const e = document.querySelector(`.tb-app[data-wid="${id}"]`); if (!e) return;
+    e.style.transition = 'all .18s ease'; e.style.opacity = '0'; e.style.transform = 'scale(0.5)';
+    setTimeout(() => e.remove(), 180);
+  }
+  return { create, close, minimize, restore, toggleMax, focus };
+})();
+
+/* ── Lanzar apps: registra un proceso y abre la ventana con el iframe ── */
+function openApp(appId, opts){
+  waitForKernel(async K => {
+    const app = (await K.apps.get(appId)) || APP_CATALOG.find(a => a.id === appId);
+    if (!app) { toast('⚠️','App','No se pudo abrir "'+appId+'".'); return; }
+    const uid = (opts && opts.uid) || (appId + '_' + Date.now());
+    let url = app.url;
+    if (opts && opts.filePath) url += (url.includes('?') ? '&' : '?') + 'path=' + encodeURIComponent(opts.filePath);
+    if (opts && opts.startPath) url += (url.includes('?') ? '&' : '?') + 'start=' + encodeURIComponent(opts.startPath);
+    const proc = K.procs.spawn(appId, { title: app.name, icon: app.icon, cwd: DESKTOP_DIR });
+    WM.create({ id: uid, title: (opts && opts.title) || app.name, width: app.winWidth, height: app.winHeight, url, icon: app.icon, pid: proc.pid });
+  });
+}
+
+/* Kernel emite 'shell:launch' cuando una app pide abrir otra (o el propio
+   Kernel resuelve un doble-clic de archivo vía Kernel.openFile). Además
+   definimos 'shell:toast' como convención propia para que las apps pidan
+   un toast sin duplicar UI. */
+waitForKernel(K => {
+  K.on('shell:launch', payload => openApp(payload.appId, payload));
+  K.on('shell:toast', payload => toast(payload.icon, payload.title, payload.msg, payload.ms));
+});
+
+/* ── Registro de apps + extensiones + accesos de escritorio por defecto ── */
+async function ensureAppsRegistered(K){
+  for (const app of APP_CATALOG){
+    await K.apps.register({ id: app.id, name: app.name, icon: app.icon, url: app.url, winWidth: app.winWidth, winHeight: app.winHeight });
+  }
+}
+
+const EXTENSION_ROUTES = {
+  txt:'notepad', md:'notepad', json:'notepad', csv:'notepad', log:'notepad', xml:'notepad', sh:'notepad',
+  js:'vscode', css:'vscode', py:'vscode', html:'vscode', htm:'vscode',
+  jpg:'img_viewer', jpeg:'img_viewer', png:'img_viewer', gif:'img_viewer', webp:'img_viewer', bmp:'img_viewer', svg:'img_viewer',
+  mp4:'vid_player', webm:'vid_player', ogv:'vid_player', mov:'vid_player',
+  mp3:'aud_player', wav:'aud_player', ogg:'aud_player', flac:'aud_player', aac:'aud_player', m4a:'aud_player',
+};
+function registerExtensions(K){
+  Object.entries(EXTENSION_ROUTES).forEach(([ext, appId]) => K.bindings.registerExtension(ext, appId));
+}
+
+async function ensureDefaultDesktopShortcuts(K){
+  await K.fs.mkdir(DESKTOP_DIR);
+  const existing = await K.fs.readdir(DESKTOP_DIR);
+  if (existing.length > 0) return;
+  for (const app of APP_CATALOG){
+    await K.fs.createShortcut(`${DESKTOP_DIR}/${app.name}`, { appId: app.id, name: app.name, icon: app.icon, metadata: { systemApp: false } });
+  }
+}
+
+/* ── Escritorio: iconos desde Kernel.fs ── */
+const DESK_GRID = { iconSize: 80, snapGrid: true, PAD: 16, GAP: 4 };
+function deskCellSize(){ return DESK_GRID.iconSize + DESK_GRID.GAP; }
+function deskGridPos(idx){
+  const cs = deskCellSize();
+  const availW = window.innerWidth - DESK_GRID.PAD * 2;
+  const cols = Math.max(1, Math.floor(availW / cs));
+  return { left: DESK_GRID.PAD + (idx % cols) * cs, top: DESK_GRID.PAD + Math.floor(idx / cols) * cs };
+}
+function snapToGrid(x, y){
+  if (!DESK_GRID.snapGrid) return { x, y };
+  const cs = deskCellSize();
+  return { x: Math.round((x - DESK_GRID.PAD) / cs) * cs + DESK_GRID.PAD, y: Math.round((y - DESK_GRID.PAD) / cs) * cs + DESK_GRID.PAD };
+}
+function applyIconSize(K, size){
+  DESK_GRID.iconSize = size;
+  document.querySelectorAll('.desk-icon').forEach(el => {
+    el.style.width = size + 'px';
+    const img = el.querySelector('.di-img'); if (img) img.style.width = img.style.height = Math.round(size*0.65) + 'px';
+  });
+  relayoutDesktop();
+  K.prefs.set('os.iconSize', size);
+}
+function relayoutDesktop(){
+  [...document.querySelectorAll('.desk-icon')].forEach((el, i) => {
+    const pos = deskGridPos(i);
+    el.style.left = pos.left + 'px'; el.style.top = pos.top + 'px'; el.style.width = DESK_GRID.iconSize + 'px';
+  });
+}
+function makeDraggableIcon(el, K, path){
+  let sx, sy, sl, st, drag = false;
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    drag = false;
+    const stX = e.clientX, stY = e.clientY;
+    sx = e.clientX; sy = e.clientY; sl = el.offsetLeft; st = el.offsetTop;
+    const mm = ev => {
+      if (Math.abs(ev.clientX-stX) + Math.abs(ev.clientY-stY) > 6) drag = true;
+      if (drag){ el.style.left = (sl+ev.clientX-sx)+'px'; el.style.top = Math.max(0, st+ev.clientY-sy)+'px'; }
+    };
+    const mu = () => {
+      document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu);
+      if (drag && DESK_GRID.snapGrid){
+        const snapped = snapToGrid(el.offsetLeft, el.offsetTop);
+        el.style.left = snapped.x+'px'; el.style.top = snapped.y+'px';
       }
     };
+    document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu);
+  });
+}
+
+let _desktopRenderToken = 0;
+async function renderDesktop(){
+  const myToken = ++_desktopRenderToken;
+  const K = getKernel(); if (!K) return;
+  const area = document.getElementById('icon-area');
+  const items = await K.fs.readdir(DESKTOP_DIR);
+  if (myToken !== _desktopRenderToken) return;
+  area.innerHTML = '';
+  items.sort((a,b) => a.name.localeCompare(b.name)).forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'desk-icon';
+    const pos = deskGridPos(idx);
+    el.style.cssText = `left:${pos.left}px;top:${pos.top}px;width:${DESK_GRID.iconSize}px`;
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'di-img';
+    const icon = item.icon || (item.meta && item.meta.icon) || (item.type === 'dir' ? '📁' : '📄');
+    imgWrap.innerHTML = iconHtml(K, icon, Math.round(DESK_GRID.iconSize*0.65));
+    const sp = document.createElement('span'); sp.textContent = item.name;
+    el.appendChild(imgWrap); el.appendChild(sp);
+    el.style.opacity = '0'; el.style.transform = 'scale(0.7)';
+    setTimeout(() => { el.style.transition = 'opacity .3s ease,transform .4s cubic-bezier(.2,1.2,.3,1)'; el.style.opacity='1'; el.style.transform='scale(1)'; setTimeout(()=>el.style.transition='',450); }, 30+idx*30);
+    let clicks = 0, ct;
+    el.addEventListener('click', e => {
+      document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));
+      el.classList.add('selected'); clicks++; clearTimeout(ct);
+      ct = setTimeout(() => { if (clicks>=2) activateDesktopItem(item); clicks=0; }, 280);
+      e.stopPropagation();
+    });
+    el.addEventListener('contextmenu', e => {
+      e.preventDefault(); e.stopPropagation();
+      document.querySelectorAll('.desk-icon').forEach(d=>d.classList.remove('selected'));
+      el.classList.add('selected');
+      ctxMenu(e.clientX, e.clientY, [
+        { label:`Open ${item.name}`, fn:()=>activateDesktopItem(item) },
+        { sep:true },
+        { label:'Delete', fn: async () => { await K.fs.remove(item.id, { recursive:true }); }, danger:true },
+      ]);
+    });
+    makeDraggableIcon(el, K, item.id);
     area.appendChild(el);
   });
 }
 
-async function buildStartMenu() {
-  const grid = document.getElementById('sm-grid');
-  grid.innerHTML = '';
-  const apps = await Kernel.apps.list();
-  
-  apps.forEach(app => {
-    const el = document.createElement('div');
-    el.className = 'sm-item';
-    el.innerHTML = `${app.icon || '▪'} ${app.name}`;
-    el.onclick = () => {
-      openApp(app.id);
-      document.getElementById('start-menu').style.display = 'none';
-    };
-    grid.appendChild(el);
+function activateDesktopItem(item){
+  if (item.type === 'shortcut' && item.meta && item.meta.appId){ openApp(item.meta.appId); return; }
+  if (item.type === 'dir'){ openApp('files', { startPath: item.id }); return; }
+  const K = getKernel();
+  K.openFile(item.id).then(res => {
+    if (!res.ok && res.reason === 'NO_HANDLER') openApp('notepad', { filePath: item.id });
   });
 }
 
-document.getElementById('start-btn').onclick = (e) => {
-  e.stopPropagation();
-  const menu = document.getElementById('start-menu');
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-};
-document.addEventListener('click', () => document.getElementById('start-menu').style.display = 'none');
+/* ── Menú contextual del escritorio ── */
+document.getElementById('desktop').addEventListener('contextmenu', e => {
+  if (e.target.closest('.desk-icon')) return;
+  e.preventDefault();
+  const K = getKernel();
+  ctxMenu(e.clientX, e.clientY, [
+    { label:'New Text File', fn: async () => {
+        let n = 1, path = `${DESKTOP_DIR}/New file.txt`;
+        while (await K.fs.exists(path)) { n++; path = `${DESKTOP_DIR}/New file (${n}).txt`; }
+        await K.fs.write(path, '');
+      } },
+    { label:'Open Explorer', fn: () => openApp('files', { startPath: DESKTOP_DIR }) },
+    { sep:true },
+    { label:'Icon Size: Small',  fn:()=>applyIconSize(K,60) },
+    { label:'Icon Size: Medium', fn:()=>applyIconSize(K,80) },
+    { label:'Icon Size: Large',  fn:()=>applyIconSize(K,100) },
+    { sep:true },
+    { label: DESK_GRID.snapGrid ? 'Disable Grid Snap' : 'Enable Grid Snap', fn: () => { DESK_GRID.snapGrid = !DESK_GRID.snapGrid; toast('', 'Desktop', DESK_GRID.snapGrid ? 'Grid snap enabled' : 'Grid snap disabled'); } },
+    { sep:true },
+    { label:'Settings', fn:()=>openApp('settings') },
+    { label:'Lock Screen', fn:lockScreen },
+  ]);
+});
+window.addEventListener('resize', relayoutDesktop);
 
-// Inicializar Shell
-(async () => {
-  await buildDesktop();
-  await buildStartMenu();
+/* ── Drop de archivos: escribe directo en Kernel.fs ── */
+const IMG_EXT=['jpg','jpeg','png','gif','webp','bmp','svg'];
+const VID_EXT=['mp4','webm','ogv','mov'];
+const AUD_EXT=['mp3','wav','ogg','flac','aac','m4a'];
+const TXT_EXT=['txt','md','csv','json','js','css','html','py','sh','xml','log'];
+
+const dropZone = document.getElementById('drop-zone');
+let dragCount = 0;
+document.getElementById('desktop').addEventListener('dragenter', e => { e.preventDefault(); dragCount++; if (dragCount===1) dropZone.classList.add('show'); });
+document.getElementById('desktop').addEventListener('dragleave', () => { dragCount--; if (dragCount<=0) dropZone.classList.remove('show'); });
+document.getElementById('desktop').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('desktop').addEventListener('drop', e => { e.preventDefault(); dragCount=0; dropZone.classList.remove('show'); handleFileDrop(e.dataTransfer.files); });
+
+async function handleFileDrop(files){
+  if (!files || !files.length) return;
+  const K = getKernel();
+  for (const file of Array.from(files)){
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const path = `${DESKTOP_DIR}/${file.name}`;
+    try {
+      if (TXT_EXT.includes(ext)){
+        const text = await file.text();
+        await K.fs.write(path, text);
+      } else {
+        await K.fs.writeBinary(path, file, file.type || 'application/octet-stream');
+      }
+      toast('📥', 'Imported', `"${file.name}" added to Desktop`);
+    } catch (err) { toast('⚠️', 'Import failed', err.message); }
+  }
+}
+
+/* ── Toque de teclas de escritorio: F5-less refresh no aplica; nada extra ── */
+
+/* ── Taskbar clock ── */
+function tickTray(){
+  const n = new Date();
+  document.getElementById('clock-tray').innerHTML = `<div>${n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div><div style="font-size:10px;opacity:.5">${n.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
+}
+tickTray(); setInterval(tickTray, 15000);
+
+/* ── Volumen ── */
+function updateRangeGradient(input, min, max){
+  const pct = ((input.value-min)/(max-min))*100;
+  input.style.background = `linear-gradient(to right,var(--accent) ${pct}%,rgba(255,255,255,0.15) ${pct}%)`;
+}
+function volIcon(v){ return v===0?'🔇':v<40?'🔈':v<70?'🔉':'🔊'; }
+waitForKernel(async K => {
+  const btn = document.getElementById('tray-vol'), popup = document.getElementById('vol-popup');
+  const range = document.getElementById('vol-range'), valEl = document.getElementById('vol-val');
+  const vol = await K.prefs.get('os.volume', 80);
+  range.value = vol; valEl.textContent = vol+'%'; btn.textContent = volIcon(vol); updateRangeGradient(range,0,100);
+  let open = false;
+  const openV = () => { open=true; const r=btn.getBoundingClientRect(); popup.style.right=(window.innerWidth-r.right-6)+'px'; popup.classList.add('show'); };
+  const closeV = () => { open=false; popup.classList.remove('show'); };
+  btn.addEventListener('click', e => { e.stopPropagation(); open?closeV():openV(); });
+  range.oninput = () => { const v=parseInt(range.value); valEl.textContent=v+'%'; updateRangeGradient(range,0,100); btn.textContent=volIcon(v); K.prefs.set('os.volume', v); };
+  document.addEventListener('click', e => { if (open && !popup.contains(e.target) && e.target!==btn) closeV(); });
+});
+
+/* ── Start menu ── */
+let smOpen = false;
+async function buildStartMenu(K){
+  const grid = document.getElementById('sm-grid');
+  grid.innerHTML = '';
+  const apps = await K.apps.list();
+  apps.forEach(app => {
+    const el = document.createElement('div'); el.className = 'sm-item'; el.dataset.q = app.name.toLowerCase();
+    el.innerHTML = `<div class="si-img">${iconHtml(K, app.icon, 30)}</div><span>${app.name}</span>`;
+    el.addEventListener('click', () => { openApp(app.id); closeStartMenu(); });
+    grid.appendChild(el);
+  });
+  document.getElementById('sm-input').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.sm-item').forEach(el => el.style.display = el.dataset.q.includes(q) ? '' : 'none');
+  };
+  document.getElementById('sm-lock').onclick = () => { lockScreen(); closeStartMenu(); };
+  document.getElementById('sm-restart').onclick = () => { toast('🔄','System','Restarting HueBit OS…'); closeStartMenu(); };
+  document.getElementById('sm-power').onclick = () => { toast('⏻','System','Shutting down…'); closeStartMenu(); };
+}
+document.getElementById('start-btn').addEventListener('click', e => { e.stopPropagation(); smOpen ? closeStartMenu() : openStartMenu(); });
+function openStartMenu(){ document.getElementById('start-menu').classList.add('open'); smOpen=true; setTimeout(()=>document.getElementById('sm-input').focus(),60); }
+function closeStartMenu(){ document.getElementById('start-menu').classList.remove('open'); smOpen=false; }
+document.addEventListener('click', e => { const sm=document.getElementById('start-menu'); if (smOpen && !sm.contains(e.target) && !e.target.closest('#start-btn')) closeStartMenu(); });
+
+async function syncStartMenuUser(K){
+  const username = await K.prefs.get('os.username', 'User');
+  const avatar = await K.prefs.get('os.avatar', null);
+  document.getElementById('sm-uname').textContent = username;
+  const av = document.getElementById('sm-av');
+  av.innerHTML = avatar ? `<img src="${avatar}">` : '👤';
+}
+
+/* ── Pantalla de bloqueo ── */
+let _lockTimer = null;
+async function resetLockTimer(K){
+  clearTimeout(_lockTimer);
+  const lockAfter = await K.prefs.get('os.lockAfter', 0);
+  if (lockAfter > 0) _lockTimer = setTimeout(lockScreen, lockAfter * 60000);
+}
+
+async function lockScreen(){
+  if (document.querySelector('.lock-overlay')) return;
+  const K = getKernel();
+  const username = await K.prefs.get('os.username', 'User');
+  const avatar = await K.prefs.get('os.avatar', null);
+  const usePassword = await K.prefs.get('os.usePassword', false);
+  const password = await K.prefs.get('os.password', '');
+  const needsPw = usePassword && password;
+
+  const ov = document.createElement('div'); ov.className = 'lock-overlay';
+  const fmt = x => String(x).padStart(2,'0');
+  const getTime = () => { const n=new Date(); return `${fmt(n.getHours())}:${fmt(n.getMinutes())}`; };
+  const getDate = () => new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  ov.innerHTML = `
+    <div class="lock-aurora"></div><div class="lock-grain"></div>
+    <div class="lock-cta" id="lock-cta">
+      <div class="lock-cta-arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 7l4 3 4-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <span class="lock-cta-label">Click to unlock</span>
+    </div>
+    <div class="lock-content">
+      <div class="lock-clock-wrap" id="lock-clock-wrap">
+        <div class="lock-big-time" id="lock-big-time">${getTime()}</div>
+        <div class="lock-big-date" id="lock-big-date">${getDate()}</div>
+      </div>
+      <div class="lock-card" id="lock-card">
+        <div class="lock-avatar" id="lock-av-el">${avatar ? `<img src="${avatar}">` : '👤'}</div>
+        <div class="lock-username">${username}</div>
+        <div class="lock-divider"></div>
+        ${needsPw ? `<div class="lock-pass-wrap"><input type="password" id="lock-pass" placeholder="Password" autocomplete="off" spellcheck="false"><button class="lock-submit" id="lock-submit">→</button></div><div class="lock-error" id="lock-err"></div>` : `<div class="lock-hint-btn" id="lock-click-hint">Click anywhere to sign in</div>`}
+      </div>
+      <button class="lock-back" id="lock-back">↑ Lock screen</button>
+    </div>`;
+  document.body.appendChild(ov);
+
+  const clockWrap = ov.querySelector('#lock-clock-wrap');
+  const cta = ov.querySelector('#lock-cta');
+  const card = ov.querySelector('#lock-card');
+  const backBtn = ov.querySelector('#lock-back');
+  let inLoginMode = false;
+
+  const goLogin = () => {
+    if (inLoginMode) return; inLoginMode = true;
+    cta.classList.add('hidden'); clockWrap.classList.add('login-mode');
+    setTimeout(() => { card.classList.add('visible'); backBtn.classList.add('visible'); }, 80);
+    if (needsPw) setTimeout(() => ov.querySelector('#lock-pass')?.focus(), 220);
+  };
+  const goIdle = () => {
+    if (!inLoginMode) return; inLoginMode = false;
+    card.classList.remove('visible'); backBtn.classList.remove('visible'); clockWrap.classList.remove('login-mode');
+    setTimeout(() => cta.classList.remove('hidden'), 480);
+  };
+  const unlock = () => {
+    clearInterval(iv); document.removeEventListener('keydown', keyHandler);
+    ov.style.transition = 'opacity .5s ease'; ov.style.opacity = '0';
+    setTimeout(() => ov.remove(), 520);
+    resetLockTimer(K);
+  };
+  cta.addEventListener('click', goLogin);
+  ov.addEventListener('click', e => {
+    if (inLoginMode) return;
+    const cl = e.target.classList;
+    if (e.target===ov || cl.contains('lock-aurora') || cl.contains('lock-grain') || cl.contains('lock-big-time') || cl.contains('lock-big-date') || cl.contains('lock-clock-wrap') || cl.contains('lock-content')) goLogin();
+  });
+  const keyHandler = e => { if (!inLoginMode && !['Meta','Control','Alt','Shift'].includes(e.key)) goLogin(); };
+  document.addEventListener('keydown', keyHandler);
+  backBtn.addEventListener('click', goIdle);
+
+  if (needsPw){
+    const inp = ov.querySelector('#lock-pass'), err = ov.querySelector('#lock-err'), sub = ov.querySelector('#lock-submit');
+    const tryUnlock = () => {
+      if (inp.value === password) { unlock(); return; }
+      err.textContent = 'Incorrect password';
+      err.style.animation = 'none'; requestAnimationFrame(() => err.style.animation = '');
+      inp.value = ''; inp.style.borderColor = 'rgba(220,100,90,.5)'; inp.style.boxShadow = '0 0 0 3px rgba(220,100,90,.07)';
+      setTimeout(() => { err.textContent=''; inp.style.borderColor=''; inp.style.boxShadow=''; }, 2200);
+    };
+    inp.addEventListener('keydown', e => { if (e.key==='Enter') tryUnlock(); });
+    sub.addEventListener('click', tryUnlock);
+  } else {
+    ov.querySelector('#lock-click-hint')?.addEventListener('click', unlock);
+  }
+
+  const tick = () => {
+    const te=document.getElementById('lock-big-time'), de=document.getElementById('lock-big-date');
+    if (te) te.textContent = getTime(); if (de) de.textContent = getDate();
+  };
+  const iv = setInterval(tick, 15000);
+}
+
+/* ── Arranque del shell ── */
+waitForKernel(async K => {
+  registerExtensions(K);
+  await ensureAppsRegistered(K);
+  await ensureDefaultDesktopShortcuts(K);
+
+  const [accent, accent2, wallpaper, customWp, nightLight, iconSize] = await Promise.all([
+    K.prefs.get('os.accent', '#5b8af5'),
+    K.prefs.get('os.accent2', '#9b59f5'),
+    K.prefs.get('os.wallpaper', 'original'),
+    K.prefs.get('os.customWallpaper', null),
+    K.prefs.get('os.nightLight', false),
+    K.prefs.get('os.iconSize', 80),
+  ]);
+  applyAccent(accent, accent2);
+  applyWallpaper(wallpaper, customWp);
+  applyNightLight(nightLight);
+  DESK_GRID.iconSize = iconSize;
+
+  await renderDesktop();
+  await buildStartMenu(K);
+  await syncStartMenuUser(K);
+  await resetLockTimer(K);
+
+  K.on('fs:write', p => { if (p.path && p.path.startsWith(DESKTOP_DIR)) renderDesktop(); });
+  K.on('fs:remove', p => { if (p.path && p.path.startsWith(DESKTOP_DIR)) renderDesktop(); });
+  K.on('fs:mkdir', p => { if (p.path && p.path.startsWith(DESKTOP_DIR)) renderDesktop(); });
+  K.on('fs:move', () => renderDesktop());
+
+  K.on('prefs:change', ({ key, value }) => {
+    if (key === 'os.accent') applyAccent(value, null);
+    else if (key === 'os.accent2') applyAccent(null, value);
+    else if (key === 'os.wallpaper') { K.prefs.get('os.customWallpaper', null).then(cw => applyWallpaper(value, cw)); }
+    else if (key === 'os.customWallpaper') { K.prefs.get('os.wallpaper', 'original').then(w => applyWallpaper(w, value)); }
+    else if (key === 'os.nightLight') applyNightLight(value);
+    else if (key === 'os.username' || key === 'os.avatar') syncStartMenuUser(K);
+    else if (key === 'os.lockAfter') resetLockTimer(K);
+    else if (key === 'os.iconSize') { DESK_GRID.iconSize = value; relayoutDesktop(); }
+  });
+
+  ['mousedown','keydown'].forEach(evt => document.addEventListener(evt, () => resetLockTimer(K)));
+});
+
 })();
 </script>
